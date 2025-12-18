@@ -1,0 +1,623 @@
+# Code Server CloudFormation Template - Production Ready
+# Implements reliable cloud-based VS Code development environment
+# Based on spec: .kiro/specs/code-server-deployment/
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Building Agents with Amazon Nova Act and MCP - Improved Version
+
+Parameters:
+  CodeEditorUser:
+    Type: String
+    Default: ubuntu
+  EC2KeyPair:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/create-key-pairs.html
+    Default: ws-default-keypair
+  InstanceVolumeSize:
+    Type: Number
+    Description: The volume size in GB
+    Default: 30
+  InstanceType:
+    Description: Type of EC2 instance to launch
+    Type: String
+    Default: c7g.xlarge
+    AllowedValues:
+      - c7g.medium
+      - c7g.large
+      - c7g.xlarge
+      - c7g.2xlarge
+      - c7g.4xlarge
+      - m7g.medium
+      - m7g.large
+      - m7g.xlarge
+      - m7g.2xlarge
+      - t4g.medium
+      - t4g.large
+      - t4g.xlarge
+  HomeFolder:
+    Type: String
+    Description: The home folder in the VSCodeInstance
+    Default: /home/ubuntu/workshop/
+  DevServerBasePath:
+    Type: String
+    Description: The base path for the application
+    Default: app
+  DevServerPort:
+    Type: Number
+    Description: The port for the DevServer
+    Default: 8081
+  AllowSSHAccess:
+    Type: String
+    Description: Allow SSH access for debugging
+    Default: 'true'
+    AllowedValues: ['true', 'false']
+
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: Instance Configuration
+        Parameters:
+          - InstanceVolumeSize
+          - EC2KeyPair
+          - AllowSSHAccess
+      - Label:
+          default: Code Server Configuration
+        Parameters:
+          - HomeFolder
+          - DevServerBasePath
+          - DevServerPort
+
+Mappings:
+  Subnets:
+    VPC:
+      CIDR: 10.0.0.0/16
+    PublicOne:
+      CIDR: 10.0.1.0/24
+    PublicTwo:
+      CIDR: 10.0.2.0/24
+  
+  AWSRegions2PrefixListID:
+    us-east-1:
+      PrefixList: pl-3b927c52
+    us-east-2:
+      PrefixList: pl-b6a144df
+    us-west-1:
+      PrefixList: pl-4ea04527
+    us-west-2:
+      PrefixList: pl-82a045eb
+    eu-west-1:
+      PrefixList: pl-4fa04526
+    eu-west-2:
+      PrefixList: pl-93a247fa
+    eu-central-1:
+      PrefixList: pl-a3a144ca
+    ap-southeast-1:
+      PrefixList: pl-31a34658
+    ap-southeast-2:
+      PrefixList: pl-b8a742d1
+    ap-northeast-1:
+      PrefixList: pl-58a04531
+
+Conditions:
+  EnableSSHAccess: !Equals [!Ref AllowSSHAccess, 'true']
+
+Resources:
+  ############## NETWORKING ##############
+  VPC:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !FindInMap [Subnets, VPC, CIDR]
+      EnableDnsSupport: true
+      EnableDnsHostnames: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-VPC
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-IGW
+
+  GatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref VPC
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicSubnetOne:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: !FindInMap [Subnets, PublicOne, CIDR]
+      VpcId: !Ref VPC
+      MapPublicIpOnLaunch: true
+      AvailabilityZone: !Select [0, !GetAZs '']
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-PublicSubnet1
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref VPC
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-PublicRT
+
+  PublicRoute:
+    Type: AWS::EC2::Route
+    DependsOn: GatewayAttachment
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+
+  PublicRouteTableAssoc:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnetOne
+
+  ############## SECURITY ##############
+  SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for Code Server instance
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - !If
+          - EnableSSHAccess
+          - Description: Allow SSH access for debugging
+            IpProtocol: tcp
+            FromPort: 22
+            ToPort: 22
+            CidrIp: 0.0.0.0/0
+          - !Ref AWS::NoValue
+        - Description: Allow HTTP from CloudFront
+          IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          SourcePrefixListId: !FindInMap [AWSRegions2PrefixListID, !Ref AWS::Region, PrefixList]
+        - Description: Allow dev server ports
+          IpProtocol: tcp
+          FromPort: 8501
+          ToPort: 8600
+          CidrIp: 0.0.0.0/0
+      SecurityGroupEgress:
+        - Description: Allow all outbound traffic
+          IpProtocol: -1
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-SecurityGroup
+
+  ############## IAM ##############
+  VSCodeInstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+                - ssm.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - !Sub arn:${AWS::Partition}:iam::aws:policy/AdministratorAccess
+        - !Sub arn:${AWS::Partition}:iam::aws:policy/AmazonSSMManagedInstanceCore
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-InstanceRole
+
+  VSCodeInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref VSCodeInstanceRole
+
+  ############## SSM BOOTSTRAP ##############
+  SSMLogBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Delete
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-SSMLogs
+
+  VSCodeInstanceSSMDoc:
+    Type: AWS::SSM::Document
+    Properties:
+      DocumentType: Command
+      DocumentFormat: YAML
+      Content:
+        schemaVersion: '2.2'
+        description: Bootstrap VSCode code-server instance - Improved Version
+        mainSteps:
+          - action: aws:runShellScript
+            name: UpdateSystem
+            inputs:
+              timeoutSeconds: 300
+              runCommand:
+                - '#!/bin/bash'
+                - set -e
+                - export DEBIAN_FRONTEND=noninteractive
+                - apt-get update
+                - apt-get install -y curl wget unzip software-properties-common apt-transport-https ca-certificates gnupg lsb-release
+
+          - action: aws:runShellScript
+            name: InstallNodeJS
+            inputs:
+              timeoutSeconds: 600
+              runCommand:
+                - '#!/bin/bash'
+                - set -e
+                - echo "Installing Node.js using official binary..."
+                - # Remove any existing broken NodeSource repos
+                - rm -f /etc/apt/sources.list.d/nodesource.list
+                - apt-get update
+                - # Install Node.js using official binary (more reliable than NodeSource)
+                - curl -fsSL https://nodejs.org/dist/v20.18.0/node-v20.18.0-linux-arm64.tar.xz -o /tmp/node.tar.xz
+                - tar -xJf /tmp/node.tar.xz -C /opt/
+                - ln -sf /opt/node-v20.18.0-linux-arm64/bin/node /usr/local/bin/node
+                - ln -sf /opt/node-v20.18.0-linux-arm64/bin/npm /usr/local/bin/npm
+                - ln -sf /opt/node-v20.18.0-linux-arm64/bin/npx /usr/local/bin/npx
+                - rm -f /tmp/node.tar.xz
+                - node --version
+                - npm --version
+
+          - action: aws:runShellScript
+            name: InstallAWSCLI
+            inputs:
+              timeoutSeconds: 300
+              runCommand:
+                - '#!/bin/bash'
+                - set -e
+                - curl -fsSL https://awscli.amazonaws.com/awscli-exe-linux-$(uname -m).zip -o /tmp/aws-cli.zip
+                - unzip -q -d /tmp /tmp/aws-cli.zip
+                - /tmp/aws/install
+                - rm -rf /tmp/aws /tmp/aws-cli.zip
+                - aws --version
+
+          - action: aws:runShellScript
+            name: InstallCDK
+            inputs:
+              timeoutSeconds: 300
+              runCommand:
+                - '#!/bin/bash'
+                - set -e
+                - npm install -g aws-cdk
+                - cdk --version
+
+          - action: aws:runShellScript
+            name: InstallDocker
+            inputs:
+              timeoutSeconds: 300
+              runCommand:
+                - '#!/bin/bash'
+                - set -e
+                - curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+                - echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list
+                - apt-get update
+                - apt-get install -y docker-ce docker-ce-cli containerd.io
+                - usermod -aG docker ubuntu
+                - systemctl enable docker
+                - docker --version
+
+          - action: aws:runShellScript
+            name: InstallPython
+            inputs:
+              timeoutSeconds: 600
+              runCommand:
+                - '#!/bin/bash'
+                - set -e
+                - add-apt-repository -y ppa:deadsnakes/ppa
+                - apt-get update
+                - apt-get install -y python3.12 python3.12-venv python3.12-dev python3-pip
+                - update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 2
+                - python3 --version
+                - pip3 --version
+
+          - action: aws:runShellScript
+            name: SetupWorkshop
+            inputs:
+              timeoutSeconds: 300
+              runCommand:
+                - '#!/bin/bash'
+                - set -e
+                - !Sub |
+                  mkdir -p ${HomeFolder}
+                  chown ubuntu:ubuntu ${HomeFolder}
+                  # Clone workshop repo if it doesn't exist
+                  if [ ! -d "${HomeFolder}/.git" ]; then
+                    sudo -u ubuntu git clone https://github.com/VincentV89/agentic-ai-with-mcp-and-strands ${HomeFolder} || true
+                  fi
+                  chown -R ubuntu:ubuntu ${HomeFolder}
+
+          - action: aws:runShellScript
+            name: InstallCodeServer
+            inputs:
+              timeoutSeconds: 300
+              runCommand:
+                - '#!/bin/bash'
+                - set -e
+                - curl -fsSL https://code-server.dev/install.sh | sh
+                - systemctl enable code-server@ubuntu
+                - mkdir -p /home/ubuntu/.config/code-server
+                - chown -R ubuntu:ubuntu /home/ubuntu/.config
+
+          - action: aws:runShellScript
+            name: ConfigureCodeServer
+            inputs:
+              timeoutSeconds: 300
+              runCommand:
+                - '#!/bin/bash'
+                - set -e
+                - !Sub |
+                  # Create code-server config directory
+                  mkdir -p /home/ubuntu/.config/code-server
+                  chown -R ubuntu:ubuntu /home/ubuntu/.config
+                  
+                  # Create code-server config with AWS Account ID as password
+                  tee /home/ubuntu/.config/code-server/config.yaml <<EOF
+                  bind-addr: 127.0.0.1:8080
+                  auth: password
+                  password: $(aws sts get-caller-identity --query Account --output text)
+                  cert: false
+                  EOF
+                  
+                  # Create VS Code settings
+                  mkdir -p /home/ubuntu/.local/share/code-server/User/
+                  tee /home/ubuntu/.local/share/code-server/User/settings.json <<EOF
+                  {
+                    "extensions.autoUpdate": false,
+                    "extensions.autoCheckUpdates": false,
+                    "terminal.integrated.cwd": "${HomeFolder}",
+                    "telemetry.telemetryLevel": "off",
+                    "security.workspace.trust.startupPrompt": "never",
+                    "security.workspace.trust.enabled": false,
+                    "editor.tabSize": 2
+                  }
+                  EOF
+                  
+                  chown -R ubuntu:ubuntu /home/ubuntu/.config
+                  chown -R ubuntu:ubuntu /home/ubuntu/.local/
+                  systemctl enable --now code-server@ubuntu
+
+          - action: aws:runShellScript
+            name: InstallNginx
+            inputs:
+              timeoutSeconds: 300
+              runCommand:
+                - '#!/bin/bash'
+                - set -e
+                - apt-get install -y nginx
+                - systemctl enable nginx
+
+          - action: aws:runShellScript
+            name: ConfigureNginx
+            inputs:
+              timeoutSeconds: 300
+              runCommand:
+                - '#!/bin/bash'
+                - set -e
+                - !Sub |
+                  # Create nginx config - use _ as server_name to accept any hostname
+                  tee /etc/nginx/sites-available/code-server <<EOF
+                  server {
+                      listen 80 default_server;
+                      listen [::]:80 default_server;
+                      server_name _;
+                      
+                      location / {
+                          proxy_pass http://localhost:8080/;
+                          proxy_set_header Host \$host;
+                          proxy_set_header Upgrade \$http_upgrade;
+                          proxy_set_header Connection upgrade;
+                          proxy_set_header Accept-Encoding gzip;
+                          proxy_set_header X-Real-IP \$remote_addr;
+                          proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                          proxy_set_header X-Forwarded-Proto \$scheme;
+                      }
+                      
+                      location /${DevServerBasePath} {
+                          proxy_pass http://localhost:${DevServerPort}/${DevServerBasePath};
+                          proxy_set_header Host \$host;
+                          proxy_set_header Upgrade \$http_upgrade;
+                          proxy_set_header Connection upgrade;
+                          proxy_set_header Accept-Encoding gzip;
+                          proxy_set_header X-Real-IP \$remote_addr;
+                          proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+                          proxy_set_header X-Forwarded-Proto \$scheme;
+                      }
+                  }
+                  EOF
+                  
+                  # Remove default nginx site
+                  rm -f /etc/nginx/sites-enabled/default
+                  
+                  # Enable code-server site
+                  ln -sf /etc/nginx/sites-available/code-server /etc/nginx/sites-enabled/code-server
+                  
+                  # Test nginx config
+                  nginx -t
+                  
+                  # Start nginx
+                  systemctl restart nginx
+
+          - action: aws:runShellScript
+            name: FinalSetup
+            inputs:
+              timeoutSeconds: 300
+              runCommand:
+                - '#!/bin/bash'
+                - set -e
+                - !Sub |
+                  # Set environment variables
+                  echo 'export AWS_REGION=${AWS::Region}' >> /home/ubuntu/.bashrc
+                  echo 'export AWS_ACCOUNTID=${AWS::AccountId}' >> /home/ubuntu/.bashrc
+                  echo 'export PATH=$PATH:/home/ubuntu/.local/bin' >> /home/ubuntu/.bashrc
+                  
+                  # Ensure services are running
+                  systemctl restart code-server@ubuntu
+                  systemctl restart nginx
+                  
+                  # Verify services
+                  sleep 5
+                  systemctl is-active code-server@ubuntu
+                  systemctl is-active nginx
+                  
+                  echo "Bootstrap completed successfully!"
+
+  ############## EC2 INSTANCE ##############
+  VSCodeInstanceEC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      KeyName: !Ref EC2KeyPair
+      BlockDeviceMappings:
+        - Ebs:
+            VolumeSize: !Ref InstanceVolumeSize
+            VolumeType: gp3
+            DeleteOnTermination: true
+            Encrypted: true
+          DeviceName: /dev/sda1
+      SubnetId: !Ref PublicSubnetOne
+      ImageId: '{{resolve:ssm:/aws/service/canonical/ubuntu/server/22.04/stable/current/arm64/hvm/ebs-gp2/ami-id}}'
+      InstanceType: !Ref InstanceType
+      SecurityGroupIds:
+        - !Ref SecurityGroup
+      IamInstanceProfile: !Ref VSCodeInstanceProfile
+      UserData: !Base64
+        Fn::Sub: |
+          #!/bin/bash
+          hostnamectl set-hostname dev
+          mkdir -p ${HomeFolder}
+          chown ubuntu:ubuntu ${HomeFolder}
+      Tags:
+        - Key: Name
+          Value: !Sub ${AWS::StackName}-CodeServer
+        - Key: SSMBootstrap
+          Value: 'true'
+
+  # Wait for instance to be ready before running association
+  WaitForInstanceReady:
+    Type: AWS::CloudFormation::WaitCondition
+    Properties:
+      Handle: !Ref WaitForInstanceReadyHandle
+      Timeout: 300
+      Count: 0
+
+  WaitForInstanceReadyHandle:
+    Type: AWS::CloudFormation::WaitConditionHandle
+
+  # Use instance ID targeting instead of tags for more reliability
+  VSCodeInstanceSSMAssociation:
+    Type: AWS::SSM::Association
+    DependsOn: 
+      - VSCodeInstanceEC2Instance
+      - WaitForInstanceReady
+    Properties:
+      Name: !Ref VSCodeInstanceSSMDoc
+      OutputLocation:
+        S3Location:
+          OutputS3BucketName: !Ref SSMLogBucket
+          OutputS3KeyPrefix: bootstrap
+      Targets:
+        - Key: InstanceIds
+          Values:
+            - !Ref VSCodeInstanceEC2Instance
+      WaitForSuccessTimeoutSeconds: 3600
+
+  ############## CLOUDFRONT ##############
+  VSCodeInstanceCachePolicy:
+    Type: AWS::CloudFront::CachePolicy
+    Properties:
+      CachePolicyConfig:
+        DefaultTTL: 86400
+        MaxTTL: 31536000
+        MinTTL: 1
+        Name: !Sub ${AWS::StackName}-CachePolicy
+        ParametersInCacheKeyAndForwardedToOrigin:
+          CookiesConfig:
+            CookieBehavior: all
+          EnableAcceptEncodingGzip: false
+          HeadersConfig:
+            HeaderBehavior: whitelist
+            Headers:
+              - Accept-Charset
+              - Authorization
+              - Origin
+              - Accept
+              - Referer
+              - Host
+              - Accept-Language
+              - Accept-Encoding
+              - Accept-Datetime
+          QueryStringsConfig:
+            QueryStringBehavior: all
+
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Enabled: true
+        HttpVersion: http2
+        Comment: !Sub ${AWS::StackName} Code Server Distribution
+        DefaultCacheBehavior:
+          AllowedMethods:
+            - GET
+            - HEAD
+            - OPTIONS
+            - PUT
+            - PATCH
+            - POST
+            - DELETE
+          CachePolicyId: !Ref VSCodeInstanceCachePolicy
+          OriginRequestPolicyId: 216adef6-5c7f-47e4-b989-5492eafa07d3
+          TargetOriginId: !Sub ${AWS::StackName}-Origin
+          ViewerProtocolPolicy: redirect-to-https
+        Origins:
+          - DomainName: !GetAtt VSCodeInstanceEC2Instance.PublicDnsName
+            Id: !Sub ${AWS::StackName}-Origin
+            CustomOriginConfig:
+              OriginProtocolPolicy: http-only
+              HTTPPort: 80
+        Tags:
+          - Key: Name
+            Value: !Sub ${AWS::StackName}-CloudFront
+
+Outputs:
+  InstanceId:
+    Description: EC2 Instance ID
+    Value: !Ref VSCodeInstanceEC2Instance
+    
+  PublicIP:
+    Description: Public IP address of the instance
+    Value: !GetAtt VSCodeInstanceEC2Instance.PublicIp
+    
+  DirectURL:
+    Description: Direct URL to access code-server (for debugging)
+    Value: !Sub http://${VSCodeInstanceEC2Instance.PublicIp}
+    
+  CloudFrontURL:
+    Description: CloudFront URL for code-server
+    Value: !Sub https://${CloudFrontDistribution.DomainName}/?folder=${HomeFolder}
+    
+  Password:
+    Description: Password for code-server
+    Value: !Ref AWS::AccountId
+    
+  SSMDocument:
+    Description: SSM Document for manual execution
+    Value: !Ref VSCodeInstanceSSMDoc
