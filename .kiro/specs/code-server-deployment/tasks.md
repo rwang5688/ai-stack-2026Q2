@@ -1,12 +1,14 @@
 # Implementation Plan
 
-- [ ] 1. Create CloudFormation template structure and core resources
+- [x] 1. Create CloudFormation template structure and core resources
+
   - Set up template parameters for instance configuration and debugging options
   - Define VPC, subnets, internet gateway, and routing tables
   - Create security groups with CloudFront prefix list restrictions
   - _Requirements: 2.1, 2.5, 4.3_
 
-- [ ] 1.1 Implement IAM roles and policies
+- [x] 1.1 Implement IAM roles and policies
+
   - Create EC2 instance role with SSM and administrative permissions
   - Add explicit AmazonSSMManagedInstanceCore policy for reliability
   - Configure trust relationships for EC2 and SSM services
@@ -15,6 +17,7 @@
 - [ ]* 1.2 Write property test for security group configuration
   - **Property 3: Security Group Isolation**
   - **Validates: Requirements 4.3, 2.5**
+
 
 - [ ] 2. Develop reliable SSM bootstrap document
   - Create modular installation steps with proper error handling
@@ -34,6 +37,7 @@
   - **Property 7: Node.js Installation Resilience**
   - **Validates: Requirements 3.2**
 
+
 - [ ] 2.3 Implement code-server installation and configuration
   - Install code-server using official installation script
   - Configure authentication with AWS Account ID password
@@ -47,17 +51,23 @@
 
 
 
-- [ ] 2.5 Implement nginx reverse proxy configuration
+- [x] 2.5 Implement nginx reverse proxy configuration
+
+
+
+
   - Install and configure nginx with proper proxy settings
   - Use generic server_name to avoid CloudFront circular dependency
   - Add configuration validation before applying changes
   - _Requirements: 1.1, 3.3_
 
+
 - [ ]* 2.6 Write property test for configuration validation
   - **Property 5: Configuration Validation**
   - **Validates: Requirements 3.3**
 
-- [ ] 3. Create EC2 instance and CloudFront distribution
+- [x] 3. Create EC2 instance and CloudFront distribution
+
   - Configure EC2 instance with proper user data and tags
   - Set up CloudFront distribution with custom cache policy
   - Implement proper dependency management between resources
@@ -69,7 +79,8 @@
   - Configure S3 logging for bootstrap output
   - _Requirements: 2.2, 5.2_
 
-- [ ]* 3.2 Write property test for bootstrap completion verification
+- [x]* 3.2 Write property test for bootstrap completion verification
+
   - **Property 1: Bootstrap Completion Verification**
   - **Validates: Requirements 2.2, 3.1**
 
@@ -83,12 +94,14 @@
   - Configure service recovery mechanisms
   - _Requirements: 2.4, 3.4_
 
-- [ ]* 4.1 Write property test for service auto-recovery
+- [x]* 4.1 Write property test for service auto-recovery
+
   - **Property 2: Service Auto-Recovery**
   - **Validates: Requirements 3.4, 2.4**
 
 
-- [ ]* 4.2 Write property test for session state persistence
+- [x]* 4.2 Write property test for session state persistence
+
   - **Property 8: Session State Persistence**
   - **Validates: Requirements 1.4**
 
@@ -106,6 +119,7 @@
 
 - [ ]* 6.1 Write unit tests for CloudFormation template
   - Test template syntax and resource configuration
+
   - Validate parameter constraints and mappings
   - Verify output definitions and dependencies
   - _Requirements: 2.1_
@@ -116,7 +130,8 @@
   - Test multi-region deployment compatibility
   - _Requirements: 2.2, 2.3, 5.1_
 
-- [ ] 7. Final verification and documentation
+- [x] 7. Final verification and documentation
+
   - Ensure all tests pass, ask the user if questions arise
   - Verify all requirements are met through testing
   - Update documentation with deployment instructions

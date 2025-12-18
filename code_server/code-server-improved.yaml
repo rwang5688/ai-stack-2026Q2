@@ -702,8 +702,10 @@ Resources:
                   }
                   EOF
                 - sudo systemctl restart code-server@ubuntu
+                - sudo rm -f /etc/nginx/sites-enabled/default
                 - sudo ln -s ../sites-available/code-server
                   /etc/nginx/sites-enabled/code-server
+                - sudo nginx -t
                 - sudo systemctl restart nginx
                 # - sudo -u ubuntu --login code-server --install-extension AmazonWebServices.aws-toolkit-vscode --force
                 - sudo -u ubuntu --login code-server --install-extension

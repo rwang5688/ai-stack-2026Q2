@@ -159,3 +159,48 @@ password: $(aws sts get-caller-identity --query Account --output text)
 4. **Test Failure Recovery:** Verify manual SSM execution works when association fails
 
 These improvements make the template much more reliable and easier to troubleshoot when issues occur.
+
+## Nginx Configuration Fix (December 17, 2025)
+
+### Issue
+Deployment succeeded but users were seeing the Nginx welcome page instead of code-server interface.
+
+### Root Cause
+The default nginx site (`/etc/nginx/sites-enabled/default`) was still enabled, taking precedence over the code-server configuration.
+
+### Solution
+Updated the CloudFormation template's `ConfigureCodeServer` step to:
+
+1. **Remove default site**: `sudo rm -f /etc/nginx/sites-enabled/default`
+2. **Add configuration validation**: `sudo nginx -t` before restart
+3. **Maintain proper order**: Remove default → Enable code-server → Validate → Restart
+
+### Code Changes
+```yaml
+# Before
+- sudo systemctl restart code-server@ubuntu
+- sudo ln -s ../sites-available/code-server /etc/nginx/sites-enabled/code-server
+- sudo systemctl restart nginx
+
+# After  
+- sudo systemctl restart code-server@ubuntu
+- sudo rm -f /etc/nginx/sites-enabled/default
+- sudo ln -s ../sites-available/code-server /etc/nginx/sites-enabled/code-server
+- sudo nginx -t
+- sudo systemctl restart nginx
+```
+
+### Validation
+Created `code_server/tests/nginx-config-test.py` to verify:
+- Default site removal
+- Configuration validation
+- Proper proxy configuration
+- WebSocket support
+
+### Impact
+- ✅ Fixes the "Nginx welcome page" issue
+- ✅ Ensures code-server is properly accessible via CloudFront
+- ✅ Adds configuration validation for reliability
+- ✅ Maintains all existing functionality
+
+This addresses **Requirements 1.1, 3.3** from the spec and implements **Property 5: Configuration Validation**.
