@@ -46,8 +46,10 @@ Internet → CloudFront → EC2 Instance (nginx → code-server)
 
 ### SSM Bootstrap System
 - **Document**: Custom SSM document with modular installation steps
-- **Association**: Instance ID targeting for reliability
+- **Association**: Instance ID targeting for reliability (more reliable than tag-based)
 - **Logging**: All output captured to S3 bucket
+- **Installation Strategy**: Conservative approach using original methods (NodeSource repos, standard package managers)
+- **Error Handling**: Fail-fast approach with detailed error reporting
 - **Error Handling**: Fail-fast approach with detailed error reporting
 
 ### Code-Server Configuration
