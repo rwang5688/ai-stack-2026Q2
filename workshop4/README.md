@@ -28,9 +28,14 @@ chmod +x setup-environment.sh
 curl -LsSf https://astral.sh/uv/install.sh | sh
 source ~/.bashrc  # or restart terminal
 
-# Create and activate virtual environment
+# Create virtual environment
 uv venv
+
+# Activate virtual environment (platform-specific)
+# Linux/macOS:
 source .venv/bin/activate
+# Windows (Git Bash):
+source .venv/Scripts/activate
 
 # Install dependencies
 uv pip install -r requirements.txt
@@ -38,9 +43,14 @@ uv pip install -r requirements.txt
 
 **With Standard Python:**
 ```bash
-# Create and activate virtual environment
+# Create virtual environment
 python -m venv venv
+
+# Activate virtual environment (platform-specific)
+# Linux/macOS:
 source venv/bin/activate
+# Windows (Git Bash):
+source venv/Scripts/activate
 
 # Install dependencies
 pip install -r requirements.txt
@@ -61,7 +71,10 @@ python -c "import strands_agents; print('Strands Agents SDK installed successful
 
 1. **Always activate the virtual environment first:**
    ```bash
+   # Linux/macOS:
    source .venv/bin/activate
+   # Windows (Git Bash):
+   source .venv/Scripts/activate
    ```
 
 2. **All sample code in this directory shares the same virtual environment**
@@ -88,7 +101,7 @@ Once your environment is set up, you can proceed with the workshop exercises. Ea
 
 ### Environment Setup
 - `requirements.txt` - OS-independent Python dependencies
-- `setup-environment.sh` - Cross-platform environment setup script (to be created)
+- `setup-environment.sh` - Cross-platform environment setup script
 - This README with setup and usage instructions
 
 ### Planned Additions
