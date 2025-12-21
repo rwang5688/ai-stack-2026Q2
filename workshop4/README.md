@@ -67,6 +67,10 @@ python -c "import strands_agents; print('Strands Agents SDK installed successful
 - **SageMaker Track**: Equivalent functionality using SageMaker AI models
 - **Comparison Materials**: Side-by-side analysis of both approaches
 
+### Agentic AI with Strands (Agents) SDK and (Amazon Bedrock) AgentCore Modules
+
+[MODULES.md](MODULES.md) includes detailed information about workshop modules in the [Agentic AI with Strands (Agents) SDK and (Amazon Bedrock AgentCore)](https://catalog.workshops.aws/strands/en-US) workshop, including code examples and sample queries.  These published workshop modules will teach you how to use Strands Agents SDK to build and deploy agentic AI systems.
+
 ## Development Workflow
 
 1. **Always activate the virtual environment first:**
