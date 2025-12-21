@@ -1,0 +1,45 @@
+# Core dependencies for Workshop 4 - Agentic AI with Strands Agents SDK
+# Alphabetically sorted to match the published workshop requirements
+
+# AWS observability and telemetry
+aws-opentelemetry-distro>=0.10.0
+
+# Amazon Bedrock AgentCore framework and toolkit
+bedrock-agentcore
+bedrock-agentcore-starter-toolkit
+
+# AWS SDK for Python
+boto3
+
+# LLM integration library
+litellm
+
+# Model Context Protocol with CLI tools
+mcp[cli]
+
+# AI action framework
+nova-act
+
+# OpenSearch Python client for vector operations
+opensearch-py
+
+# Data manipulation and analysis
+pandas
+
+# Retry utilities for robust operations
+retrying
+
+# Core Strands Agents SDK
+strands-agents
+
+# Strands Agents tools with memory capabilities
+strands-agents-tools[mem0_memory]
+
+# Web framework for interactive demos
+streamlit
+
+# Progress bars and utilities
+tqdm
+
+# Fast Python package manager
+uv

@@ -1,0 +1,98 @@
+# Workshop 4: Agentic AI with Strands Agents SDK
+
+This workshop provides hands-on experience with Agentic AI development using Strands Agents SDK, featuring both Amazon Bedrock and SageMaker AI implementations.
+
+## Quick Start
+
+### Prerequisites
+- **All Platforms**: Python 3.12 or higher
+- **Linux**: Git (typically pre-installed)
+- **Windows**: Git for Windows (includes Git Bash terminal)
+
+### Environment Setup
+
+#### Option 1: Automated Setup (Recommended)
+```bash
+# Make setup script executable (Linux/Git Bash)
+chmod +x setup-environment.sh
+
+# Run setup script
+./setup-environment.sh
+```
+
+#### Option 2: Manual Setup
+
+**With UV (Recommended):**
+```bash
+# Install UV (same command for all platforms via Git Bash/Terminal)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+source ~/.bashrc  # or restart terminal
+
+# Create and activate virtual environment
+uv venv
+source .venv/bin/activate
+
+# Install dependencies
+uv pip install -r requirements.txt
+```
+
+**With Standard Python:**
+```bash
+# Create and activate virtual environment
+python -m venv venv
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+### Verify Installation
+```bash
+python -c "import strands_agents; print('Strands Agents SDK installed successfully')"
+```
+
+## Workshop Structure
+
+- **Bedrock Track**: Multi-agent examples using Amazon Bedrock models
+- **SageMaker Track**: Equivalent functionality using SageMaker AI models
+- **Comparison Materials**: Side-by-side analysis of both approaches
+
+## Development Workflow
+
+1. **Always activate the virtual environment first:**
+   ```bash
+   source .venv/bin/activate
+   ```
+
+2. **All sample code in this directory shares the same virtual environment**
+
+3. **Use Git Bash on Windows for consistent Linux-like commands**
+
+## Troubleshooting
+
+### Common Issues
+- **Python not found**: Ensure Python 3.12+ is installed and in PATH
+- **Git Bash issues**: Install Git for Windows with Git Bash option
+- **Package conflicts**: Try creating a fresh virtual environment
+
+### Getting Help
+- Check the troubleshooting section in the workshop materials
+- Verify all prerequisites are installed
+- Ensure you're using Git Bash on Windows for consistent behavior
+
+## Next Steps
+
+Once your environment is set up, you can proceed with the workshop exercises. Each track (Bedrock and SageMaker) provides equivalent learning outcomes with different implementation approaches.
+
+## Current Workshop Contents
+
+### Environment Setup
+- `requirements.txt` - OS-independent Python dependencies
+- `setup-environment.sh` - Cross-platform environment setup script (to be created)
+- This README with setup and usage instructions
+
+### Planned Additions
+- Bedrock implementation examples
+- SageMaker implementation examples
+- Comparison materials and documentation
+- Hands-on exercises and validation scripts
