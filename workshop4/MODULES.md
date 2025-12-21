@@ -66,6 +66,84 @@ Try these example queries when the calculator agent is running:
 
 Type `exit` to quit the application, or press `Ctrl+C` to stop the program.
 
+## Module 2: Building Weather Agent with Strands
+
+**AWS Workshop Link:** [Module 2: Building Weather Agent with Strands](https://catalog.workshops.aws/strands/en-US/module-2-building-weather-agent-with-strands)
+
+**Strands Agents Docs on GitHub Link:** [weather_forecaster.py](https://github.com/strands-agents/docs/blob/main/docs/examples/python/weather_forecaster.py)
+
+
+### Description
+
+This module demonstrates how to integrate Strands agents with external APIs using the built-in `http_request` tool. The example creates a weather forecasting agent that connects with the National Weather Service API to retrieve and present weather information through natural language interactions.
+
+The code showcases:
+- Creating an agent with HTTP capabilities using the `http_request` tool
+- Multi-step API workflow (get coordinates, then forecast data)
+- Processing JSON responses from external APIs
+- Converting technical weather data into user-friendly language
+- Error handling for HTTP requests and API responses
+- Interactive command-line interface for weather queries
+
+### How to Run
+
+**All Platforms (Linux/macOS/Windows):**
+```bash
+cd workshop4/examples/module2
+uv run weather_forecaster.py
+```
+
+*Note: This example works cross-platform without modification as it uses the standard Strands `http_request` tool.*
+
+### Sample Questions
+
+Try these example queries when the weather agent is running:
+
+1. **Basic location queries:**
+   ```
+   What's the weather like in Seattle?
+   ```
+
+2. **Future weather:**
+   ```
+   Will it rain tomorrow in Miami?
+   ```
+
+3. **Comparative queries:**
+   ```
+   Compare the temperature in New York and Chicago this weekend
+   ```
+
+4. **Specific conditions:**
+   ```
+   What's the forecast for San Francisco this week?
+   ```
+
+5. **General weather questions:**
+   ```
+   Should I bring an umbrella in Boston today?
+   ```
+
+### API Details
+
+This example uses the **National Weather Service API**:
+- **No API key required** - completely free to use
+- **US locations only** - covers all United States locations
+- **Multi-step process**: First gets coordinates/grid info, then retrieves forecast
+- **Rich data**: Temperature, precipitation, wind, detailed conditions
+- **Production ready**: Reliable government API service
+
+### Technical Implementation
+
+The agent handles a sophisticated multi-step workflow:
+
+1. **Location Resolution**: Converts location names to coordinates using NWS points API
+2. **Forecast Retrieval**: Uses returned forecast URL to get detailed weather data
+3. **Data Processing**: Transforms technical weather data into conversational responses
+4. **Natural Language**: Presents information in user-friendly format with context
+
+Type `exit` to quit the application, or press `Ctrl+C` to stop the program.
+
 ---
 
 *Additional modules will be added as they are developed.*
