@@ -68,8 +68,8 @@ python -c "import strands_agents; print('Strands Agents SDK installed successful
 
 ## Workshop Structure
 
-- **Bedrock Track**: Multi-agent examples using Amazon Bedrock models
-- **SageMaker Track**: Equivalent functionality using SageMaker AI models
+- **Bedrock Track**: Multi-agent example using Amazon Bedrock models
+- **SageMaker Track**: Equivalent functionality using Amazon SageMaker AI models
 
 ### Agentic AI with Strands (Agents) SDK and (Amazon Bedrock) AgentCore Workshop Modules
 
@@ -117,7 +117,6 @@ Once your environment is set up, you can proceed with the workshop exercises. Ea
 
 ### Planned Additions
 
-- Bedrock implementation examples
-- SageMaker implementation examples
-- Comparison materials and documentation
-- Hands-on exercises and validation scripts
+- Strands Agents SDK examples (In Progress)
+- Amazon Bedrock implementation examples (Not Started)
+- Amazon SageMaker AI implementation examples (Not Started)
