@@ -367,3 +367,203 @@ The agent uses two primary tools:
 *Additional modules will be added as they are developed.*
 
 ---
+## Module 4: Building Workflow Agent with Strands
+
+**AWS Workshop Link:** [Module 4: Building Workflow Agent with Strands](https://catalog.workshops.aws/strands/en-US/module-4-building-workflow-agent-with-strands)
+
+### Description
+
+This module demonstrates how to create a multi-agent workflow using Strands agents to perform web research, fact-checking, and report generation. The example shows specialized agent roles working together in sequence to process complex information through agent-to-agent communication.
+
+The module showcases:
+- **Multi-Agent Architecture**: Three specialized agents working in sequence
+- **Agent-to-Agent Communication**: Passing information between agents programmatically
+- **Web Research Capabilities**: Using `http_request` tool for information gathering
+- **Workflow Orchestration**: Coordinated execution of multiple processing steps
+- **Output Management**: Clean user experience with suppressed intermediate outputs
+- **Specialized Roles**: Researcher, Analyst, and Writer agents with distinct responsibilities
+
+### Agent Architecture
+
+The Research Assistant implements a **three-agent workflow** where each agent has a specific role:
+
+| Agent | Role | Responsibility | Tools Used |
+|-------|------|----------------|------------|
+| **Researcher Agent** | Information Gathering | Gathers information from web sources using research tools | `http_request` |
+| **Analyst Agent** | Fact Verification | Verifies facts and identifies key insights from research findings | None (LLM only) |
+| **Writer Agent** | Report Generation | Creates final reports based on analysis | None (LLM only) |
+
+### Key Features
+
+- **Complexity**: Intermediate level multi-agent coordination
+- **Interaction**: Command line interface with clean progress feedback
+- **Tools**: HTTP request capabilities for web research
+- **Communication**: Sequential agent-to-agent information passing
+- **Output**: Suppressed intermediate outputs for clean user experience
+
+### How to Run
+
+**All Platforms (Linux/macOS/Windows):**
+```bash
+cd workshop4/modules/module4
+uv run agents_workflow.py
+```
+
+### Sample Queries and Expected Responses
+
+#### Query 1: Research Questions
+```
+What are quantum computers?
+```
+
+**Expected Response Structure:**
+- Fact-check confirmation of quantum computing claims
+- Key insights about quantum mechanics utilization, qubits, and applications
+- Current development stage and challenges
+- Source reliability assessment
+- Comprehensive summary with technical accuracy
+
+#### Query 2: Fact-Checking Claims
+```
+Lemon cures cancer
+```
+
+**Expected Response Structure:**
+- **Factual Claims Accuracy**: False rating with explanation
+- **Key Insights**: Nutritional benefits vs. medical claims
+- **Cancer Treatment**: Standard medical approaches
+- **Misinformation Risks**: Dangers of unverified claims
+- **Source Reliability**: References to authoritative health organizations
+
+#### Query 3: Current Events Analysis
+```
+Interest rates have been decreasing recently
+```
+
+**Expected Response Structure:**
+- **Claim Accuracy**: Verification with data corrections if needed
+- **Research Insights**: Economic indicators and market implications
+- **Source Reliability**: Federal Reserve data credibility assessment
+- **Summary**: Contextualized findings with economic analysis
+
+### Technical Implementation
+
+#### 1. Agent Initialization
+Each agent is created with specialized system prompts:
+
+```python
+# Researcher Agent with web capabilities
+researcher_agent = Agent(
+    system_prompt=(
+        "You are a Researcher Agent that gathers information from the web. "
+        "1. Determine if the input is a research query or factual claim "
+        "2. Use your research tools (http_request, retrieve) to find relevant information "
+        "3. Include source URLs and keep findings under 500 words"
+    ),
+    callback_handler=None,  # Suppresses intermediate output
+    tools=[http_request]
+)
+
+# Analyst Agent for verification
+analyst_agent = Agent(
+    system_prompt=(
+        "You are an Analyst Agent that verifies information. "
+        "1. For factual claims: Rate accuracy from 1-5 and correct if needed "
+        "2. For research queries: Identify 3-5 key insights "
+        "3. Evaluate source reliability and keep analysis under 400 words"
+    ),
+    callback_handler=None
+)
+
+# Writer Agent for final reports
+writer_agent = Agent(
+    system_prompt=(
+        "You are a Writer Agent that creates clear reports. "
+        "1. For fact-checks: State whether claims are true or false "
+        "2. For research: Present key insights in a logical structure "
+        "3. Keep reports under 500 words with brief source mentions"
+    ),
+    callback_handler=None
+)
+```
+
+#### 2. Workflow Orchestration
+The workflow coordinates information flow between agents:
+
+```python
+def run_research_workflow(user_input):
+    # Step 1: Research phase
+    researcher_response = researcher_agent(
+        f"Research: '{user_input}'. Use your available tools to gather information from reliable sources."
+    )
+    research_findings = str(researcher_response)
+    
+    # Step 2: Analysis phase
+    analyst_response = analyst_agent(
+        f"Analyze these findings about '{user_input}':\n\n{research_findings}"
+    )
+    analysis = str(analyst_response)
+    
+    # Step 3: Report generation
+    final_report = writer_agent(
+        f"Create a report on '{user_input}' based on this analysis:\n\n{analysis}"
+    )
+    
+    return final_report
+```
+
+#### 3. Output Management
+- **Suppressed Intermediate Outputs**: `callback_handler=None` prevents verbose agent outputs
+- **Clean Progress Feedback**: Simple print statements show workflow progress
+- **Final Result Only**: Users see only the Writer Agent's final report
+
+### Tools Overview
+
+#### `http_request` Tool
+The `http_request` tool enables web information gathering:
+- **HTTP Methods**: Supports GET, POST, PUT, DELETE
+- **URL Encoding**: Handles proper URL formatting
+- **Response Parsing**: Returns structured data from web sources
+- **Error Handling**: Manages network timeouts and connection issues
+
+*Note: Understanding implementation details is not crucial for grasping multi-agent workflow concepts.*
+
+### Troubleshooting
+
+#### Common Issues
+
+**Network Errors:**
+```
+urllib3.exceptions.ProtocolError: Response ended prematurely
+```
+- **Cause**: API throttling or network connectivity issues
+- **Solution**: Wait a moment and retry the query
+- **Alternative**: Try a different, simpler query
+
+**Connection Timeouts:**
+- **Cause**: Slow network or overloaded web services
+- **Solution**: Check internet connection and retry
+- **Workaround**: Use shorter, more specific queries
+
+#### Performance Tips
+- **Query Length**: Keep queries concise for faster processing
+- **Network**: Ensure stable internet connection for web research
+- **Patience**: Complex research queries may take 30-60 seconds to complete
+
+### Extending the Example
+
+**Suggested Enhancements:**
+1. **User Feedback Loop**: Allow users to request more detail after receiving reports
+2. **Parallel Research**: Modify Researcher Agent to gather from multiple sources simultaneously
+3. **Visual Content**: Enhance Writer Agent to include charts or structured data
+4. **Web Interface**: Build a web UI for the workflow
+5. **Session Memory**: Implement memory so the system remembers previous research sessions
+6. **Source Validation**: Add additional fact-checking against multiple authoritative sources
+
+### Usage Notes
+- Type `exit` to quit the application
+- Press `Ctrl+C` to stop the program
+- Avoid entering sensitive or PII data in queries
+- Be patient with complex research queries - they may take time to process
+
+---
