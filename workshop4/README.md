@@ -117,6 +117,6 @@ Once your environment is set up, you can proceed with the workshop exercises. Ea
 
 ### Planned Additions
 
-- Strands Agents SDK examples (In Progress)
-- Amazon Bedrock implementation examples (Not Started)
-- Amazon SageMaker AI implementation examples (Not Started)
+- Strands Agents SDK modules (In Progress)
+- Amazon Bedrock implementation (Not Started)
+- Amazon SageMaker AI implementation (Not Started)

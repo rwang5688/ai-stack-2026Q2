@@ -13,8 +13,8 @@ source .venv/bin/activate  # Linux/macOS
 source .venv/Scripts/activate  # Windows Git Bash
 
 # Run examples
-uv run examples/module1/mcp_calculator.py  # Linux/macOS
-uv run examples/module1/mcp_calculator_windows.py  # Windows (if issues)
+uv run modules/module1/mcp_calculator.py  # Linux/macOS
+uv run modules/module1/mcp_calculator_windows.py  # Windows (if issues)
 
 # Check what's running
 netstat -an | grep :8000  # Linux/macOS/Git Bash
@@ -47,7 +47,7 @@ netstat -an | findstr :8000  # Windows CMD
 |-----------|-------------|-------------------|---------------|
 | List files | `ls -la` | `ls -la` | `dir` |
 | Change directory | `cd workshop4` | `cd workshop4` | `cd workshop4` |
-| Create directory | `mkdir examples` | `mkdir examples` | `mkdir examples` |
+| Create directory | `mkdir modules` | `mkdir modules` | `mkdir modules` |
 | Remove file | `rm file.txt` | `rm file.txt` | `del file.txt` |
 | Copy file | `cp src dest` | `cp src dest` | `copy src dest` |
 
@@ -174,21 +174,21 @@ $env:AWS_DEFAULT_REGION="us-east-1"
 **Linux/macOS:**
 ```python
 import os
-path = "workshop4/examples/module1"
-full_path = os.path.join("workshop4", "examples", "module1")
+path = "workshop4/modules/module1"
+full_path = os.path.join("workshop4", "modules", "module1")
 ```
 
 **Windows (Git Bash Compatible):**
 ```python
 import os
 # Use forward slashes - Git Bash handles them correctly
-path = "workshop4/examples/module1"
-full_path = os.path.join("workshop4", "examples", "module1")  # Still use os.path.join
+path = "workshop4/modules/module1"
+full_path = os.path.join("workshop4", "modules", "module1")  # Still use os.path.join
 ```
 
 **Windows (Native):**
 ```python
 import os
-path = "workshop4\\examples\\module1"
-full_path = os.path.join("workshop4", "examples", "module1")
+path = "workshop4\\modules\\module1"
+full_path = os.path.join("workshop4", "modules", "module1")
 ```

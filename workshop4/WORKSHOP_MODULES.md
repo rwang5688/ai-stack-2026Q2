@@ -33,13 +33,13 @@ The code showcases:
 
 **Standard Version (Linux/macOS):**
 ```bash
-cd workshop4/examples/module1
+cd workshop4/modules/module1
 uv run mcp_calculator.py
 ```
 
 **Windows GitBash (if connection issues occur):**
 ```bash
-cd workshop4/examples/module1
+cd workshop4/modules/module1
 uv run mcp_calculator_windows.py
 ```
 
@@ -123,7 +123,7 @@ The code showcases:
 
 **All Platforms (Linux/macOS/Windows):**
 ```bash
-cd workshop4/examples/module2
+cd workshop4/modules/module2
 uv run weather_forecaster.py
 ```
 
@@ -220,7 +220,7 @@ If are not already in module directory, navigate to module directory.
 **All Platforms (Linux/macOS/Windows):**
 ```bash
 # Navigate to module directory
-cd workshop4/examples/module3
+cd workshop4/modules/module3
 ```
 
 Once you have changed to module directory, run the knowledge base creation script.
@@ -258,7 +258,7 @@ echo "export OPENSEARCH_HOST=\"$OPENSEARCH_HOST\"" >> ~/.bashrc
 
 **All Platforms (Linux/macOS/Windows):**
 ```bash
-cd workshop4/examples/module3
+cd workshop4/modules/module3
 uv run knowledge_base_agent.py
 ```
 
