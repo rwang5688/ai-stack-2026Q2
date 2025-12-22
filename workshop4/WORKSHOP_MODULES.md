@@ -206,6 +206,34 @@ The module showcases:
 
 This step automates the creation of an Amazon Bedrock Knowledge Base using a Python script that handles the entire setup process.
 
+#### 🧹 Important: Cleanup First Workflow
+
+**CRITICAL**: Always run cleanup before creating a new Knowledge Base to prevent IAM policy conflicts.
+
+```bash
+# Navigate to module directory
+cd workshop4/modules/module3
+
+# STEP 1: Clean up any existing resources (REQUIRED)
+uv run cleanup.py
+
+# STEP 2: Create new Knowledge Base
+uv run create_knowledge_base.py
+```
+
+**Why cleanup first?**
+- Prevents "policy already exists" errors
+- Ensures IAM roles and policies align with S3, OpenSearch, and Bedrock resources
+- Removes orphaned policies from previous runs
+- Guarantees clean resource state for reliable creation
+
+**What cleanup removes:**
+- Knowledge Bases and data sources
+- S3 buckets (bedrock-kb-bucket-*)
+- OpenSearch Serverless collections
+- IAM roles (AmazonBedrockExecutionRoleForKnowledgeBase_*)
+- IAM policies (AmazonBedrock*PolicyForKnowledgeBase_*)
+
 #### What the Script Does:
 - Downloads sample knowledge base files (pets-kb-files.zip)
 - Creates an S3 bucket with random suffix for data storage

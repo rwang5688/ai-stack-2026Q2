@@ -92,3 +92,45 @@ Working backwards from workshop_4 preparation, starting with code-server directo
 - Focus on UV as the common tool
 - Document activation script differences
 - Make jq optional or provide alternatives
+
+## December 22, 2025 - Module 3 IAM Cleanup Fix
+
+### Key Accomplishments
+- Fixed critical IAM policy cleanup bug in Module 3 (Knowledge Base)
+- Successfully resolved "policy already exists" error that was blocking knowledge base recreation
+
+### Issues & Resolutions
+- **Issue**: Module 3 cleanup.py was not deleting orphaned IAM policies, causing "AmazonBedrockOSSPolicyForKnowledgeBase_5393 already exists" error
+  - **Root Cause**: Cleanup script only deleted policies attached to roles, but policies became orphaned when roles were deleted first
+  - **Specific Policies**: Found 3 orphaned policies with suffix `_5393`:
+    - `AmazonBedrockFoundationModelPolicyForKnowledgeBase_5393`
+    - `AmazonBedrockOSSPolicyForKnowledgeBase_5393` 
+    - `AmazonBedrockS3PolicyForKnowledgeBase_5393`
+  - **Resolution**: Enhanced cleanup.py to search for and delete orphaned Bedrock policies using pattern matching
+
+### Technical Fix Details
+- Added orphaned policy detection logic to `cleanup_iam_roles()` function
+- Uses IAM paginator to scan all customer-managed policies
+- Identifies policies with "AmazonBedrock" and "KnowledgeBase" in name
+- Successfully tested - cleanup now removes all 3 orphaned policies
+
+### Workflow Improvement
+- **Critical Requirement**: Users MUST run `cleanup.py` before `create_knowledge_base.py`
+- This ensures IAM roles and policies are aligned with S3, OpenSearch, and Bedrock resources
+- Prevents resource conflicts and "already exists" errors
+
+### Validation Results
+```
+✅ Cleaned up 1 IAM roles and 3 policies
+Found orphaned policy: AmazonBedrockFoundationModelPolicyForKnowledgeBase_5393
+Found orphaned policy: AmazonBedrockOSSPolicyForKnowledgeBase_5393
+Found orphaned policy: AmazonBedrockS3PolicyForKnowledgeBase_5393
+✅ Deleted policy: AmazonBedrockOSSPolicyForKnowledgeBase_5393
+✅ Deleted policy: AmazonBedrockFoundationModelPolicyForKnowledgeBase_5393
+✅ Deleted policy: AmazonBedrockS3PolicyForKnowledgeBase_5393
+```
+
+### Next Steps
+- [ ] Update workshop documentation to emphasize cleanup-first workflow
+- [ ] Update Module 3 documentation in WORKSHOP_MODULES.md
+- [ ] Update workshop4-preparation spec task 3.3 status
