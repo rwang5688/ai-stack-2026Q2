@@ -1,4 +1,4 @@
-# Session Notes - December 20, 2025
+# Session Notes - December 20 to 21, 2025
 
 ## Session Overview
 Working backwards from workshop_4 preparation, starting with code-server directory structure improvements and spec organization.

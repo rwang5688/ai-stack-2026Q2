@@ -5,13 +5,17 @@ This workshop provides hands-on experience with Agentic AI development using Str
 ## Quick Start
 
 ### Prerequisites
-- **All Platforms**: Python 3.12 or higher
+
+- **All Operating Systems**: Python 3.12 or higher
 - **Linux**: Git (typically pre-installed)
 - **Windows**: Git for Windows (includes Git Bash terminal)
 
 ### Environment Setup
 
+See [Cross-Platform Develompent Guide](CROSS_PLATFORM.md) for detailed information about environment setup and runtime execution across different platforms.
+
 #### Option 1: Automated Setup (Recommended)
+
 ```bash
 # Make setup script executable (Linux/Git Bash)
 chmod +x setup-environment.sh
@@ -57,6 +61,7 @@ pip install -r requirements.txt
 ```
 
 ### Verify Installation
+
 ```bash
 python -c "import strands_agents; print('Strands Agents SDK installed successfully')"
 ```
@@ -65,11 +70,10 @@ python -c "import strands_agents; print('Strands Agents SDK installed successful
 
 - **Bedrock Track**: Multi-agent examples using Amazon Bedrock models
 - **SageMaker Track**: Equivalent functionality using SageMaker AI models
-- **Comparison Materials**: Side-by-side analysis of both approaches
 
-### Agentic AI with Strands (Agents) SDK and (Amazon Bedrock) AgentCore Modules
+### Agentic AI with Strands (Agents) SDK and (Amazon Bedrock) AgentCore Workshop Modules
 
-[MODULES.md](MODULES.md) includes detailed information about workshop modules in the [Agentic AI with Strands (Agents) SDK and (Amazon Bedrock AgentCore)](https://catalog.workshops.aws/strands/en-US) workshop, including code examples and sample queries.  These published workshop modules will teach you how to use Strands Agents SDK to build and deploy agentic AI systems.
+See [Agentic AI with Strands (Agents) SDK and (Amazon Bedrock) AgentCore Workshop Modules](MODULES.md) for detailed information, including sample code and queries, from the modules leading up to Module 7 in the [Agentic AI with Strands (Agents) SDK and (Amazon Bedrock AgentCore)](https://catalog.workshops.aws/strands/en-US) workshop.  These published workshop modules will teach you how to use Strands Agents SDK to build and deploy agentic AI systems.
 
 ## Development Workflow
 
@@ -88,11 +92,13 @@ python -c "import strands_agents; print('Strands Agents SDK installed successful
 ## Troubleshooting
 
 ### Common Issues
+
 - **Python not found**: Ensure Python 3.12+ is installed and in PATH
 - **Git Bash issues**: Install Git for Windows with Git Bash option
 - **Package conflicts**: Try creating a fresh virtual environment
 
 ### Getting Help
+
 - Check the troubleshooting section in the workshop materials
 - Verify all prerequisites are installed
 - Ensure you're using Git Bash on Windows for consistent behavior
@@ -104,11 +110,13 @@ Once your environment is set up, you can proceed with the workshop exercises. Ea
 ## Current Workshop Contents
 
 ### Environment Setup
+
 - `requirements.txt` - OS-independent Python dependencies
 - `setup-environment.sh` - Cross-platform environment setup script
 - This README with setup and usage instructions
 
 ### Planned Additions
+
 - Bedrock implementation examples
 - SageMaker implementation examples
 - Comparison materials and documentation

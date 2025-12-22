@@ -1,8 +1,16 @@
-# Workshop 4 Modules
+# Agentic AI with Strands (Agents) SDK and (Amazon Bedrock) AgentCore Workshop Modules
 
-This document provides an overview of all workshop modules with links to examples and instructions for running each module.
+This document provides detailed information, including sample code and queries, from the modules leading up to Module 7 in the [Agentic AI with Strands (Agents) SDK and (Amazon Bedrock AgentCore)](https://catalog.workshops.aws/strands/en-US) workshop.  These published workshop modules will teach you how to use Strands Agents SDK to build and deploy agentic AI systems.
 
 **⚠️ AWS Credentials Required:** All examples require AWS credentials with Amazon Bedrock permissions. Ensure your runtime environment has proper IAM permissions to invoke Bedrock models.
+
+---
+
+## Environment Setup
+
+See [Cross-Platform Develompent Guide](CROSS_PLATFORM.md) for detailed information about environment setup and runtime execution across different platforms.
+
+---
 
 ## Module 1: Building with Model Context Protocol (MCP)
 
@@ -65,6 +73,32 @@ Try these example queries when the calculator agent is running:
    ```
 
 Type `exit` to quit the application, or press `Ctrl+C` to stop the program.
+
+### Windows Troubleshooting
+
+If you encounter `ReadError` or `MCPClientInitializationError` on Windows:
+
+1. **Use the Windows-compatible version** (recommended):
+   ```bash
+   uv run mcp_calculator_windows.py
+   ```
+
+2. **Check port availability**:
+   ```bash
+   netstat -an | findstr :8000
+   ```
+
+3. **Run as Administrator** if needed:
+   - Right-click Git Bash → "Run as administrator"
+
+4. **Windows Firewall**: Add Python to firewall exceptions if blocked
+
+5. **Alternative troubleshooting**:
+   - The Windows version uses 127.0.0.1 instead of localhost
+   - Includes longer startup delays for Windows networking
+   - Better error handling for connection issues
+
+---
 
 ## Module 2: Building Weather Agent with Strands
 
@@ -149,33 +183,3 @@ Type `exit` to quit the application, or press `Ctrl+C` to stop the program.
 *Additional modules will be added as they are developed.*
 
 ---
-
-## Platform Differences
-
-For additional help with platform-specific commands and Windows-compatible versions, see [PLATFORM-DIFFERENCES.md](PLATFORM-DIFFERENCES.md).
-
----
-
-## Windows Troubleshooting
-
-If you encounter `ReadError` or `MCPClientInitializationError` on Windows:
-
-1. **Use the Windows-compatible version** (recommended):
-   ```bash
-   uv run mcp_calculator_windows.py
-   ```
-
-2. **Check port availability**:
-   ```bash
-   netstat -an | findstr :8000
-   ```
-
-3. **Run as Administrator** if needed:
-   - Right-click Git Bash → "Run as administrator"
-
-4. **Windows Firewall**: Add Python to firewall exceptions if blocked
-
-5. **Alternative troubleshooting**:
-   - The Windows version uses 127.0.0.1 instead of localhost
-   - Includes longer startup delays for Windows networking
-   - Better error handling for connection issues

@@ -1,50 +1,93 @@
 # Implementation Plan
 
-- [ ] 1. Set up workshop directory structure
+- [x] 1. Set up workshop directory structure
   - Create workshop4 directory with organized subdirectories
   - Set up separate tracks for Bedrock and SageMaker implementations
   - Create shared resources and documentation folders
   - _Requirements: 1.1, 1.3, 6.1_
 
-- [ ] 2. Create workshop content framework
-  - [ ] 2.1 Develop workshop overview and learning objectives
+- [x] 2. Create workshop content framework
+  - [x] 2.1 Develop workshop overview and learning objectives
     - Write comprehensive workshop introduction
     - Define clear learning outcomes for both tracks
     - Create prerequisite checklist
     - _Requirements: 1.1, 1.3_
 
-  - [ ] 2.2 Create modular content structure
+  - [x] 2.2 Create modular content structure
     - Design content modules for flexible delivery
     - Create template structure for exercises
     - Set up content versioning approach
     - _Requirements: 1.5, 6.1, 6.2_
 
-- [ ] 3. Develop Bedrock implementation materials
-  - [ ] 3.1 Create Bedrock multi-agent example documentation
-    - Document Strands Agents SDK integration with Amazon Bedrock
-    - Create step-by-step implementation guide
-    - Include code examples and explanations
-    - _Requirements: 2.1, 2.5_
+- [x] 2.3 Checkpoint - Foundation Complete
+  - Workshop directory structure established
+  - Core documentation framework in place (README, MODULES, CROSS_PLATFORM)
+  - Module 1 and 2 examples implemented and tested
+  - Ready to proceed with Module 3 development
+  - _Requirements: 1.4, 6.3_
 
-  - [ ] 3.2 Develop Bedrock hands-on exercises
-    - Create progressive exercises building multi-agent functionality
-    - Include validation checkpoints
-    - Provide troubleshooting guidance
-    - _Requirements: 2.4, 5.1, 5.2_
+- [ ] 3. Add workshop modules from Agentic AI with Strands (Agents) SDK workshop (Modules 1-6)
+  - [x] 3.1 Add Module 1 example (MCP Calculator)
+    - Port Module 1 code from Agentic AI with Strands (Agents) SDK workshop to examples/module1/
+    - Add Module 1 documentation to MODULES.md with description and sample queries
+    - Test cross-platform compatibility (Linux/Windows Git Bash)
+    - Include troubleshooting guidance for common issues
+    - _Requirements: 2.1, 2.5, 5.1_
 
-- [ ] 4. Develop SageMaker implementation materials
-  - [ ] 4.1 Create SageMaker multi-agent example documentation
-    - Document equivalent functionality using SageMaker AI
-    - Create parallel implementation guide to Bedrock version
+  - [x] 3.2 Add Module 2 example (Weather Agent)
+    - Port Module 2 code from Agentic AI with Strands (Agents) SDK workshop to examples/module2/
+    - Add Module 2 documentation to MODULES.md
+    - Test and validate example functionality
+    - Document any platform-specific considerations
+    - _Requirements: 2.1, 2.5, 5.1_
+
+  - [ ] 3.3 Add Module 3 example
+    - Port Module 3 code from Agentic AI with Strands (Agents) SDK workshop to examples/module3/
+    - Add Module 3 documentation to MODULES.md with description and sample queries
+    - Test cross-platform compatibility (Linux/Windows Git Bash)
+    - Include troubleshooting guidance for common issues
+    - _Requirements: 2.1, 2.5, 5.1_
+
+  - [ ] 3.4 Add Module 4 example
+    - Port Module 4 code from Agentic AI with Strands (Agents) SDK workshop to examples/module4/
+    - Add Module 4 documentation to MODULES.md
+    - Test and validate example functionality
+    - Document any platform-specific considerations
+    - _Requirements: 2.1, 2.5, 5.1_
+
+  - [ ] 3.5 Add Module 5 example
+    - Port Module 5 code from Agentic AI with Strands (Agents) SDK workshop to examples/module5/
+    - Add Module 5 documentation to MODULES.md
+    - Focus on multi-agent interactions and coordination features
+    - Include advanced troubleshooting scenarios
+    - _Requirements: 2.1, 2.5, 5.1, 5.3_
+
+  - [ ] 3.6 Add Module 6 example
+    - Port Module 6 code from Agentic AI with Strands (Agents) SDK workshop to examples/module6/
+    - Add Module 6 documentation to MODULES.md
+    - Demonstrate complex multi-agent scenarios
+    - Include performance considerations and optimization tips
+    - _Requirements: 2.1, 2.5, 5.1, 5.3_
+
+  - [ ] 3.7 Prepare for Module 7 (multi-agent deployment focus)
+    - Document the progression from Modules 1-6 leading to Module 7
+    - Create checkpoint validation for module progression
+    - Prepare foundation for Module 7 multi-agent deployment examples
+    - _Requirements: 2.1, 2.5, 5.1, 5.3_
+
+- [ ] 4. Develop SageMaker implementation track
+  - [ ] 4.1 Create SageMaker equivalent modules
+    - Develop SageMaker versions of Modules 3-6
+    - Document SageMaker AI model integration patterns
     - Include model fine-tuning examples with JumpStart
     - Explain Lambda function approach for classification models as MCP tools
     - _Requirements: 2.2, 3.1, 3.2_
 
-  - [ ] 4.2 Develop SageMaker hands-on exercises
-    - Create exercises parallel to Bedrock track
-    - Include model training and deployment activities
-    - Provide agent integration examples
-    - _Requirements: 2.4, 5.1, 5.2_
+  - [ ] 4.2 Create SageMaker-specific exercises
+    - Develop hands-on exercises for model training and deployment
+    - Include agent integration examples with custom models
+    - Provide SageMaker-specific troubleshooting guidance
+    - _Requirements: 2.4, 3.1, 3.2, 5.1, 5.2_
 
 - [ ] 5. Create comparison and analysis materials
   - [ ] 5.1 Develop side-by-side comparison documentation
@@ -72,10 +115,11 @@
     - Include resource cleanup procedures
     - _Requirements: 4.4, 5.4_
 
-- [ ] 7. Checkpoint - Review and validate workshop materials
-  - Review all content for consistency and completeness
-  - Validate that both tracks provide equivalent learning outcomes
-  - Ensure modular structure supports customization
+- [ ] 7. Checkpoint - Core modules complete
+  - Review Modules 1-6 for consistency and completeness
+  - Validate progressive learning path and difficulty curve
+  - Ensure cross-platform compatibility across all modules
+  - Prepare for Module 7 multi-agent deployment focus
   - _Requirements: 1.4, 6.3, 6.4_
 
 - [ ] 8. Create instructor resources
