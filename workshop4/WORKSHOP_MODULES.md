@@ -215,13 +215,20 @@ This step automates the creation of an Amazon Bedrock Knowledge Base using a Pyt
 
 #### How to Run:
 
+If are not already in workshop directory, navigate to workshop directory.
+
+**All Platforms (Linux/macOS/Windows):**
+```bash
+# Navigate to workshop directory
+cd workshop4
+```
+
+Once you have changed to workshop directory, run the knowledge base creation script.
+
 **All Platforms (Linux/macOS/Windows):**
 ```bash
 # Set AWS region (if not already set)
 export AWS_DEFAULT_REGION="$AWS_REGION"
-
-# Navigate to workshop directory
-cd workshop4
 
 # Run the knowledge base creation script
 uv run create_knowledge_base.py
