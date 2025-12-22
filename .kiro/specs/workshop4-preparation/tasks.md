@@ -41,11 +41,14 @@
     - Document any platform-specific considerations
     - _Requirements: 2.1, 2.5, 5.1_
 
-  - [ ] 3.3 Add Module 3 example
+  - [x] 3.3 Add Module 3 example
     - Port Module 3 code from Agentic AI with Strands (Agents) SDK workshop to examples/module3/
     - Add Module 3 documentation to MODULES.md with description and sample queries
     - Test cross-platform compatibility (Linux/Windows Git Bash)
     - Include troubleshooting guidance for common issues
+    - Fixed IAM policy cleanup bug preventing knowledge base recreation
+    - Implemented cleanup-first workflow to prevent resource conflicts
+    - Validated both knowledge base queries and personal memory functionality
     - _Requirements: 2.1, 2.5, 5.1_
 
   - [ ] 3.4 Add Module 4 example

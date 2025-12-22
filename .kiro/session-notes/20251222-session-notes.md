@@ -1,4 +1,4 @@
-# Session Notes - December 20 to 21, 2025
+# Session Notes - December 20 to 22, 2025
 
 ## Session Overview
 Working backwards from workshop_4 preparation, starting with code-server directory structure improvements and spec organization.
@@ -134,3 +134,29 @@ Found orphaned policy: AmazonBedrockS3PolicyForKnowledgeBase_5393
 - [ ] Update workshop documentation to emphasize cleanup-first workflow
 - [ ] Update Module 3 documentation in WORKSHOP_MODULES.md
 - [ ] Update workshop4-preparation spec task 3.3 status
+
+### Module 3 Completion and Testing
+
+#### Key Accomplishments
+- **Module 3 fully implemented and tested** - Knowledge Base agent working end-to-end
+- **Documentation updated** - Added comprehensive Module 3 section to WORKSHOP_MODULES.md
+- **Cleanup workflow documented** - Emphasized cleanup-first approach in all documentation
+- **Task 3.3 marked complete** in workshop4-preparation spec
+
+#### Validation Results
+- ✅ **Knowledge Base Creation**: Automated setup works without IAM conflicts
+- ✅ **Console Testing**: Knowledge Base queries work from AWS console  
+- ✅ **Agent Integration**: Strands agent successfully connects and functions
+- ✅ **Dual Functionality**: Both health information retrieval AND personal memory storage working
+- ✅ **Memory Persistence**: Memory files visible and accessible in KB console
+- ✅ **Cross-platform**: Works reliably on Windows Git Bash environment
+
+#### Documentation Updates
+- **WORKSHOP_MODULES.md**: Added complete Module 3 section with cleanup workflow
+- **Session Notes**: Documented IAM cleanup fix and testing results
+- **Task Spec**: Updated task 3.3 with completion details and fix summary
+
+### Session Summary
+Successfully transformed Module 3 from "a pain in the ass" to a reliable, well-documented workshop module. The IAM cleanup fix and cleanup-first workflow ensure students won't encounter the resource conflict issues that were blocking progress.
+
+**Status**: Module 3 complete and ready for workshop delivery.
