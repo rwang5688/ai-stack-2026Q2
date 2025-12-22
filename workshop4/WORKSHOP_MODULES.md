@@ -215,15 +215,15 @@ This step automates the creation of an Amazon Bedrock Knowledge Base using a Pyt
 
 #### How to Run:
 
-If are not already in workshop directory, navigate to workshop directory.
+If are not already in module directory, navigate to module directory.
 
 **All Platforms (Linux/macOS/Windows):**
 ```bash
-# Navigate to workshop directory
-cd workshop4
+# Navigate to module directory
+cd workshop4/examples/module3
 ```
 
-Once you have changed to workshop directory, run the knowledge base creation script.
+Once you have changed to module directory, run the knowledge base creation script.
 
 **All Platforms (Linux/macOS/Windows):**
 ```bash
