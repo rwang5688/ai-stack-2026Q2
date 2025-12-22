@@ -73,7 +73,7 @@ python -c "import strands_agents; print('Strands Agents SDK installed successful
 
 ### Agentic AI with Strands (Agents) SDK and (Amazon Bedrock) AgentCore Workshop Modules
 
-See [Agentic AI with Strands (Agents) SDK and (Amazon Bedrock) AgentCore Workshop Modules](MODULES.md) for detailed information, including sample code and queries, from the modules leading up to Module 7 in the [Agentic AI with Strands (Agents) SDK and (Amazon Bedrock AgentCore)](https://catalog.workshops.aws/strands/en-US) workshop.  These published workshop modules will teach you how to use Strands Agents SDK to build and deploy agentic AI systems.
+See [Workshop Modules](WORKSHOP_MODULES.md) for detailed information, including sample code and queries, from the modules leading up to Module 7 in the [Agentic AI with Strands (Agents) SDK and (Amazon Bedrock AgentCore)](https://catalog.workshops.aws/strands/en-US) workshop.  These published workshop modules will teach you how to use Strands Agents SDK to build and deploy agentic AI systems.
 
 ## Development Workflow
 
