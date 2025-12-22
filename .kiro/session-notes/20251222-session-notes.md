@@ -160,3 +160,41 @@ Found orphaned policy: AmazonBedrockS3PolicyForKnowledgeBase_5393
 Successfully transformed Module 3 from "a pain in the ass" to a reliable, well-documented workshop module. The IAM cleanup fix and cleanup-first workflow ensure students won't encounter the resource conflict issues that were blocking progress.
 
 **Status**: Module 3 complete and ready for workshop delivery.
+
+## UV Virtual Environment Optimization
+
+### Issue Discovered
+- **Problem**: `workshop4/setup-environment.sh` was slow on Windows despite existing venv
+- **Root Cause**: Script used `uv venv --clear` flag which always recreates virtual environment
+- **Impact**: Windows file operations are slower, causing noticeable delay even with existing venv
+
+### Investigation & Solution
+- **Research**: Found `uv venv --allow-existing` flag in UV documentation
+- **Flag Behavior**: 
+  - `--clear`: Always deletes and recreates venv (slow)
+  - `--allow-existing`: Preserves existing venv, only creates if missing (fast)
+- **Fix Applied**: Replaced `--clear` with `--allow-existing` in setup script
+
+### Performance Impact
+- **Before**: Always recreates venv (slow on Windows)
+- **After**: 
+  - First run: Creates venv (same speed as before)
+  - Subsequent runs: Preserves existing venv (much faster, especially on Windows)
+
+### Technical Details
+```bash
+# Before (slow)
+uv venv venv --python "$PYTHON_CMD" --clear
+
+# After (optimized)
+uv venv venv --python "$PYTHON_CMD" --allow-existing
+```
+
+### Cross-Platform Benefits
+- **Linux**: Faster subsequent runs (already fast, now even faster)
+- **Windows**: Significant speed improvement on subsequent runs
+- **Consistency**: Same behavior across platforms
+
+### Resources
+- [UV CLI Reference](https://docs.astral.sh/uv/reference/cli/) - Command line options
+- [Linux Command Library - uv venv](https://linuxcommandlibrary.com/man/uv-venv) - Flag documentation

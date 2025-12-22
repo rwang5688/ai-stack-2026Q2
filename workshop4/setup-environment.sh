@@ -61,7 +61,7 @@ echo "✅ UV package manager available"
 
 # Create virtual environment with UV
 echo "🔧 Creating virtual environment..."
-uv venv venv --python "$PYTHON_CMD" --clear
+uv venv venv --python "$PYTHON_CMD" --allow-existing
 
 # Determine the correct activation script path
 if [ -f "venv/bin/activate" ]; then
@@ -75,7 +75,7 @@ else
     exit 1
 fi
 
-echo "✅ Virtual environment created for $PLATFORM"
+echo "✅ Virtual environment ready for $PLATFORM"
 
 # Activate virtual environment and install dependencies
 echo "📦 Installing dependencies..."
