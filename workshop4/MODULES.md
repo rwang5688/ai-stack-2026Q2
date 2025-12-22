@@ -180,6 +180,160 @@ Type `exit` to quit the application, or press `Ctrl+C` to stop the program.
 
 ---
 
+## Module 3: Building Knowledge-Base Agent with Strands
+
+**AWS Workshop Link:** [Module 3: Building Knowledge-Base Agent with Strands](https://catalog.workshops.aws/strands/en-US/module-3-building-knowledge-base-agent-with-strands)
+
+### Description
+
+This module demonstrates how to create and integrate Amazon Bedrock Knowledge Bases with Strands agents. The module consists of two main steps: first creating a Bedrock Knowledge Base using Python automation, then building a Strands agent that can query and interact with the knowledge base through natural language.
+
+The module showcases:
+- Automated creation of Amazon Bedrock Knowledge Bases using Python
+- S3 bucket creation and data synchronization
+- Integration of knowledge bases with Strands agents
+- Natural language querying of structured knowledge
+- Retrieval-Augmented Generation (RAG) patterns with Bedrock
+
+### Step 1: Create Bedrock Knowledge Base with Python
+
+This step automates the creation of an Amazon Bedrock Knowledge Base using a Python script that handles the entire setup process.
+
+#### What the Script Does:
+- Downloads sample knowledge base files (pets-kb-files.zip)
+- Creates an S3 bucket with random suffix for data storage
+- Sets up an Amazon Bedrock Knowledge Base with custom data source
+- Synchronizes the S3 bucket with the Knowledge Base
+- Configures vector embeddings and search capabilities
+
+#### How to Run:
+
+**All Platforms (Linux/macOS/Windows):**
+```bash
+# Set AWS region (if not already set)
+export AWS_DEFAULT_REGION="$AWS_REGION"
+
+# Navigate to workshop directory
+cd workshop4
+
+# Run the knowledge base creation script
+uv run create_knowledge_base.py
+```
+
+**⚠️ Important Notes:**
+- **Processing Time**: This operation takes approximately 7-9 minutes to complete
+- **AWS Permissions**: Requires IAM permissions for Amazon Bedrock, S3, and related services
+- **Region**: Ensure you're in a region that supports Amazon Bedrock Knowledge Bases
+
+### Step 2: Build Knowledge-Base Agent with Strands
+
+This step demonstrates how to create a Strands agent that can intelligently store and retrieve information from the Amazon Bedrock Knowledge Base created in Step 1.
+
+#### Setup Environment Variables
+
+First, configure the required environment variables with the Knowledge Base ID and OpenSearch endpoint:
+
+```bash
+# Get Knowledge Base ID and OpenSearch details
+export STRANDS_KNOWLEDGE_BASE_ID=$(aws bedrock-agent list-knowledge-bases --region $AWS_REGION --query 'knowledgeBaseSummaries[].knowledgeBaseId' --output text)
+export OPENSEARCH_COLLECTION_ID=$(aws opensearchserverless list-collections --query "collectionSummaries[].id" --output text)
+export OPENSEARCH_ENDPOINT=$(aws opensearchserverless batch-get-collection --ids $OPENSEARCH_COLLECTION_ID --query 'collectionDetails[].collectionEndpoint' --output text)
+export OPENSEARCH_HOST="${OPENSEARCH_ENDPOINT#https://*}"
+
+# Persist to bashrc for future sessions
+echo "export STRANDS_KNOWLEDGE_BASE_ID=\"${STRANDS_KNOWLEDGE_BASE_ID}\"" >> ~/.bashrc
+echo "export OPENSEARCH_HOST=\"$OPENSEARCH_HOST\"" >> ~/.bashrc
+```
+
+#### How to Run
+
+**All Platforms (Linux/macOS/Windows):**
+```bash
+cd workshop4/examples/module3
+uv run knowledge_base_agent.py
+```
+
+#### What the Agent Does
+
+The knowledge base agent demonstrates a **code-defined workflow** that:
+
+1. **Intent Classification**: Uses LLM to determine if user wants to store or retrieve information
+2. **Conditional Execution**: Routes to either storage or retrieval based on intent
+3. **Tool Chaining**: For retrieval, combines memory search with LLM response generation
+
+**Key Features:**
+- **Deterministic behavior** through explicit code control
+- **Optimized tool usage** with precise parameter tuning
+- **Specialized prompts** for classification and response generation
+- **Memory tool** for storing/retrieving with semantic similarity
+- **LLM integration** for natural language processing
+
+#### Sample Interactions
+
+**Storing Information:**
+```
+User: I am 41 years old
+Agent: I've stored this information.
+```
+
+**Retrieving Information:**
+```
+User: What is my age?
+Agent: You're 41 years old.
+```
+
+**Other Examples:**
+- Store: "My favorite color is blue"
+- Store: "I work as a software engineer"
+- Retrieve: "What do you know about me?"
+- Retrieve: "Tell me about my preferences"
+
+#### Technical Implementation
+
+The agent uses two primary tools:
+
+- **`memory`**: Store/retrieve information with semantic search capabilities
+- **`use_llm`**: Intent classification and response generation
+
+**Workflow Process:**
+1. User query → Intent classification (store vs retrieve)
+2. If store: Save content to knowledge base
+3. If retrieve: Search knowledge base → Generate natural response
+
+#### Troubleshooting
+
+**If retrievals fail:**
+- Decrease `min_score` value in the code for more lenient matching
+- Increase `min_score` to reduce hallucinations and improve precision
+
+**Verify setup:**
+- Check environment variables: `echo $STRANDS_KNOWLEDGE_BASE_ID`
+- Confirm Knowledge Base exists in Amazon Bedrock console
+- Verify OpenSearch collection is accessible
+
+### Prerequisites
+
+- AWS credentials configured with appropriate permissions
+- Amazon Bedrock access in your AWS region
+- S3 permissions for bucket creation and management
+- Python 3.12+ with uv package manager
+
+### Troubleshooting
+
+**Common Issues:**
+- **Region Support**: Ensure your AWS region supports Amazon Bedrock Knowledge Bases
+- **Permissions**: Verify IAM permissions for Amazon Bedrock, S3, and IAM operations
+- **Timeout**: Knowledge Base creation can take 7-9 minutes - be patient
+- **S3 Bucket Names**: Script handles random suffix generation to avoid naming conflicts
+
+**Error Resolution:**
+- Check AWS credentials: `aws sts get-caller-identity`
+- Verify region: `echo $AWS_REGION`
+- Check Amazon Bedrock availability in your region
+- Review CloudTrail logs for detailed error information
+
+---
+
 *Additional modules will be added as they are developed.*
 
 ---
