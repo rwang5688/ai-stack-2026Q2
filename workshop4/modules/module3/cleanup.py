@@ -105,24 +105,32 @@ def cleanup_opensearch_collections():
         print(f"❌ Error listing OpenSearch collections: {e}")
 
 def cleanup_iam_roles():
-    """Delete Bedrock-related IAM roles"""
-    print("👤 Cleaning up IAM Roles...")
+    """Delete Bedrock-related IAM roles and policies"""
+    print("👤 Cleaning up IAM Roles and Policies...")
     try:
         response = iam_client.list_roles()
         roles_to_delete = [role for role in response['Roles'] 
                           if 'AmazonBedrockExecutionRoleForKnowledgeBase' in role['RoleName']]
+        
+        # Collect all policy ARNs to delete
+        policies_to_delete = set()
         
         for role in roles_to_delete:
             role_name = role['RoleName']
             print(f"  Deleting IAM role: {role_name}")
             
             try:
-                # Detach managed policies
+                # Collect attached managed policies for deletion
                 attached_policies = iam_client.list_attached_role_policies(RoleName=role_name)
                 for policy in attached_policies['AttachedPolicies']:
+                    policy_arn = policy['PolicyArn']
+                    # Only delete policies we created (not AWS managed policies)
+                    if 'AmazonBedrock' in policy_arn and 'policy/' in policy_arn:
+                        policies_to_delete.add(policy_arn)
+                    
                     iam_client.detach_role_policy(
                         RoleName=role_name,
-                        PolicyArn=policy['PolicyArn']
+                        PolicyArn=policy_arn
                     )
                 
                 # Delete inline policies
@@ -140,7 +148,32 @@ def cleanup_iam_roles():
             except Exception as e:
                 print(f"    ❌ Error deleting role {role_name}: {e}")
         
-        print(f"✅ Cleaned up {len(roles_to_delete)} IAM roles")
+        # Also find and delete orphaned Bedrock policies (not attached to any role)
+        print("  Searching for orphaned Bedrock policies...")
+        try:
+            paginator = iam_client.get_paginator('list_policies')
+            for page in paginator.paginate(Scope='Local'):  # Only customer-managed policies
+                for policy in page['Policies']:
+                    policy_name = policy['PolicyName']
+                    policy_arn = policy['Arn']
+                    
+                    # Look for all Bedrock KnowledgeBase-related policies
+                    if 'AmazonBedrock' in policy_name and 'KnowledgeBase' in policy_name:
+                        policies_to_delete.add(policy_arn)
+                        print(f"    Found orphaned policy: {policy_name}")
+        except Exception as e:
+            print(f"    ❌ Error listing policies: {e}")
+        
+        # Now delete the collected policies
+        for policy_arn in policies_to_delete:
+            try:
+                policy_name = policy_arn.split('/')[-1]
+                iam_client.delete_policy(PolicyArn=policy_arn)
+                print(f"    ✅ Deleted policy: {policy_name}")
+            except Exception as e:
+                print(f"    ❌ Error deleting policy {policy_arn}: {e}")
+        
+        print(f"✅ Cleaned up {len(roles_to_delete)} IAM roles and {len(policies_to_delete)} policies")
     except Exception as e:
         print(f"❌ Error listing IAM roles: {e}")
 
