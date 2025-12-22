@@ -115,40 +115,6 @@ def upload_directory(path, bucket_name):
             print(f"uploading file {file_to_upload} to {bucket_name}")
             s3_client.upload_file(file_to_upload,bucket_name,file)
 
-def check_bucket_has_files(bucket_name, expected_files):
-    """Check if S3 bucket contains the expected PDF files"""
-    try:
-        response = s3_client.list_objects_v2(Bucket=bucket_name)
-        if 'Contents' not in response:
-            print(f"Bucket {bucket_name} is empty")
-            return False
-        
-        existing_files = [obj['Key'] for obj in response['Contents']]
-        missing_files = [f for f in expected_files if f not in existing_files]
-        
-        if missing_files:
-            print(f"Bucket {bucket_name} is missing files: {missing_files}")
-            return False
-        
-        print(f"Bucket {bucket_name} contains all {len(expected_files)} expected files")
-        return True
-    except Exception as e:
-        print(f"Error checking bucket contents: {e}")
-        return False
-
-def get_or_create_s3_bucket():
-    """Get existing bucket or create new one if needed"""
-    buckets = s3_client.list_buckets()['Buckets']
-    s3_buckets = [b['Name'] for b in buckets if b['Name'].startswith('bedrock-kb-bucket')]
-    
-    if s3_buckets:
-        print(f"Found existing bucket: {s3_buckets[0]}")
-        return s3_buckets[0]
-    else:
-        bucket_name = create_s3_bucket_with_random_suffix('bedrock-kb-bucket')
-        print(f"Created new S3 bucket: {bucket_name}")
-        return bucket_name
-
 def create_bedrock_knowledge_base(name, description, s3_bucket):
     knowledge_base = BedrockKnowledgeBase(
         kb_name=name,
@@ -202,35 +168,22 @@ def ingest_knowledge_base_documents(knowledge_base_id, data_source_id, s3_bucket
 
 def main():
     folder = 'pets-kb-files'
-    
-    # Step 1: Check if local folder exists, if not download and extract
     if not os.path.isdir(folder):
-        print("Local folder doesn't exist, downloading and extracting files...")
         download_file('https://d3k0crbaw2nl4d.cloudfront.net/pets-kb-files.zip')
         extract_zip_file('pets-kb-files.zip')
+        s3_bucket = create_s3_bucket_with_random_suffix('bedrock-kb-bucket')
+        print(f'Created S3 bucket: {s3_bucket}')
+        upload_directory("pets-kb-files", s3_bucket)
     else:
-        print(f"Local folder '{folder}' already exists with PDF files")
-    
-    # Get list of PDF files that should be in S3
-    pdf_files = [f for f in os.listdir(folder) if f.endswith('.pdf')]
-    print(f"Found {len(pdf_files)} PDF files to upload: {pdf_files}")
-    
-    # Step 2: Get or create S3 bucket
-    s3_bucket = get_or_create_s3_bucket()
-    
-    # Step 3: Check if S3 bucket has the files, if not upload them
-    if not check_bucket_has_files(s3_bucket, pdf_files):
-        print(f"Uploading {len(pdf_files)} files to S3 bucket {s3_bucket}...")
-        upload_directory(folder, s3_bucket)
-        print("Upload completed!")
-    else:
-        print("S3 bucket already contains all required files, skipping upload")
+        print('Skipping download as folder {folder} already exists.')
+        buckets = s3_client.list_buckets()['Buckets']
+        s3_buckets = [ b['Name'] for b in buckets if b['Name'].startswith('bedrock-kb-bucket') ]
+        s3_bucket = s3_buckets[0]
 
-    # Step 4: Create or get existing Bedrock Knowledge Base
+    # Create Bedrock Knowledge Base
     response = bedrock_agent_client.list_knowledge_bases()
     knowledge_bases = response.get('knowledgeBaseSummaries')
     if not len(knowledge_bases):
-        print("Creating new Bedrock Knowledge Base...")
         random_suffix = str(uuid.uuid4())[:8]
         knowledge_base = create_bedrock_knowledge_base(
             name = f'pets-kb-{random_suffix}',
@@ -241,7 +194,7 @@ def main():
         data_source_id = knowledge_base.get_datasource_id()
         print(f'Created Bedrock Knowledge Base with ID: {knowledge_base_id}')
     else:
-        print('Using existing Bedrock Knowledge Base')
+        print('Skipping Bedrock Knowledge Base Creation')
         knowledge_base_id = knowledge_bases[0]['knowledgeBaseId']
         response = bedrock_agent_client.list_data_sources(knowledgeBaseId=knowledge_base_id)
         data_sources = response['dataSourceSummaries']
@@ -255,7 +208,7 @@ def main():
     print(f'Loading documents into Bedrock Knowledge Base: {knowledge_base_id}')
     print(f'Data Source ID: {data_source_id}')
 
-    # Step 5: Ingest documents from S3 into Bedrock Knowledge Base
+    # Ingest documents from S3 into Bedrock Knowledge Base
     # Requires the appropriate S3 bucket permissions in the
     # Knowledge Base role: AmazonBedrockExecutionRoleForKnowledgeBase_xx 
     ingest_knowledge_base_documents(
