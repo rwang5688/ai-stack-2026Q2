@@ -1,6 +1,6 @@
-# Workshop 4: Agentic AI with Strands Agents SDK
+# Workshop 4: AI Application Development on AWS
 
-This workshop provides hands-on experience with Agentic AI development using Strands Agents SDK, featuring both Amazon Bedrock and SageMaker AI implementations.
+This workshop provides hands-on experience with AI Application Development on AWS, featuring Strands Agents SDK, Amazon Bedrock, and Amazon SageMaker AI.
 
 ## Quick Start
 
