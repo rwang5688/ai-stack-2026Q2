@@ -364,9 +364,6 @@ The agent uses two primary tools:
 
 ---
 
-*Additional modules will be added as they are developed.*
-
----
 ## Module 4: Building Workflow Agent with Strands
 
 **AWS Workshop Link:** [Module 4: Building Workflow Agent with Strands](https://catalog.workshops.aws/strands/en-US/module-4-building-workflow-agent-with-strands)
@@ -567,3 +564,5 @@ urllib3.exceptions.ProtocolError: Response ended prematurely
 - Be patient with complex research queries - they may take time to process
 
 ---
+
+*Additional modules will be added as they are developed.*
