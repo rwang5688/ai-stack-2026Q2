@@ -195,6 +195,13 @@ The module showcases:
 - Natural language querying of structured knowledge
 - Retrieval-Augmented Generation (RAG) patterns with Bedrock
 
+### ⚠️ Prerequisites
+
+- **AWS credentials** with IAM permissions for Amazon Bedrock, S3, and related services
+- **Amazon Bedrock region support** - ensure you're in a region that supports Amazon Bedrock Knowledge Bases
+- **Python 3.12+** with uv package manager
+- **Processing Time**: Knowledge Base creation takes approximately 7-9 minutes to complete
+
 ### Step 1: Create Bedrock Knowledge Base with Python
 
 This step automates the creation of an Amazon Bedrock Knowledge Base using a Python script that handles the entire setup process.
@@ -219,11 +226,6 @@ cd workshop4
 # Run the knowledge base creation script
 uv run create_knowledge_base.py
 ```
-
-**⚠️ Important Notes:**
-- **Processing Time**: This operation takes approximately 7-9 minutes to complete
-- **AWS Permissions**: Requires IAM permissions for Amazon Bedrock, S3, and related services
-- **Region**: Ensure you're in a region that supports Amazon Bedrock Knowledge Bases
 
 ### Step 2: Build Knowledge-Base Agent with Strands
 
@@ -310,13 +312,6 @@ The agent uses two primary tools:
 - Check environment variables: `echo $STRANDS_KNOWLEDGE_BASE_ID`
 - Confirm Knowledge Base exists in Amazon Bedrock console
 - Verify OpenSearch collection is accessible
-
-### Prerequisites
-
-- AWS credentials configured with appropriate permissions
-- Amazon Bedrock access in your AWS region
-- S3 permissions for bucket creation and management
-- Python 3.12+ with uv package manager
 
 ### Troubleshooting
 
