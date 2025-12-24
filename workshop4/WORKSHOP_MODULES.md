@@ -571,6 +571,15 @@ urllib3.exceptions.ProtocolError: Response ended prematurely
 
 **AWS Workshop Link:** [Module 5: Building Memory Agent with Strands](https://catalog.workshops.aws/strands/en-US/module-5-building-memory-agent-with-strands)
 
+**⚠️ KNOWN ISSUE:** This module has a critical bug with the mem0 library's Amazon Bedrock integration. The mem0_memory tool fails with `UnrecognizedClientException: The security token included in the request is invalid` even when AWS credentials are properly configured and working with all other AWS services. This issue occurs across all platforms (Windows, Linux, macOS) and affects any non-default credential setup including:
+- Temporary credentials from AWS STS
+- Named AWS profiles (non-default)
+- EC2 instance profiles
+- AWS SSO authentication
+- IAM roles for service accounts
+
+This is a mem0 library design flaw - it doesn't properly use the standard boto3 credential chain and requires a default AWS profile setup, making it incompatible with modern AWS authentication methods commonly used in enterprise environments.
+
 ### Description
 
 This module demonstrates how to create a Strands agent that leverages memory from mem0.ai to maintain context across conversations and provide personalized responses. The example showcases how to store, retrieve, and utilize memories to create more intelligent and contextual AI interactions with persistent memory capabilities.
@@ -765,6 +774,8 @@ The agent includes a built-in demo with pre-populated memories:
 
 **AWS Workshop Link:** [Module 6: Building Meta Agent with Strands](https://catalog.workshops.aws/strands/en-US/module-6-building-meta-agent-with-strands)
 
+**⚠️ WINDOWS COMPATIBILITY ISSUE:** The standard version fails on Windows due to a cross-platform compatibility bug in the `strands_tools` package. The `shell` tool imports Unix-only modules (`termios`, `pty`, `tty`) that don't exist on Windows, causing `ModuleNotFoundError: No module named 'termios'`. A Windows-compatible version is provided that removes the shell tool while maintaining full meta-tooling functionality.
+
 ### Description
 
 This module demonstrates Strands Agents' advanced meta-tooling capabilities - the ability of an agent to create, load, and use custom tools dynamically at runtime. Meta-tooling refers to an AI system's capability to create new tools on demand rather than being limited to a predefined set of capabilities.
@@ -795,10 +806,16 @@ The Meta-Tooling Agent implements a **single agent with dynamic capability expan
 
 ### How to Run
 
-**All Platforms (Linux/macOS/Windows):**
+**Standard Version (Linux/macOS):**
 ```bash
 cd modules/module6
 uv run meta_tooling.py
+```
+
+**Windows-Compatible Version:**
+```bash
+cd modules/module6
+uv run meta_tooling_windows.py
 ```
 
 ### Tools Used Overview

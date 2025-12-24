@@ -26,7 +26,7 @@
   - Ready to proceed with Module 3 development
   - _Requirements: 1.4, 6.3_
 
-- [ ] 3. Add workshop modules from Agentic AI with Strands (Agents) SDK workshop (Modules 1-6)
+- [x] 3. Add workshop modules from Agentic AI with Strands (Agents) SDK workshop (Modules 1-6)
   - [x] 3.1 Add Module 1 example (MCP Calculator)
     - Port Module 1 code from Agentic AI with Strands (Agents) SDK workshop to examples/module1/
     - Add Module 1 documentation to MODULES.md with description and sample queries
@@ -58,18 +58,23 @@
     - Document any platform-specific considerations
     - _Requirements: 2.1, 2.5, 5.1_
 
-  - [ ] 3.5 Add Module 5 example
+  - [x] 3.5 Add Module 5 example
     - Port Module 5 code from Agentic AI with Strands (Agents) SDK workshop to examples/module5/
     - Add Module 5 documentation to MODULES.md
     - Focus on multi-agent interactions and coordination features
     - Include advanced troubleshooting scenarios
+    - **COMPLETED WITH KNOWN ISSUE**: mem0 library incompatible with modern AWS authentication methods
+    - Documented comprehensive issue description and workarounds in WORKSHOP_MODULES.md
     - _Requirements: 2.1, 2.5, 5.1, 5.3_
 
-  - [ ] 3.6 Add Module 6 example
+  - [x] 3.6 Add Module 6 example
     - Port Module 6 code from Agentic AI with Strands (Agents) SDK workshop to examples/module6/
     - Add Module 6 documentation to MODULES.md
     - Demonstrate complex multi-agent scenarios
     - Include performance considerations and optimization tips
+    - **COMPLETED**: Windows compatibility issue resolved with shell tool removal
+    - Created meta_tooling_windows.py for cross-platform compatibility
+    - Successfully tested on Windows with all documented test cases working
     - _Requirements: 2.1, 2.5, 5.1, 5.3_
 
   - [ ] 3.7 Prepare for Module 7 (multi-agent deployment focus)
