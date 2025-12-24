@@ -565,4 +565,423 @@ urllib3.exceptions.ProtocolError: Response ended prematurely
 
 ---
 
+## Module 5: Building Memory Agent with Strands
+
+**AWS Workshop Link:** [Module 5: Building Memory Agent with Strands](https://catalog.workshops.aws/strands/en-US/module-5-building-memory-agent-with-strands)
+
+### Description
+
+This module demonstrates how to create a Strands agent that leverages memory from mem0.ai to maintain context across conversations and provide personalized responses. The example showcases how to store, retrieve, and utilize memories to create more intelligent and contextual AI interactions with persistent memory capabilities.
+
+The module showcases:
+- **Memory Operations**: Storing, retrieving, and listing user-specific information
+- **Contextual Responses**: Using retrieved memories to generate personalized answers
+- **Tool Chaining**: Combining memory retrieval with LLM response generation
+- **Semantic Search**: Finding relevant memories based on context and similarity
+- **User Isolation**: Maintaining separate memory spaces for different users
+- **Dual Memory Support**: Compatible with both mem0.ai and Amazon Bedrock AgentCore Memory
+
+### Agent Architecture
+
+The Memory Agent implements a **single agent with memory management** approach:
+
+| Component | Role | Responsibility | Tools Used |
+|-----------|------|----------------|------------|
+| **Memory Agent** | Personal Assistant | Maintains context by remembering user details and preferences | `mem0_memory`, `use_agent` |
+
+### Key Features
+
+- **Complexity**: Intermediate level memory management
+- **Interaction**: Command line interface with memory operations
+- **Tools**: Memory storage/retrieval and LLM capabilities
+- **Memory Types**: User-specific information, preferences, and contextual data
+- **Persistence**: Information stored across conversation sessions
+
+### How to Run
+
+**Prerequisites:**
+Ensure the `OPENSEARCH_HOST` environment variable is properly set:
+
+```bash
+# Check if environment variable is set
+tail -3 ~/.bashrc
+source ~/.bashrc
+echo "OPENSEARCH_HOST=\"$OPENSEARCH_HOST\""
+
+# Set user ID (optional, defaults to 'J')
+export USER_ID="J"  # Feel free to change this to another name
+```
+
+**All Platforms (Linux/macOS/Windows):**
+```bash
+cd workshop4/modules/module5
+uv run memory_agent.py
+```
+
+### Sample Interactions
+
+#### Interaction 1: Storing Information
+```
+User: My name is J, I am 34 years old, I like seafood, and I have a pet dog
+Agent: Hello J! I've stored your information. How can I assist you further?
+```
+
+#### Interaction 2: Retrieving Information
+```
+User: What is my age?
+Agent: You are 34 years old. Is there anything else you would like to know?
+```
+
+#### Interaction 3: Listing All Memories
+```
+User: Tell me everything that you know about me
+Agent: Here's everything I know about you:
+- Your name is J
+- You are 34 years old
+- You like seafood
+- You have a pet dog
+```
+
+### Technical Implementation
+
+#### Memory Operations Workflow
+
+The agent supports multiple memory operations through the `mem0_memory` tool:
+
+1. **Store**: Save new information with user association
+2. **Retrieve**: Search for relevant memories using semantic similarity
+3. **List**: Display all stored memories for a user
+4. **Get**: Retrieve specific memory by ID
+5. **Delete**: Remove specific memories
+6. **History**: View memory modification history
+
+#### Tool Chaining Process
+
+The memory agent demonstrates sophisticated tool chaining:
+
+```
+┌───────────────┐     ┌───────────────────────┐     ┌───────────────┐
+│               │     │                       │     │               │
+│  User Query   │────▶│  memory() Retrieval   │────▶│  use_agent()  │────▶ Response
+│               │     │                       │     │               │
+└───────────────┘     └───────────────────────┘     └───────────────┘
+                       (Finds relevant memories)     (Generates natural
+                                                     language answer)
+```
+
+#### Memory Configuration
+
+The agent supports multiple memory backends:
+
+**mem0.ai Backend (Default):**
+- Uses FAISS for local vector storage
+- Configurable embeddings and LLM models
+- Environment variable configuration
+
+**Amazon Bedrock AgentCore Memory:**
+- Enterprise-grade memory management
+- Requires memory_id, actor_id, session_id, and namespace
+- Integrated with AWS services
+
+#### System Prompt Specialization
+
+The agent uses specialized prompts for different operations:
+
+```python
+MEMORY_SYSTEM_PROMPT = """You are a personal assistant that maintains context by remembering user details.
+
+Capabilities:
+- Store new information using mem0_memory tool (action="store")
+- Retrieve relevant memories (action="retrieve")
+- List all memories (action="list")
+- Provide personalized responses
+
+Key Rules:
+- Always include user_id in tool calls
+- Be conversational and natural in responses
+- Format output clearly
+- Acknowledge stored information
+- Only share relevant information
+- Politely indicate when information is unavailable
+"""
+```
+
+### Memory Requirements
+
+**User/Agent Association:**
+- Most operations require either `user_id` or `agent_id`
+- Ensures proper data isolation between users
+- Maintains privacy and context separation
+
+**Required for:**
+- Storing new memories
+- Listing all memories
+- Retrieving memories via semantic search
+
+**Not required for:**
+- Getting specific memory by ID
+- Deleting specific memory
+- Getting memory history
+
+### Demo Mode
+
+The agent includes a built-in demo with pre-populated memories:
+
+```bash
+# Run demo mode
+> demo
+```
+
+**Demo memories include:**
+- Personal information (name, age)
+- Preferences (travel, accommodation)
+- Hobbies (hiking, photography)
+- Pets (dog named Max)
+- Food preferences (Italian cuisine)
+
+### Extending the Example
+
+**Suggested Enhancements:**
+1. **Memory Categories**: Implement tagging or categorization for better organization
+2. **Memory Prioritization**: Add importance levels to emphasize critical information
+3. **Memory Expiration**: Implement time-based relevance for changing information
+4. **Multi-User Support**: Enhanced management for multiple simultaneous users
+5. **Memory Visualization**: Create visual interface for browsing and managing memories
+6. **Proactive Memory Usage**: Agent suggests relevant memories in conversations
+7. **Memory Analytics**: Track memory usage patterns and effectiveness
+
+### Usage Notes
+- Type `exit` to quit the application
+- Type `demo` to run the demonstration mode
+- Press `Ctrl+C` to stop the program
+- Avoid entering sensitive or PII data in queries
+- Memory persists across sessions when properly configured
+
+---
+
+## Module 6: Building Meta Agent with Strands
+
+**AWS Workshop Link:** [Module 6: Building Meta Agent with Strands](https://catalog.workshops.aws/strands/en-US/module-6-building-meta-agent-with-strands)
+
+### Description
+
+This module demonstrates Strands Agents' advanced meta-tooling capabilities - the ability of an agent to create, load, and use custom tools dynamically at runtime. Meta-tooling refers to an AI system's capability to create new tools on demand rather than being limited to a predefined set of capabilities.
+
+The module showcases:
+- **Dynamic Tool Creation**: Creating new tools at runtime based on natural language descriptions
+- **Tool Loading**: Dynamically registering new tools with the agent's registry
+- **Code Generation**: Automatically generating valid Python tool code following Strands specifications
+- **Tool Management**: Loading, testing, and using newly created tools
+- **Runtime Extension**: Expanding agent capabilities without restarting or reconfiguration
+- **Intelligent Tool Detection**: Distinguishing between tool creation and tool usage requests
+
+### Agent Architecture
+
+The Meta-Tooling Agent implements a **single agent with dynamic capability expansion**:
+
+| Component | Role | Responsibility | Tools Used |
+|-----------|------|----------------|------------|
+| **Meta Agent** | Tool Builder | Creates, loads, and manages custom tools dynamically | `load_tool`, `shell`, `editor` |
+
+### Key Features
+
+- **Complexity**: Advanced level meta-programming
+- **Interaction**: Command line interface with tool creation capabilities
+- **Core Concept**: Meta-Tooling (Dynamic Tool Creation)
+- **Key Technique**: Runtime Tool Generation
+- **Extensibility**: Unlimited capability expansion through tool creation
+
+### How to Run
+
+**All Platforms (Linux/macOS/Windows):**
+```bash
+cd workshop4/modules/module6
+uv run meta_tooling.py
+```
+
+### Tools Used Overview
+
+The meta-tooling agent uses three primary tools to create and manage dynamic tools:
+
+#### 1. `load_tool`
+- **Purpose**: Dynamic loading of Python tools at runtime
+- **Capabilities**: 
+  - Registering new tools with agent's registry
+  - Hot-reloading of capabilities
+  - Validating tool specifications before loading
+
+#### 2. `editor`
+- **Purpose**: Creation and modification of tool code files
+- **Capabilities**:
+  - Syntax highlighting and code creation
+  - Precise string replacements in existing tools
+  - Code insertion at specific locations
+  - Finding and navigating code sections
+  - Creating backups with undo capability
+
+#### 3. `shell`
+- **Purpose**: Execute shell commands for tool management
+- **Capabilities**:
+  - Debug tool creation and execution problems
+  - Sequential or parallel command execution
+  - Working directory context management
+
+### Meta-Tooling Implementation
+
+#### Key Components
+
+**1. Agent Initialization with Meta-Tools**
+```python
+agent = Agent(
+    model=bedrock_model,
+    system_prompt=TOOL_BUILDER_SYSTEM_PROMPT,
+    tools=[load_tool, shell, editor]
+)
+```
+
+**2. Standardized Tool Structure**
+The system enforces a strict tool specification format:
+
+```python
+from typing import Any
+from strands.types.tools import ToolUse, ToolResult
+
+TOOL_SPEC = {
+    "name": "tool_name",  # Must match function name
+    "description": "What the tool does",
+    "inputSchema": {  # Exact capitalization required
+        "json": {
+            "type": "object",
+            "properties": {
+                "param_name": {
+                    "type": "string",
+                    "description": "Parameter description"
+                }
+            },
+            "required": ["param_name"]
+        }
+    }
+}
+
+def tool_name(tool_use: ToolUse, **kwargs: Any) -> ToolResult:
+    tool_use_id = tool_use["toolUseId"]
+    param_value = tool_use["input"]["param_name"]
+    
+    # Process inputs
+    result = param_value  # Replace with actual processing
+    
+    return {
+        "toolUseId": tool_use_id,
+        "status": "success",
+        "content": [{"text": f"Result: {result}"}]
+    }
+```
+
+#### Tool Creation Workflow
+
+**Autonomous Tool Creation Process:**
+1. **Natural Language Analysis**: Parse user request to determine tool requirements
+2. **Code Generation**: Generate complete Python code following Strands specifications
+3. **File Creation**: Use `editor` tool to write code to appropriately named file
+4. **Tool Loading**: Use `load_tool` to dynamically register the new tool
+5. **Validation**: Confirm tool creation and availability
+6. **Usage**: Demonstrate or use the newly created tool
+
+#### System Prompt Guidelines
+
+The `TOOL_BUILDER_SYSTEM_PROMPT` provides comprehensive instructions for:
+
+- **Tool Naming Convention**: File name must match function name
+- **Tool Creation vs. Usage**: Distinguish between creating new tools and using existing ones
+- **Tool Structure**: Enforce standardized format for all generated tools
+- **Autonomous Workflow**: Handle complete creation process without user intervention
+
+### Sample Interactions
+
+#### Step 1: Creating a Custom Tool
+
+**Input:**
+```
+Create a tool that counts characters in text
+```
+
+**Expected Process:**
+1. Agent analyzes the request and determines tool requirements
+2. Generates Python code for character counting functionality
+3. Creates file named `count_characters.py`
+4. Loads the tool into the agent's registry
+5. Confirms successful creation with "TOOL_CREATED: count_characters.py"
+
+#### Step 2: Using the Custom Tool
+
+**Input:**
+```
+Count the characters in "Hello, Strands! How are you today?"
+```
+
+**Expected Response:**
+- Agent recognizes this as a usage request (not creation)
+- Uses the existing `count_characters` tool
+- Returns: "The text contains 34 characters"
+- Explains why no new tool was created (existing tool handles the request)
+
+### Technical Implementation Details
+
+#### Tool Creation Intelligence
+
+The agent demonstrates sophisticated decision-making:
+
+**Creation Triggers:**
+- "Create a tool that..."
+- "Make a tool for..."
+- "Build a tool to..."
+
+**Usage Recognition:**
+- Direct task requests without creation keywords
+- Questions that existing tools can answer
+- Specific operations on data
+
+#### Error Handling and Validation
+
+**Tool Specification Validation:**
+- Ensures proper `inputSchema` format with "json" wrapper
+- Validates function parameter access via `tool_use["input"]["param_name"]`
+- Confirms return format with `toolUseId` and content structure
+
+**Runtime Validation:**
+- Tests tool loading before confirming creation
+- Validates tool functionality with sample inputs
+- Provides clear error messages for debugging
+
+### Extending the Example
+
+**Suggested Enhancements:**
+1. **Tool Version Control**: Implement versioning for created tools to track changes
+2. **Tool Testing**: Add automated testing for newly created tools
+3. **Tool Improvement**: Create tools that enhance existing capabilities
+4. **Tool Categories**: Organize tools by functionality or domain
+5. **Tool Sharing**: Enable export/import of created tools
+6. **Tool Analytics**: Track tool usage and effectiveness
+7. **Tool Documentation**: Auto-generate documentation for created tools
+8. **Tool Optimization**: Improve existing tools based on usage patterns
+
+### Advanced Use Cases
+
+**Complex Tool Creation Examples:**
+- Data processing pipelines
+- API integration tools
+- File manipulation utilities
+- Mathematical computation tools
+- Text processing and analysis tools
+- Format conversion utilities
+
+### Usage Notes
+- Type `exit` to quit the application
+- Press `Ctrl+C` to stop the program
+- Avoid entering sensitive or PII data in tool creation requests
+- Created tools persist for the session duration
+- Tool names must be unique within the session
+
+---
+
 *Additional modules will be added as they are developed.*
