@@ -77,38 +77,41 @@
     - Successfully tested on Windows with all documented test cases working
     - _Requirements: 2.1, 2.5, 5.1, 5.3_
 
-  - [ ] 3.7 Prepare for Module 7 (multi-agent deployment focus)
-    - Document the progression from Modules 1-6 leading to Module 7
-    - Create checkpoint validation for module progression
-    - Prepare foundation for Module 7 multi-agent deployment examples
+  - [x] 3.7 Checkpoint - Core Modules Complete
+    - All Modules 1-6 documented and tested
+    - Cross-platform compatibility validated
+    - Known issues documented with workarounds
+    - Foundation ready for multi-agent implementation tracks
     - _Requirements: 2.1, 2.5, 5.1, 5.3_
 
-- [ ] 4. Develop SageMaker implementation track
-  - [ ] 4.1 Create SageMaker equivalent modules
-    - Develop SageMaker versions of Modules 3-6
+- [ ] 4. Develop Multi-Agent Bedrock example
+  - [ ] 4.1 Create multi-agent Bedrock example
+    - Develop multi-agent coordination examples using Bedrock
+    - Include agent-to-agent communication patterns
+    - Demonstrate complex workflow orchestration
+    - Document Bedrock-specific multi-agent patterns
+    - _Requirements: 2.2, 3.1, 3.2, 5.3_
+
+  - [ ] 4.2 Create Bedrock multi-agent exercises
+    - Develop hands-on exercises for multi-agent scenarios
+    - Include real-world use case implementations
+    - Provide Bedrock-specific troubleshooting guidance
+    - Document performance optimization techniques
+    - _Requirements: 2.4, 3.1, 3.2, 5.1, 5.2_
+
+- [ ] 5. Develop Multi-Agent SageMaker AI example
+  - [ ] 5.1 Create SageMaker AI example
+    - Develop multi-agent coordination example using SageMaker AI
     - Document SageMaker AI model integration patterns
     - Include model fine-tuning examples with JumpStart
     - Explain Lambda function approach for classification models as MCP tools
     - _Requirements: 2.2, 3.1, 3.2_
 
-  - [ ] 4.2 Create SageMaker-specific exercises
+  - [ ] 5.2 Create SageMaker-specific exercises
     - Develop hands-on exercises for model training and deployment
     - Include agent integration examples with custom models
     - Provide SageMaker-specific troubleshooting guidance
     - _Requirements: 2.4, 3.1, 3.2, 5.1, 5.2_
-
-- [ ] 5. Create comparison and analysis materials
-  - [ ] 5.1 Develop side-by-side comparison documentation
-    - Highlight key differences between Bedrock and SageMaker approaches
-    - Create decision matrix for model selection
-    - Include performance and cost considerations
-    - _Requirements: 2.3_
-
-  - [ ] 5.2 Create advanced integration examples
-    - Show combination of Bedrock and SageMaker approaches
-    - Demonstrate complex multi-agent scenarios
-    - Include real-world use case examples
-    - _Requirements: 3.3, 5.5_
 
 - [ ] 6. Develop setup and infrastructure guidance
   - [ ] 6.1 Create AWS CDK setup documentation
@@ -123,11 +126,11 @@
     - Include resource cleanup procedures
     - _Requirements: 4.4, 5.4_
 
-- [ ] 7. Checkpoint - Core modules complete
-  - Review Modules 1-6 for consistency and completeness
-  - Validate progressive learning path and difficulty curve
-  - Ensure cross-platform compatibility across all modules
-  - Prepare for Module 7 multi-agent deployment focus
+- [ ] 7. Checkpoint - Multi-agent tracks complete
+  - Review multi-agent implementations for consistency and completeness
+  - Validate progressive learning path from basic to advanced scenarios
+  - Ensure cross-platform compatibility across all multi-agent examples
+  - Prepare for final workshop packaging
   - _Requirements: 1.4, 6.3, 6.4_
 
 - [ ] 8. Create instructor resources
