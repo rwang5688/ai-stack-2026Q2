@@ -2,13 +2,15 @@
 
 This document provides detailed information, including sample code and queries, from the modules leading up to Module 7 in the [Agentic AI with Strands (Agents) SDK and (Amazon Bedrock AgentCore)](https://catalog.workshops.aws/strands/en-US) workshop.  These published workshop modules will teach you how to use Strands Agents SDK to build and deploy agentic AI systems.
 
-**⚠️ AWS Credentials Required:** All examples require AWS credentials with Amazon Bedrock permissions. Ensure your runtime environment has proper IAM permissions to invoke Bedrock models.
-
 ---
 
 ## Environment Setup
 
 See [Cross-Platform Develompent Guide](CROSS_PLATFORM.md) for detailed information about environment setup and runtime execution across different platforms.
+
+**⚠️ AWS Credentials Required:** All examples require AWS credentials with Amazon Bedrock permissions. Ensure your runtime environment has proper IAM permissions to invoke Bedrock models.
+
+**⚠️ Change working directory to the `workshop4` directory:** All examples assume you have changed your working directory to the `workshop4` directory.
 
 ---
 
@@ -33,13 +35,13 @@ The code showcases:
 
 **Standard Version (Linux/macOS):**
 ```bash
-cd workshop4/modules/module1
+cd modules/module1
 uv run mcp_calculator.py
 ```
 
 **Windows GitBash (if connection issues occur):**
 ```bash
-cd workshop4/modules/module1
+cd modules/module1
 uv run mcp_calculator_windows.py
 ```
 
@@ -123,7 +125,7 @@ The code showcases:
 
 **All Platforms (Linux/macOS/Windows):**
 ```bash
-cd workshop4/modules/module2
+cd modules/module2
 uv run weather_forecaster.py
 ```
 
@@ -212,7 +214,7 @@ This step automates the creation of an Amazon Bedrock Knowledge Base using a Pyt
 
 ```bash
 # Navigate to module directory
-cd workshop4/modules/module3
+cd modules/module3
 
 # STEP 1: Clean up any existing resources (REQUIRED)
 uv run cleanup.py
@@ -248,7 +250,7 @@ If are not already in module directory, navigate to module directory.
 **All Platforms (Linux/macOS/Windows):**
 ```bash
 # Navigate to module directory
-cd workshop4/modules/module3
+cd modules/module3
 ```
 
 Once you have changed to module directory, run the knowledge base creation script.
@@ -286,7 +288,7 @@ echo "export OPENSEARCH_HOST=\"$OPENSEARCH_HOST\"" >> ~/.bashrc
 
 **All Platforms (Linux/macOS/Windows):**
 ```bash
-cd workshop4/modules/module3
+cd modules/module3
 uv run knowledge_base_agent.py
 ```
 
@@ -402,7 +404,7 @@ The Research Assistant implements a **three-agent workflow** where each agent ha
 
 **All Platforms (Linux/macOS/Windows):**
 ```bash
-cd workshop4/modules/module4
+cd modules/module4
 uv run agents_workflow.py
 ```
 
@@ -614,7 +616,7 @@ export USER_ID="J"  # Feel free to change this to another name
 
 **All Platforms (Linux/macOS/Windows):**
 ```bash
-cd workshop4/modules/module5
+cd modules/module5
 uv run memory_agent.py
 ```
 
@@ -795,7 +797,7 @@ The Meta-Tooling Agent implements a **single agent with dynamic capability expan
 
 **All Platforms (Linux/macOS/Windows):**
 ```bash
-cd workshop4/modules/module6
+cd modules/module6
 uv run meta_tooling.py
 ```
 
