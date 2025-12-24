@@ -51,7 +51,7 @@
     - Validated both knowledge base queries and personal memory functionality
     - _Requirements: 2.1, 2.5, 5.1_
 
-  - [ ] 3.4 Add Module 4 example
+  - [x] 3.4 Add Module 4 example
     - Port Module 4 code from Agentic AI with Strands (Agents) SDK workshop to examples/module4/
     - Add Module 4 documentation to MODULES.md
     - Test and validate example functionality
