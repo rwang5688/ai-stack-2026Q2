@@ -193,7 +193,7 @@ Both multi-agent workshops follow the same 4-step progressive architecture:
 
 ### Getting Help
 
-- Check [Workshop Modules](WORKSHOP_MODULES.md) for detailed module information
+- Check [Foundational Modules](MODULES.md) for detailed foundational modules information
 - Check [Cross-Platform Development Guide](CROSS_PLATFORM.md) for environment issues
 - Review spec documents in `.kiro/specs/` for implementation details
 - Verify all prerequisites are installed
