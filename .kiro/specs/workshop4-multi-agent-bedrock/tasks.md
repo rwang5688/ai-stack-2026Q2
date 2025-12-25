@@ -1,6 +1,6 @@
 # Implementation Plan
 
-- [ ] 1. Set up project structure for 4-step multi-agent workshop
+- [x] 1. Set up project structure for 4-step multi-agent workshop
   - Create workshop4/multi_agent_bedrock directory with organized subdirectories for each step
   - Set up Step 1 (CLI), Step 2 (UI), Step 3 (Knowledge), Step 4 (Deployment) folders
   - Create shared resources and documentation structure
@@ -8,49 +8,49 @@
   - _Requirements: 1.1_
 
 - [ ] 2. Implement Step 1: CLI Multi-Agent System with Teacher's Assistant Pattern
-  - [ ] 2.1 Create Teacher's Assistant orchestrator agent
+  - [x] 2.1 Create Teacher's Assistant orchestrator agent
     - Implement main orchestrator using Strands Agents SDK with natural language routing
     - Create system prompt for query classification and routing logic
     - Set up callback_handler=None to suppress intermediate outputs
     - Add command-line interface for user interactions
     - _Requirements: 2.1, 2.5_
 
-  - [ ] 2.2 Implement Math Assistant specialized agent
+  - [x] 2.2 Implement Math Assistant specialized agent
     - Create Math Assistant as @tool decorated function
     - Integrate calculator tool for mathematical operations
     - Implement domain-specific system prompt for math queries
     - Add error handling and response formatting
     - _Requirements: 2.2, 2.3_
 
-  - [ ] 2.3 Implement English Assistant specialized agent
+  - [x] 2.3 Implement English Assistant specialized agent
     - Create English Assistant as @tool decorated function
     - Focus on grammar and language comprehension capabilities
     - Implement domain-specific system prompt for English queries
     - Add error handling and response formatting
     - _Requirements: 2.2, 2.3_
 
-  - [ ] 2.4 Implement Language Assistant specialized agent
+  - [x] 2.4 Implement Language Assistant specialized agent
     - Create Language Assistant as @tool decorated function
     - Integrate http_request tool for translation services
     - Implement domain-specific system prompt for translation queries
     - Add error handling and response formatting
     - _Requirements: 2.2, 2.3_
 
-  - [ ] 2.5 Implement Computer Science Assistant specialized agent
+  - [x] 2.5 Implement Computer Science Assistant specialized agent
     - Create Computer Science Assistant as @tool decorated function
     - Integrate python_repl, shell, editor, and file operations tools
     - Implement domain-specific system prompt for programming queries
     - Add error handling and response formatting
     - _Requirements: 2.2, 2.3_
 
-  - [ ] 2.6 Implement General Assistant specialized agent
+  - [x] 2.6 Implement General Assistant specialized agent
     - Create General Assistant as @tool decorated function
     - Handle queries outside specialized domains (no specific tools)
     - Implement general-purpose system prompt
     - Add error handling and response formatting
     - _Requirements: 2.2, 2.3_
 
-  - [ ] 2.7 Create CLI testing interface and sample queries
+  - [x] 2.7 Create CLI testing interface and sample queries
     - Implement command-line interface for testing all agents
     - Create sample queries for each specialized domain
     - Add exit functionality and user guidance
