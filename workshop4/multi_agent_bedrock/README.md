@@ -1,4 +1,4 @@
-# Multi-Agent Example
+# Multi-Agent Example with Strands Agents and Amazon Bedrock
 
 This directory contains the implementation files for the Multi-Agent Example architecture, where specialized agents work together under the coordination of a central orchestrator.
 
