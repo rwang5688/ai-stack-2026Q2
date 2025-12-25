@@ -43,17 +43,20 @@ The Teacher's Assistant implements a **multi-agent coordination pattern** where 
 - **Key Technique**: Dynamic Query Routing with Tool-Agent Pattern
 - **Cross-Platform**: Works on Windows, Linux, and macOS with automatic tool detection
 - **Model Integration**: Amazon Bedrock Nova Pro (`us.amazon.nova-pro-v1:0`) for enhanced reasoning
-- **Tools Used**: calculator, python_repl, shell, http_request, editor, file operations
+- **Tools Used**: calculator, python_repl, shell, http_request, editor, file operations, memory
 - **Output Management**: Clean user experience with suppressed agent intermediates
 - **Progressive Learning**: 4-step implementation from CLI to production deployment
+- **Knowledge Base Integration**: Personal information storage and retrieval (Step 3)
+- **Intelligent Routing**: Automatic determination between educational and knowledge queries
 
 ## Architecture Diagram
 
 ```
-Teacher's Assistant (Orchestrator)
-├── Central coordinator that routes queries to specialists
-├── Query Classification & Routing
+Teacher's Assistant (Orchestrator) + Knowledge Base Router
+├── Central coordinator that routes queries to specialists OR knowledge base
+├── Query Classification & Routing (Educational vs Knowledge)
 │
+├── EDUCATIONAL SPECIALISTS:
 ├── Math Assistant ──────────── Calculator Tool
 │   └── Handles mathematical calculations and concepts
 │
@@ -66,8 +69,14 @@ Teacher's Assistant (Orchestrator)
 ├── Computer Science Assistant ── Python REPL, Shell & File Tools
 │   └── Handles programming and technical concepts
 │
-└── General Assistant ──────── No Specialized Tools
-    └── Processes queries outside specialized domains
+├── General Assistant ──────── No Specialized Tools
+│   └── Processes queries outside specialized domains
+│
+└── KNOWLEDGE BASE SYSTEM:
+    ├── Knowledge Base Agent ─── Memory Tool + Use Agent Tool
+    │   ├── Store Action: "Remember that my birthday is July 25"
+    │   └── Retrieve Action: "What's my birthday?"
+    └── Strands Knowledge Base ── Document Storage & Retrieval
 ```
 
 ## How to Run
@@ -119,6 +128,168 @@ streamlit run app.py
 **Choose Your Interface:**
 - **CLI (Step 1)**: Best for direct testing, scripting, or terminal-based workflows
 - **Web UI (Step 2)**: Best for interactive use, demonstrations, or user-friendly access
+
+### Step 3: Knowledge Base Integration
+
+**Enhanced web interface with knowledge base capabilities for storing and retrieving personal information:**
+
+#### Prerequisites for Step 3
+
+In addition to the basic prerequisites, Step 3 requires:
+- **Strands Knowledge Base ID**: Environment variable configuration
+- **Memory tool access**: Enabled through environment variable
+
+#### Environment Setup
+
+**Option 1: Set environment variable in your shell session (temporary):**
+
+```bash
+# For current session only
+export STRANDS_KNOWLEDGE_BASE_ID="your_knowledge_base_id_here"
+export BYPASS_TOOL_CONSENT="true"
+
+# Verify the variable is set
+echo $STRANDS_KNOWLEDGE_BASE_ID
+```
+
+**Option 2: Add to .bashrc for persistent setup (recommended):**
+
+```bash
+# Add to your .bashrc file
+echo 'export STRANDS_KNOWLEDGE_BASE_ID="your_knowledge_base_id_here"' >> ~/.bashrc
+echo 'export BYPASS_TOOL_CONSENT="true"' >> ~/.bashrc
+
+# Reload your shell configuration
+source ~/.bashrc
+
+# Verify the variables are set
+echo $STRANDS_KNOWLEDGE_BASE_ID
+echo $BYPASS_TOOL_CONSENT
+```
+
+**Option 3: For demonstration/testing without a real knowledge base:**
+
+```bash
+# Use the default demo KB ID for testing
+export STRANDS_KNOWLEDGE_BASE_ID="demokb123"
+export BYPASS_TOOL_CONSENT="true"
+```
+
+#### Running Step 3
+
+```bash
+# Navigate to the multi-agent directory
+cd workshop4/multi_agent_bedrock
+
+# Ensure environment variables are set
+echo "KB ID: $STRANDS_KNOWLEDGE_BASE_ID"
+echo "Tool Consent: $BYPASS_TOOL_CONSENT"
+
+# Run the enhanced Streamlit web app with knowledge base
+streamlit run app.py
+```
+
+#### Step 3 Features
+
+- **Intelligent Query Routing**: Automatically determines whether queries should go to educational specialists or knowledge base
+- **Knowledge Storage**: Store personal information, preferences, and facts
+- **Knowledge Retrieval**: Retrieve previously stored information with natural language queries
+- **Dual Functionality**: Seamlessly combines educational assistance with personal knowledge management
+- **Enhanced UI**: Updated interface showing both educational and knowledge base capabilities
+
+#### Step 3 Sample Interactions
+
+**Knowledge Storage Examples:**
+```
+"Remember that my birthday is July 25"
+"Store this information: I live in Seattle"
+"My favorite programming language is Python"
+"I work as a software engineer at Amazon"
+"My favorite K-pop groups are aespa, BLACKPINK, NMIXX, Hearts2Hearts, Red Velvet, ITZY, and TWICE"
+```
+
+**Knowledge Retrieval Examples:**
+```
+"What's my birthday?"
+"Where do I live?"
+"What is my favorite programming language?"
+"What do you know about my job?"
+"Who are my favorite K-pop groups?"
+```
+
+**Educational Queries (still work as before):**
+```
+"Solve the quadratic equation x^2 + 5x + 6 = 0"
+"Write a Python function to check if a string is a palindrome"
+"Translate 'Hello, how are you?' to Spanish"
+```
+
+#### How Knowledge Base Routing Works
+
+The enhanced Step 3 implementation uses **intelligent dual routing** to seamlessly handle both educational and personal knowledge queries:
+
+1. **Query Analysis**: When you submit a query, the system first determines whether it's:
+   - **Educational** (math, programming, translations, etc.) → Routes to Teacher's Assistant
+   - **Knowledge-based** (storing/retrieving personal information) → Routes to Knowledge Base Agent
+
+2. **Knowledge Base Operations**: For knowledge queries, the system further determines:
+   - **Store Action**: Phrases like "Remember that...", "Store this...", "My favorite..." 
+   - **Retrieve Action**: Questions like "What's my...", "Who are...", "Where do I..."
+
+3. **Clean Response Processing**: Knowledge base responses are automatically cleaned to remove technical metadata and provide user-friendly answers.
+
+#### Knowledge Base Response Examples
+
+**Storage Confirmation:**
+```
+User: "Remember that my birthday is July 25"
+System: "✅ I've stored this information in your knowledge base."
+```
+
+**Retrieval Response:**
+```
+User: "Who are my favorite K-pop groups?"
+System: "Your favorite K-pop groups are: aespa, BLACKPINK, NMIXX, Hearts2Hearts, Red Velvet, ITZY, and TWICE."
+```
+
+**Educational Query (unchanged):**
+```
+User: "Solve x^2 + 5x + 6 = 0"
+System: "Routed to Math Assistant
+
+I'll solve the quadratic equation x² + 5x + 6 = 0 step by step...
+[Full mathematical solution follows]"
+```
+
+#### Troubleshooting Step 3
+
+**Common Issues:**
+
+1. **Knowledge Base ID not set:**
+   ```
+   Error: STRANDS_KNOWLEDGE_BASE_ID environment variable is not set
+   ```
+   **Solution:** Set the environment variable as shown above
+
+2. **Tool consent issues:**
+   ```
+   Error: Tool consent required
+   ```
+   **Solution:** Ensure `BYPASS_TOOL_CONSENT="true"` is set
+
+3. **Environment variables not persisting:**
+   ```bash
+   # Check if variables are set
+   env | grep STRANDS
+   
+   # If not found, re-source your .bashrc
+   source ~/.bashrc
+   ```
+
+4. **Knowledge base connection issues:**
+   - Verify AWS credentials are properly configured
+   - Ensure you have permissions for the knowledge base service
+   - Check that the knowledge base ID exists and is accessible
 
 ## Sample Interactions
 
@@ -236,6 +407,30 @@ Here's a breakdown of the translation:
 If you are speaking in a more formal context, you might use "¿cómo está usted?" instead of "¿cómo estás?". The phrase "usted" is a formal version of "you," often used when addressing someone with whom you are not familiar or in a professional setting.
 ```
 
+### Example 4: Knowledge Base Storage (Step 3)
+
+**Input:**
+```
+Remember that my favorite K-pop groups are aespa, BLACKPINK, NMIXX, Hearts2Hearts, Red Velvet, ITZY, and TWICE
+```
+
+**Expected Output (Routed to Knowledge Base Agent):**
+```
+✅ I've stored this information in your knowledge base.
+```
+
+### Example 5: Knowledge Base Retrieval (Step 3)
+
+**Input:**
+```
+Who are my favorite K-pop groups?
+```
+
+**Expected Output (Routed to Knowledge Base Agent):**
+```
+Your favorite K-pop groups are: aespa, BLACKPINK, NMIXX, Hearts2Hearts, Red Velvet, ITZY, and TWICE.
+```
+
 ## Technical Implementation
 
 ### Cross-Platform Tool Compatibility
@@ -338,6 +533,8 @@ The multi-agent system utilizes several tools to provide specialized capabilitie
 | **http_request** | Web requests | External API access with authentication support | Language Assistant |
 | **editor** | File editing | Code creation and modification with syntax highlighting | English & CS Assistants |
 | **file_read/file_write** | File operations | Reading and writing files for content management | English & CS Assistants |
+| **memory** | Knowledge base operations | Store and retrieve personal information from Strands Knowledge Base | Knowledge Base Agent |
+| **use_agent** | Agent orchestration | Route queries to appropriate agents and process responses | Knowledge Base Agent |
 
 ### Tool Integration Benefits
 
