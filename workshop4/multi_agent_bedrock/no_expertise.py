@@ -1,4 +1,5 @@
 from strands import Agent, tool
+from cross_platform_tools import get_general_tools
 import json
 
 GENERAL_ASSISTANT_SYSTEM_PROMPT = """
@@ -48,7 +49,7 @@ def general_assistant(query: str) -> str:
         print("Routed to General Assistant")
         general_agent = Agent(
             system_prompt=GENERAL_ASSISTANT_SYSTEM_PROMPT,
-            tools=[],  # No specialized tools needed for general knowledge
+            tools=get_general_tools(),  # No specialized tools needed for general knowledge
         )
         agent_response = general_agent(formatted_query)
         text_response = str(agent_response)

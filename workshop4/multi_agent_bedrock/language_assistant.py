@@ -1,5 +1,5 @@
 from strands import Agent, tool
-from strands_tools import http_request
+from cross_platform_tools import get_language_tools
 import json
 
 LANGUAGE_ASSISTANT_SYSTEM_PROMPT = """
@@ -46,7 +46,7 @@ def language_assistant(query: str) -> str:
         print("Routed to Language Assistant")
         language_agent = Agent(
             system_prompt=LANGUAGE_ASSISTANT_SYSTEM_PROMPT,
-            tools=[http_request],
+            tools=get_language_tools(),
         )
         agent_response = language_agent(formatted_query)
         text_response = str(agent_response)

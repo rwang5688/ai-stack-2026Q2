@@ -1,5 +1,5 @@
 from strands import Agent, tool
-from strands_tools import python_repl, shell, file_read, file_write, editor
+from cross_platform_tools import get_computer_science_tools, get_platform_capabilities
 import json
 
 COMPUTER_SCIENCE_ASSISTANT_SYSTEM_PROMPT = """
@@ -49,10 +49,24 @@ def computer_science_assistant(query: str) -> str:
     
     try:
         print("Routed to Computer Science Assistant")
-        # Create the computer science agent with relevant tools
+        
+        # Get available tools for this platform
+        available_tools = get_computer_science_tools()
+        capabilities = get_platform_capabilities()
+        
+        # Add platform-specific guidance to the system prompt
+        platform_note = ""
+        if not capabilities['available_tools']['python_repl']:
+            platform_note += "\nNote: Python code execution is not available on this platform. Provide code examples with explanations instead of executing them."
+        if not capabilities['available_tools']['shell']:
+            platform_note += "\nNote: Shell command execution is not available on this platform. Provide command examples with explanations instead of executing them."
+        
+        enhanced_prompt = COMPUTER_SCIENCE_ASSISTANT_SYSTEM_PROMPT + platform_note
+        
+        # Create the computer science agent with available tools
         cs_agent = Agent(
-            system_prompt=COMPUTER_SCIENCE_ASSISTANT_SYSTEM_PROMPT,
-            tools=[python_repl, shell, file_read, file_write, editor],
+            system_prompt=enhanced_prompt,
+            tools=available_tools,
         )
         agent_response = cs_agent(formatted_query)
         text_response = str(agent_response)

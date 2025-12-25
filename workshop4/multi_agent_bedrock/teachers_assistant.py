@@ -10,7 +10,7 @@ A specialized Strands agent that is the orchestrator to utilize sub-agents and t
 
 from strands import Agent
 from strands.models import BedrockModel
-from strands_tools import file_read, file_write, editor
+from cross_platform_tools import get_platform_capabilities
 
 from computer_science_assistant import computer_science_assistant
 from english_assistant import english_assistant
@@ -64,8 +64,23 @@ teacher_agent = Agent(
 
 # Example usage
 if __name__ == "__main__":
-    print("\n📁 Teacher's Assistant Strands Agent 📁\n")
-    print("Ask a question in any subject area, and I'll route it to the appropriate specialist.")
+    # Display platform capabilities
+    capabilities = get_platform_capabilities()
+    platform_info = capabilities['platform']
+    
+    print(f"\n📁 Teacher's Assistant Strands Agent 📁")
+    print(f"Platform: {platform_info['system']} ({platform_info['platform']})")
+    
+    # Show available tools
+    available_tools = capabilities['available_tools']
+    unavailable_tools = [tool for tool, available in available_tools.items() if not available]
+    
+    if unavailable_tools:
+        print(f"Note: Some tools are not available on {platform_info['system']}: {', '.join(unavailable_tools)}")
+        if 'python_repl' in unavailable_tools or 'shell' in unavailable_tools:
+            print("Computer Science Assistant will provide code examples with explanations instead of execution.")
+    
+    print("\nAsk a question in any subject area, and I'll route it to the appropriate specialist.")
     print("Type 'exit' to quit.")
 
     # Interactive loop

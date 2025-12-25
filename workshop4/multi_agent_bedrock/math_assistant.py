@@ -1,5 +1,5 @@
 from strands import Agent, tool
-from strands_tools import calculator
+from cross_platform_tools import get_math_tools
 import json
 
 MATH_ASSISTANT_SYSTEM_PROMPT = """
@@ -46,7 +46,7 @@ def math_assistant(query: str) -> str:
         # Create the math agent with calculator capability
         math_agent = Agent(
             system_prompt=MATH_ASSISTANT_SYSTEM_PROMPT,
-            tools=[calculator],
+            tools=get_math_tools(),
         )
         agent_response = math_agent(formatted_query)
         text_response = str(agent_response)
