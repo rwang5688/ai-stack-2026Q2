@@ -9,12 +9,14 @@ Progressive learning from basic MCP tools to complex agent interactions, prepari
 
 **Location**: `workshop4/modules/`
 **Spec**: `.kiro/specs/workshop4-modules/`
+**Documentation**: [Foundational Modules Guide](MODULES.md)
 
 ### 2. Multi-Agent System using Strands Agents and Amazon Bedrock
 4-step progressive implementation: CLI → Web UI → Knowledge Base → Production Deployment
 
-**Location**: `workshop4/multi_agent_bedrock/` (planned)
+**Location**: `workshop4/multi_agent_bedrock/`
 **Spec**: `.kiro/specs/workshop4-multi-agent-bedrock/`
+**Documentation**: [Multi-Agent Bedrock Guide](MULTI_AGENT_BEDROCK.md)
 
 ### 3. Multi-Agent System using Strands Agents and Amazon SageMaker AI
 Side-by-side analog of the Bedrock version using SageMaker AI (JumpStart) models
@@ -148,8 +150,8 @@ Both multi-agent workshops follow the same 4-step progressive architecture:
 - **Module 6**: ✅ COMPLETED - Meta-Tooling Agent (Windows compatibility resolved)
 
 ### Multi-Agent Bedrock (workshop4-multi-agent-bedrock)
-- **Status**: 📋 SPEC COMPLETE - Ready for implementation
-- **Step 1**: 🔄 PLANNED - CLI Teacher's Assistant system
+- **Status**: ✅ STEP 1 COMPLETE - CLI Teacher's Assistant system implemented
+- **Step 1**: ✅ COMPLETED - CLI multi-agent system with 5 specialized agents
 - **Step 2**: 🔄 PLANNED - Streamlit web interface
 - **Step 3**: 🔄 PLANNED - Bedrock Knowledge Base integration
 - **Step 4**: 🔄 PLANNED - Production deployment
@@ -193,7 +195,6 @@ Both multi-agent workshops follow the same 4-step progressive architecture:
 
 ### Getting Help
 
-- Check [Foundational Modules](MODULES.md) for detailed foundational modules information
 - Check [Cross-Platform Development Guide](CROSS_PLATFORM.md) for environment issues
 - Review spec documents in `.kiro/specs/` for implementation details
 - Verify all prerequisites are installed
