@@ -1,10 +1,8 @@
-# Workshop 4 Preparation Design Document
+# Workshop 4 Modules Design Document
 
 ## Overview
 
-The Workshop 4 preparation system creates comprehensive, reusable educational materials for Agentic AI development using Strands Agents SDK and AgentCore. The system implements a dual-track approach with both Amazon Bedrock and SageMaker AI implementations, providing students with hands-on experience in multi-agent systems and different AI model integration patterns.
-
-The design emphasizes modularity and reusability, enabling instructors to customize content for different audiences while maintaining consistency across implementations. The workshop infrastructure is deployed using AWS CDK, ensuring reliable and scalable environments for hands-on exercises.
+The Workshop 4 Modules design focuses on foundational Agentic AI concepts using Strands Agents SDK, covering modules 1-6 that build progressive understanding from basic MCP tools to complex agent interactions. The design emphasizes modularity, cross-platform compatibility, and clear learning progression to prepare students for advanced multi-agent implementations.
 
 ## Architecture
 
@@ -12,58 +10,52 @@ The design emphasizes modularity and reusability, enabling instructors to custom
 
 ```mermaid
 graph TB
-    subgraph "Workshop Materials"
-        WM[Workshop Content]
-        DOC[Documentation]
-        EX[Exercises]
-        REF[Reference Implementations]
+    subgraph "Workshop Modules 1-6"
+        M1[Module 1: MCP Calculator]
+        M2[Module 2: Weather Agent]
+        M3[Module 3: Knowledge Base Agent]
+        M4[Module 4: Agent Workflows]
+        M5[Module 5: Memory Agent]
+        M6[Module 6: Meta-Tooling Agent]
     end
     
-    subgraph "Implementation Tracks"
-        BR[Bedrock Track]
-        SM[SageMaker Track]
-        COMP[Comparison Materials]
-    end
-    
-    subgraph "Infrastructure Layer"
-        CDK[AWS CDK]
-        BEDROCK[Amazon Bedrock]
-        SAGEMAKER[SageMaker AI]
-        MCP[MCP Tools]
-    end
-    
-    subgraph "Agent Framework"
+    subgraph "Foundation Layer"
         STRANDS[Strands Agents SDK]
-        CORE[Amazon Bedrock AgentCore]
-        AGENTS[Multi-Agent System]
+        MCP[MCP Tools]
+        DOCS[Documentation System]
+        TESTS[Testing Framework]
     end
     
-    WM --> BR
-    WM --> SM
-    WM --> COMP
+    subgraph "Cross-Platform Support"
+        LINUX[Linux Environment]
+        WINDOWS[Windows Git Bash]
+        COMPAT[Compatibility Layer]
+    end
     
-    BR --> BEDROCK
-    SM --> SAGEMAKER
+    M1 --> STRANDS
+    M2 --> STRANDS
+    M3 --> STRANDS
+    M4 --> STRANDS
+    M5 --> STRANDS
+    M6 --> STRANDS
     
-    BR --> STRANDS
-    SM --> STRANDS
+    STRANDS --> MCP
+    STRANDS --> DOCS
+    STRANDS --> TESTS
     
-    STRANDS --> CORE
-    CORE --> AGENTS
-    
-    CDK --> BEDROCK
-    CDK --> SAGEMAKER
-    CDK --> MCP
+    LINUX --> COMPAT
+    WINDOWS --> COMPAT
+    COMPAT --> STRANDS
 ```
 
 ### Component Architecture
 
-The system follows a layered architecture with clear separation of concerns:
+The system follows a progressive learning architecture with clear module separation:
 
-1. **Content Layer**: Workshop materials, documentation, and exercises
-2. **Implementation Layer**: Bedrock and SageMaker specific implementations
-3. **Framework Layer**: Strands Agents SDK and Amazon Bedrock AgentCore integration
-4. **Infrastructure Layer**: AWS CDK deployment and resource management
+1. **Module Layer**: Individual learning modules with specific objectives
+2. **Foundation Layer**: Strands Agents SDK and MCP tools integration
+3. **Support Layer**: Documentation, testing, and cross-platform compatibility
+4. **Platform Layer**: Linux and Windows (Git Bash) environment support
 
 ## Components and Interfaces
 
@@ -133,41 +125,37 @@ The system follows a layered architecture with clear separation of concerns:
 
 After analyzing all acceptance criteria, several properties can be consolidated to eliminate redundancy:
 
-- Properties 1.1, 1.3, and 2.5 all relate to completeness of materials and can be combined into a comprehensive "Material Completeness" property
-- Properties 2.1, 2.2, and 3.1-3.5 all relate to implementation functionality and can be grouped under "Implementation Correctness" 
-- Properties 4.1-4.5 all relate to infrastructure management and can be consolidated into "Infrastructure Reliability"
-- Properties 5.1-5.5 all relate to exercise functionality and can be combined into "Exercise System Functionality"
-- Properties 6.1-6.5 all relate to modularity and reusability and can be consolidated into "System Modularity"
+- Properties 1.1, 1.3, and 3.2 all relate to completeness of materials and can be combined into a comprehensive "Material Completeness" property
+- Properties 2.1-2.6 are all specific module examples that can be grouped under "Module Functionality"
+- Properties 3.1, 3.3, 3.4, 3.5 all relate to exercise and testing capabilities and can be consolidated into "Exercise System Functionality"
+- Properties 4.1-4.5 all relate to modularity and reusability and can be consolidated into "System Modularity"
+- Properties 1.2, 1.4, 1.5 relate to system consistency and compatibility
 
 ### Core Properties
 
 **Property 1: Material Completeness**
-*For any* workshop configuration, all required documentation, setup instructions, and tutorial materials should be present and accessible
-**Validates: Requirements 1.1, 1.3, 2.5**
+*For any* workshop module (1-6), all required documentation, setup instructions, and tutorial materials should be present and accessible
+**Validates: Requirements 1.1, 1.3, 3.2**
 
-**Property 2: Implementation Equivalence**
-*For any* multi-agent example, both Bedrock and SageMaker implementations should provide equivalent functionality and produce comparable results
-**Validates: Requirements 2.1, 2.2**
+**Property 2: Module Progression Consistency**
+*For any* sequence of modules, each module should build correctly on previous concepts and enable successful progression from basic to complex implementations
+**Validates: Requirements 1.2**
 
-**Property 3: Framework Integration**
-*For any* deployed model (fine-tuned LLM or classification model), it should integrate properly with the Strands Agents SDK architecture and function as expected
-**Validates: Requirements 3.1, 3.2, 3.3, 3.4, 3.5**
+**Property 3: Cross-Platform Compatibility**
+*For any* workshop module, the code and instructions should work correctly on both Linux and Windows (Git Bash) environments
+**Validates: Requirements 1.5**
 
-**Property 4: Infrastructure Reliability**
-*For any* workshop deployment, AWS CDK should provision all required resources, support multiple environments, scale appropriately, and clean up completely
-**Validates: Requirements 4.1, 4.2, 4.3, 4.4, 4.5**
-
-**Property 5: Exercise Validation**
-*For any* workshop exercise, the system should provide proper guidance, validate completion correctly, and enable successful multi-agent interactions
-**Validates: Requirements 2.4, 5.1, 5.2, 5.3, 5.4, 5.5**
-
-**Property 6: Content Consistency**
-*For any* workshop content update, all related materials, code examples, and documentation should remain consistent and synchronized
+**Property 4: Content Consistency**
+*For any* workshop content update, all related materials, code examples, and inter-module references should remain consistent and synchronized
 **Validates: Requirements 1.4**
 
-**Property 7: System Modularity**
-*For any* workshop customization, modular components should be selectable, configurable for different audiences, and maintain backward compatibility
-**Validates: Requirements 1.5, 6.1, 6.2, 6.3, 6.4, 6.5**
+**Property 5: Exercise System Functionality**
+*For any* workshop module, the exercises should provide proper guidance, validate completion correctly, and enable successful agent interactions
+**Validates: Requirements 3.1, 3.3, 3.4, 3.5**
+
+**Property 6: System Modularity**
+*For any* workshop customization, modular components should be selectable, configurable for different audiences, and maintain clear separation between foundational and advanced concepts
+**Validates: Requirements 4.1, 4.2, 4.3, 4.4, 4.5**
 
 ## Error Handling
 

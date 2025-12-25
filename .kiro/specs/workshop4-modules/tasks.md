@@ -84,77 +84,29 @@
     - Foundation ready for multi-agent implementation tracks
     - _Requirements: 2.1, 2.5, 5.1, 5.3_
 
-- [ ] 4. Develop Multi-Agent Bedrock example
-  - [ ] 4.1 Create multi-agent Bedrock example
-    - Develop multi-agent coordination examples using Bedrock
-    - Include agent-to-agent communication patterns
-    - Demonstrate complex workflow orchestration
-    - Document Bedrock-specific multi-agent patterns
-    - _Requirements: 2.2, 3.1, 3.2, 5.3_
-
-  - [ ] 4.2 Create Bedrock multi-agent exercises
-    - Develop hands-on exercises for multi-agent scenarios
-    - Include real-world use case implementations
-    - Provide Bedrock-specific troubleshooting guidance
-    - Document performance optimization techniques
-    - _Requirements: 2.4, 3.1, 3.2, 5.1, 5.2_
-
-- [ ] 5. Develop Multi-Agent SageMaker AI example
-  - [ ] 5.1 Create SageMaker AI example
-    - Develop multi-agent coordination example using SageMaker AI
-    - Document SageMaker AI model integration patterns
-    - Include model fine-tuning examples with JumpStart
-    - Explain Lambda function approach for classification models as MCP tools
-    - _Requirements: 2.2, 3.1, 3.2_
-
-  - [ ] 5.2 Create SageMaker-specific exercises
-    - Develop hands-on exercises for model training and deployment
-    - Include agent integration examples with custom models
-    - Provide SageMaker-specific troubleshooting guidance
-    - _Requirements: 2.4, 3.1, 3.2, 5.1, 5.2_
-
-- [ ] 6. Develop setup and infrastructure guidance
-  - [ ] 6.1 Create AWS CDK setup documentation
-    - Document infrastructure requirements
-    - Provide CDK deployment scripts and guidance
-    - Include environment management instructions
-    - _Requirements: 4.1, 4.2_
-
-  - [ ] 6.2 Create troubleshooting and support materials
-    - Document common issues and solutions
-    - Create debugging guides for both tracks
-    - Include resource cleanup procedures
-    - _Requirements: 4.4, 5.4_
-
-- [ ] 7. Checkpoint - Multi-agent tracks complete
-  - Review multi-agent implementations for consistency and completeness
-  - Validate progressive learning path from basic to advanced scenarios
-  - Ensure cross-platform compatibility across all multi-agent examples
-  - Prepare for final workshop packaging
-  - _Requirements: 1.4, 6.3, 6.4_
-
-- [ ] 8. Create instructor resources
-  - [ ] 8.1 Develop instructor guide and presentation materials
-    - Create comprehensive instructor manual
+- [ ] 4. Create instructor resources and final packaging
+  - [ ] 4.1 Develop instructor guide and presentation materials
+    - Create comprehensive instructor manual for modules 1-6
     - Develop slide decks and presentation materials
     - Include timing and pacing recommendations
     - _Requirements: 1.1, 1.3_
 
-  - [ ] 8.2 Create assessment and validation materials
-    - Develop exercise validation criteria
+  - [ ] 4.2 Create assessment and validation materials
+    - Develop exercise validation criteria for each module
     - Create rubrics for hands-on activities
     - Include optional extension exercises for advanced participants
-    - _Requirements: 2.4, 5.5_
+    - _Requirements: 3.1, 3.5_
 
-- [ ] 9. Final review and packaging
-  - [ ] 9.1 Conduct final content review
-    - Ensure all requirements are addressed
-    - Validate content consistency across tracks
+- [ ] 5. Final review and packaging
+  - [ ] 5.1 Conduct final content review
+    - Ensure all requirements are addressed for modules 1-6
+    - Validate content consistency across modules
     - Check all links and references
-    - _Requirements: 1.4, 6.4_
+    - _Requirements: 1.4, 4.4_
 
-  - [ ] 9.2 Package workshop materials for delivery
-    - Organize final deliverables
+  - [ ] 5.2 Package workshop materials for delivery
+    - Organize final deliverables for foundational modules
     - Create distribution-ready package
     - Include setup verification checklist
-    - _Requirements: 6.1, 6.5_
+    - Prepare foundation for multi-agent workshop extensions
+    - _Requirements: 4.1, 4.5_
