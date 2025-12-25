@@ -8,6 +8,12 @@
 
 This module demonstrates how to implement a multi-agent architecture using Strands Agents with Amazon Bedrock model hosting, where specialized agents work together under the coordination of a central orchestrator. The system uses natural language routing to direct queries to the most appropriate specialized agent based on subject matter expertise, showcasing the **Teacher's Assistant Pattern** and **Tool-Agent Pattern**.
 
+The module follows a **4-step progressive implementation**:
+- **Step 1**: CLI Multi-Agent System (Command-line interface)
+- **Step 2**: Streamlit Web Interface (Web-based user interface)
+- **Step 3**: Knowledge Base Integration (Document-enhanced responses)
+- **Step 4**: Production Deployment (Docker + AWS CDK)
+
 The module showcases:
 - **Multi-Agent Architecture**: Central orchestrator coordinating 5 specialized agents
 - **Tool-Agent Pattern**: Strands agents wrapped as tools using the `@tool` decorator
@@ -15,7 +21,7 @@ The module showcases:
 - **Domain Specialization**: Each agent optimized for specific subject areas with targeted tools
 - **Cross-Platform Compatibility**: Dynamic tool detection and fallbacks for Windows/Linux/macOS
 - **Clean Output Management**: Suppressed intermediate outputs for optimal user experience
-- **Amazon Bedrock Integration**: Using AWS Nova Pro model for enhanced AI capabilities
+- **Amazon Bedrock Integration**: Using AWS Nova Pro model (`us.amazon.nova-pro-v1:0`) for enhanced AI capabilities
 
 ## Agent Architecture
 
@@ -33,12 +39,13 @@ The Teacher's Assistant implements a **multi-agent coordination pattern** where 
 ## Key Features
 
 - **Complexity**: Intermediate level multi-agent coordination
-- **Interaction**: Command line interface with intelligent routing
+- **Interfaces**: Both command-line (Step 1) and web-based (Step 2) interfaces
 - **Key Technique**: Dynamic Query Routing with Tool-Agent Pattern
 - **Cross-Platform**: Works on Windows, Linux, and macOS with automatic tool detection
-- **Model Integration**: Amazon Bedrock Nova Pro for enhanced reasoning
+- **Model Integration**: Amazon Bedrock Nova Pro (`us.amazon.nova-pro-v1:0`) for enhanced reasoning
 - **Tools Used**: calculator, python_repl, shell, http_request, editor, file operations
 - **Output Management**: Clean user experience with suppressed agent intermediates
+- **Progressive Learning**: 4-step implementation from CLI to production deployment
 
 ## Architecture Diagram
 
@@ -67,14 +74,51 @@ Teacher's Assistant (Orchestrator)
 
 **Prerequisites:**
 - AWS credentials configured with Amazon Bedrock permissions
-- Python 3.12+ with uv package manager
+- Python 3.12+ with virtual environment activated
 - Access to Amazon Bedrock Nova Pro model (`us.amazon.nova-pro-v1:0`)
+- Streamlit installed (included in requirements.txt)
 
-**All Platforms (Linux/macOS/Windows):**
+### Step 1: CLI Multi-Agent System
+
+**Command-line interface for direct agent interaction:**
+
 ```bash
+# Navigate to the multi-agent directory
 cd workshop4/multi_agent_bedrock
+
+# Run the CLI version
 uv run teachers_assistant.py
 ```
+
+**Features:**
+- Direct command-line interaction
+- Clean terminal output with routing confirmation
+- Cross-platform tool compatibility
+- Type `exit` to quit
+
+### Step 2: Streamlit Web Interface
+
+**Web-based interface with enhanced user experience:**
+
+```bash
+# Navigate to the multi-agent directory
+cd workshop4/multi_agent_bedrock
+
+# Run the Streamlit web app
+streamlit run app.py
+```
+
+**Features:**
+- User-friendly web interface at `http://localhost:8501`
+- Conversation history and session management
+- Visual service information (Amazon Bedrock + Nova Pro model)
+- Sidebar with specialist descriptions and sample questions
+- Enhanced error handling and loading indicators
+- Clear conversation button
+
+**Choose Your Interface:**
+- **CLI (Step 1)**: Best for direct testing, scripting, or terminal-based workflows
+- **Web UI (Step 2)**: Best for interactive use, demonstrations, or user-friendly access
 
 ## Sample Interactions
 
@@ -302,15 +346,30 @@ The multi-agent system utilizes several tools to provide specialized capabilitie
 - **Real-world Integration**: Agents can interact with external systems and APIs
 - **Interactive Execution**: Real-time code execution and system interaction
 
+## Directory Structure
+
+```
+workshop4/multi_agent_bedrock/
+├── app.py                          # Step 2: Streamlit web interface
+├── teachers_assistant.py           # Step 1: CLI interface  
+├── cross_platform_tools.py         # Cross-platform compatibility
+├── math_assistant.py               # Math specialist
+├── english_assistant.py            # English specialist
+├── language_assistant.py           # Language specialist
+├── computer_science_assistant.py   # CS specialist
+└── no_expertise.py                 # General assistant
+```
+
 ## Implementation Files
 
-- **[cross_platform_tools.py](multi_agent_bedrock/cross_platform_tools.py)** - Cross-platform tool detection and import management
-- **[teachers_assistant.py](multi_agent_bedrock/teachers_assistant.py)** - Main orchestrator agent with routing logic
-- **[math_assistant.py](multi_agent_bedrock/math_assistant.py)** - Mathematical specialist with calculator integration
-- **[english_assistant.py](multi_agent_bedrock/english_assistant.py)** - Language arts specialist with file operations
-- **[language_assistant.py](multi_agent_bedrock/language_assistant.py)** - Translation specialist with HTTP capabilities
-- **[computer_science_assistant.py](multi_agent_bedrock/computer_science_assistant.py)** - Programming specialist with platform-aware tools
-- **[no_expertise.py](multi_agent_bedrock/no_expertise.py)** - General knowledge assistant for non-specialized queries
+- **[app.py](multi_agent_bedrock/app.py)** - Step 2: Streamlit web interface for multi-agent system with conversation history, enhanced UX, and Amazon Bedrock service identification
+- **[teachers_assistant.py](multi_agent_bedrock/teachers_assistant.py)** - Step 1: CLI orchestrator agent with routing logic and command-line interface
+- **[cross_platform_tools.py](multi_agent_bedrock/cross_platform_tools.py)** - Cross-platform tool detection and import management for Windows/Linux/macOS compatibility
+- **[math_assistant.py](multi_agent_bedrock/math_assistant.py)** - Mathematical specialist with calculator integration for equations and mathematical concepts
+- **[english_assistant.py](multi_agent_bedrock/english_assistant.py)** - Language arts specialist with file operations for writing, grammar, and literature
+- **[language_assistant.py](multi_agent_bedrock/language_assistant.py)** - Translation specialist with HTTP capabilities for language-related queries
+- **[computer_science_assistant.py](multi_agent_bedrock/computer_science_assistant.py)** - Programming specialist with platform-aware tools (python_repl, shell, editor, file operations)
+- **[no_expertise.py](multi_agent_bedrock/no_expertise.py)** - General knowledge assistant for queries outside specialized domains (no specific tools)
 
 ## Amazon Bedrock Integration
 
@@ -320,7 +379,7 @@ The system uses Amazon Bedrock's Nova Pro model for enhanced reasoning capabilit
 
 ```python
 bedrock_model = BedrockModel(
-    model_id="us.amazon.nova-pro-v1:0",
+    model_id="us.amazon.nova-pro-v1:0",  # Amazon Nova Pro via Amazon Bedrock
     temperature=0.3,
 )
 ```
@@ -330,6 +389,7 @@ bedrock_model = BedrockModel(
 - **Domain Expertise**: Better understanding of specialized subject areas
 - **Natural Language Processing**: Improved query classification and routing
 - **Cost Efficiency**: Optimized pricing for production workloads
+- **Cross-Region Support**: Can use cross-region inference profile IDs for multi-region deployments
 
 ### AWS Prerequisites
 
@@ -345,12 +405,13 @@ bedrock_model = BedrockModel(
 1. **Add Memory**: Implement session memory so the system remembers previous interactions
 2. **Add More Specialists**: Create additional specialized agents for other domains (Science, History, Art)
 3. **Implement Agent Collaboration**: Enable multiple agents to collaborate on complex queries
-4. **Create a Web Interface**: Build a Streamlit web UI for the teacher's assistant (Step 2)
-5. **Add Evaluation**: Implement a system to evaluate and improve routing accuracy
-6. **Performance Monitoring**: Track agent performance and response quality
-7. **Multi-Modal Support**: Add support for image, audio, and document processing
-8. **Advanced Routing**: Implement confidence scoring and fallback mechanisms
-9. **Enhanced Cross-Platform Support**: Add more platform-specific optimizations
+4. **Add Knowledge Base**: Integrate Bedrock Knowledge Base for document-enhanced responses (Step 3)
+5. **Production Deployment**: Deploy using Docker and AWS CDK infrastructure (Step 4)
+6. **Add Evaluation**: Implement a system to evaluate and improve routing accuracy
+7. **Performance Monitoring**: Track agent performance and response quality
+8. **Multi-Modal Support**: Add support for image, audio, and document processing
+9. **Advanced Routing**: Implement confidence scoring and fallback mechanisms
+10. **Enhanced Cross-Platform Support**: Add more platform-specific optimizations
 
 ### Advanced Use Cases
 
@@ -380,9 +441,10 @@ aws bedrock list-foundation-models --region us-west-2
 ```
 
 **Model Access:**
-- Ensure you have access to the Nova Pro model in your region
+- Ensure you have access to Amazon Nova Pro model (`us.amazon.nova-pro-v1:0`) in your region
 - Check Amazon Bedrock console for model availability
 - Verify IAM permissions for bedrock:InvokeModel
+- For multi-region deployments, consider using cross-region inference profile IDs
 
 **Import Errors:**
 - Ensure all required packages are installed: `uv pip install -r requirements.txt`
@@ -408,11 +470,24 @@ aws bedrock list-foundation-models --region us-west-2
 
 ## Usage Notes
 
+### CLI Version (Step 1)
 - Type `exit` to quit the application
 - Press `Ctrl+C` to stop the program
+- Each agent provides routing confirmation for transparency
+- Clean terminal output with suppressed intermediate processing
+
+### Web Interface (Step 2)
+- Access via browser at `http://localhost:8501`
+- Use the sidebar for specialist information and sample questions
+- Conversation history is maintained during the session
+- Use "Clear Conversation" button to start fresh
+- Loading indicators show processing status
+
+### General Guidelines
 - Avoid entering sensitive or PII data in queries
 - Be patient with complex queries - they may take time to process
-- Each agent provides routing confirmation for transparency
+- Cross-platform compatibility automatically adapts tool availability
+- Service information clearly shows "Amazon Bedrock" and model details
 
 ---
 
