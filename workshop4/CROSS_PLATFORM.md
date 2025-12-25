@@ -169,6 +169,159 @@ $env:AWS_DEFAULT_REGION="us-east-1"
    time.sleep(5)
    ```
 
+### Cross-Platform Tool Imports (Multi-Agent Systems)
+
+**Issue:** Strands tools `python_repl` and `shell` fail on Windows due to Unix-only dependencies (`fcntl`, `pty`, `termios`)
+
+**Root Cause:** These tools import Unix-specific modules that don't exist on Windows
+
+**Solution:** Dynamic platform detection with tool fallbacks using `cross_platform_tools.py`
+
+#### Implementation Pattern
+
+**1. Create Cross-Platform Tool Module:**
+```python
+# cross_platform_tools.py
+import platform
+
+def get_platform_info():
+    """Get detailed platform information."""
+    return {
+        'system': platform.system(),
+        'is_windows': platform.system().lower() == 'windows',
+        'is_linux': platform.system().lower() == 'linux',
+        'is_macos': platform.system().lower() == 'darwin'
+    }
+
+def import_platform_tools():
+    """Import platform-specific tools with fallbacks."""
+    platform_info = get_platform_info()
+    
+    if platform_info['is_windows']:
+        # Windows: Skip problematic tools
+        print("Detected Windows - using limited tool set")
+        python_repl = None
+        shell = None
+    else:
+        # Linux/macOS: Import all tools
+        try:
+            from strands_tools import python_repl, shell
+            print(f"Detected {platform_info['system']} - full tool set available")
+        except ImportError:
+            python_repl = None
+            shell = None
+
+def get_computer_science_tools():
+    """Get tools available for Computer Science Assistant."""
+    tools = [file_read, file_write, editor]  # Always available
+    
+    if python_repl:
+        tools.append(python_repl)
+    if shell:
+        tools.append(shell)
+    
+    return tools
+```
+
+**2. Update Agent Imports:**
+```python
+# Before (fails on Windows):
+from strands_tools import python_repl, shell, file_read, file_write, editor
+
+# After (cross-platform):
+from cross_platform_tools import get_computer_science_tools, get_platform_capabilities
+```
+
+**3. Dynamic Tool Assignment:**
+```python
+# Before (static tool list):
+cs_agent = Agent(
+    system_prompt=SYSTEM_PROMPT,
+    tools=[python_repl, shell, file_read, file_write, editor]
+)
+
+# After (dynamic tool list):
+available_tools = get_computer_science_tools()
+cs_agent = Agent(
+    system_prompt=enhanced_prompt,
+    tools=available_tools
+)
+```
+
+**4. Platform-Aware System Prompts:**
+```python
+capabilities = get_platform_capabilities()
+platform_note = ""
+
+if not capabilities['available_tools']['python_repl']:
+    platform_note += "\nNote: Python code execution not available. Provide code examples with explanations."
+
+if not capabilities['available_tools']['shell']:
+    platform_note += "\nNote: Shell execution not available. Provide command examples with explanations."
+
+enhanced_prompt = BASE_SYSTEM_PROMPT + platform_note
+```
+
+#### Tool Availability Matrix
+
+| Tool | Linux | macOS | Windows | Fallback Behavior |
+|------|-------|-------|---------|-------------------|
+| `calculator` | ✓ | ✓ | ✓ | Always available |
+| `http_request` | ✓ | ✓ | ✓ | Always available |
+| `file_read` | ✓ | ✓ | ✓ | Always available |
+| `file_write` | ✓ | ✓ | ✓ | Always available |
+| `editor` | ✓ | ✓ | ✓ | Always available |
+| `python_repl` | ✓ | ✓ | ✗ | Code examples instead of execution |
+| `shell` | ✓ | ✓ | ✗ | Command examples instead of execution |
+
+#### Platform Detection Output
+
+**Linux/macOS:**
+```
+Detected Linux platform - full tool set available
+Platform: Linux (Linux-5.15.0-generic-x86_64-with-glibc2.35)
+Available tools:
+    ✓ calculator
+    ✓ http_request
+    ✓ file_read
+    ✓ file_write
+    ✓ editor
+    ✓ python_repl
+    ✓ shell
+```
+
+**Windows:**
+```
+Detected Windows platform - using limited tool set (python_repl and shell not available)
+Platform: Windows (Windows-11-10.0.26100-SP0)
+Note: Some tools are not available on Windows: python_repl, shell
+Computer Science Assistant will provide code examples with explanations instead of execution.
+Available tools:
+    ✓ calculator
+    ✓ http_request
+    ✓ file_read
+    ✓ file_write
+    ✓ editor
+    ✗ python_repl
+    ✗ shell
+```
+
+#### Benefits of This Approach
+
+1. **Automatic Detection**: No manual platform configuration needed
+2. **Graceful Degradation**: Agents adapt behavior based on available tools
+3. **Consistent Interface**: Same code works across all platforms
+4. **Clear Feedback**: Users understand platform limitations
+5. **Future-Proof**: Easy to add new tools or platforms
+6. **Reusable**: Can be used across multiple workshop steps (CLI, Streamlit, etc.)
+
+#### Usage in Multi-Agent Systems
+
+**Step 1 (CLI):** Direct integration with `teachers_assistant.py`
+**Step 2 (Streamlit):** Import `cross_platform_tools` in `app.py`
+**Step 3 (Knowledge Base):** Enhanced agents maintain cross-platform compatibility
+**Step 4 (Production):** Docker containers can use appropriate base images per platform
+
 ### Path Handling
 
 **Linux/macOS:**

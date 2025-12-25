@@ -13,6 +13,7 @@ The module showcases:
 - **Tool-Agent Pattern**: Strands agents wrapped as tools using the `@tool` decorator
 - **Natural Language Routing**: Intelligent query classification and agent selection
 - **Domain Specialization**: Each agent optimized for specific subject areas with targeted tools
+- **Cross-Platform Compatibility**: Dynamic tool detection and fallbacks for Windows/Linux/macOS
 - **Clean Output Management**: Suppressed intermediate outputs for optimal user experience
 - **Amazon Bedrock Integration**: Using AWS Nova Pro model for enhanced AI capabilities
 
@@ -34,6 +35,7 @@ The Teacher's Assistant implements a **multi-agent coordination pattern** where 
 - **Complexity**: Intermediate level multi-agent coordination
 - **Interaction**: Command line interface with intelligent routing
 - **Key Technique**: Dynamic Query Routing with Tool-Agent Pattern
+- **Cross-Platform**: Works on Windows, Linux, and macOS with automatic tool detection
 - **Model Integration**: Amazon Bedrock Nova Pro for enhanced reasoning
 - **Tools Used**: calculator, python_repl, shell, http_request, editor, file operations
 - **Output Management**: Clean user experience with suppressed agent intermediates
@@ -192,6 +194,29 @@ If you are speaking in a more formal context, you might use "¿cómo está usted
 
 ## Technical Implementation
 
+### Cross-Platform Tool Compatibility
+
+The system uses dynamic platform detection to ensure compatibility across Windows, Linux, and macOS:
+
+```python
+# cross_platform_tools.py handles platform-specific tool imports
+from cross_platform_tools import get_computer_science_tools, get_platform_capabilities
+
+# Automatic platform detection and tool fallbacks
+capabilities = get_platform_capabilities()
+available_tools = get_computer_science_tools()
+
+# Platform-aware system prompts
+if not capabilities['available_tools']['python_repl']:
+    platform_note += "Note: Python code execution not available. Providing code examples with explanations."
+```
+
+**Tool Availability by Platform:**
+- **Windows**: Core tools (calculator, http_request, file operations, editor) ✓, execution tools (python_repl, shell) ✗
+- **Linux/macOS**: All tools available ✓
+
+For detailed cross-platform implementation, see [Cross-Platform Development Guide](CROSS_PLATFORM.md).
+
 ### 1. Teacher's Assistant (Orchestrator)
 
 The `teacher_assistant` acts as the central coordinator that analyzes incoming natural language queries, determines the most appropriate specialized agent, and routes queries to that agent.
@@ -236,11 +261,13 @@ def math_assistant(query: str) -> str:
 ```
 
 **Agent Specializations:**
-- **Math Assistant**: Mathematical calculations using `calculator` tool
-- **English Assistant**: Writing and grammar using `editor`, `file_read`, `file_write` tools
-- **Language Assistant**: Translations using `http_request` tool
-- **Computer Science Assistant**: Programming using `python_repl`, `shell`, `editor`, file operations
-- **General Assistant**: General knowledge without specialized tools
+- **Math Assistant**: Mathematical calculations using `calculator` tool (cross-platform)
+- **English Assistant**: Writing and grammar using `editor`, `file_read`, `file_write` tools (cross-platform)
+- **Language Assistant**: Translations using `http_request` tool (cross-platform)
+- **Computer Science Assistant**: Programming using available tools based on platform detection
+  - **Linux/macOS**: `python_repl`, `shell`, `editor`, file operations (full functionality)
+  - **Windows**: `editor`, file operations (code examples with explanations)
+- **General Assistant**: General knowledge without specialized tools (cross-platform)
 
 ### 3. Tool-Agent Pattern
 
@@ -249,6 +276,7 @@ This example demonstrates the **Tool-Agent Pattern** where Strands agents are wr
 **Benefits:**
 - **Modularity**: Each agent can be developed and tested independently
 - **Scalability**: Easy to add new specialized agents
+- **Cross-Platform Compatibility**: Automatic adaptation to platform capabilities
 - **Maintainability**: Clear separation of concerns and responsibilities
 - **Reusability**: Specialized agents can be used in other contexts
 
@@ -276,11 +304,12 @@ The multi-agent system utilizes several tools to provide specialized capabilitie
 
 ## Implementation Files
 
+- **[cross_platform_tools.py](multi_agent_bedrock/cross_platform_tools.py)** - Cross-platform tool detection and import management
 - **[teachers_assistant.py](multi_agent_bedrock/teachers_assistant.py)** - Main orchestrator agent with routing logic
 - **[math_assistant.py](multi_agent_bedrock/math_assistant.py)** - Mathematical specialist with calculator integration
 - **[english_assistant.py](multi_agent_bedrock/english_assistant.py)** - Language arts specialist with file operations
 - **[language_assistant.py](multi_agent_bedrock/language_assistant.py)** - Translation specialist with HTTP capabilities
-- **[computer_science_assistant.py](multi_agent_bedrock/computer_science_assistant.py)** - Programming specialist with execution tools
+- **[computer_science_assistant.py](multi_agent_bedrock/computer_science_assistant.py)** - Programming specialist with platform-aware tools
 - **[no_expertise.py](multi_agent_bedrock/no_expertise.py)** - General knowledge assistant for non-specialized queries
 
 ## Amazon Bedrock Integration
@@ -316,11 +345,12 @@ bedrock_model = BedrockModel(
 1. **Add Memory**: Implement session memory so the system remembers previous interactions
 2. **Add More Specialists**: Create additional specialized agents for other domains (Science, History, Art)
 3. **Implement Agent Collaboration**: Enable multiple agents to collaborate on complex queries
-4. **Create a Web Interface**: Build a Streamlit web UI for the teacher's assistant
+4. **Create a Web Interface**: Build a Streamlit web UI for the teacher's assistant (Step 2)
 5. **Add Evaluation**: Implement a system to evaluate and improve routing accuracy
 6. **Performance Monitoring**: Track agent performance and response quality
 7. **Multi-Modal Support**: Add support for image, audio, and document processing
 8. **Advanced Routing**: Implement confidence scoring and fallback mechanisms
+9. **Enhanced Cross-Platform Support**: Add more platform-specific optimizations
 
 ### Advanced Use Cases
 
