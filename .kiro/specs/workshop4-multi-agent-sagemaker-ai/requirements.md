@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This specification defines the requirements for creating Module 7: Building Multi-Agent with Strands using Amazon SageMaker AI model hosting. This implementation serves as a side-by-side analog to the Bedrock version, following the same 4-step progressive approach: (1) CLI multi-agent system using Teacher's Assistant pattern, (2) Streamlit web interface integration, (3) knowledge base enhancement, and (4) production deployment using AWS CDK, Docker, and ECS Fargate. The key difference is using SageMaker AI (JumpStart) models instead of Bedrock models.
+This specification defines the requirements for creating Module 7: Building Multi-Agent with Strands using Amazon SageMaker AI model hosting. This implementation serves as a side-by-side analog to the Bedrock version, following the same 6-step progressive approach: (1) CLI multi-agent system using Teacher's Assistant pattern, (2) Streamlit web interface integration, (3) knowledge base enhancement, (4) Memory integration and enhanced UI features, (5) production deployment using AWS CDK, Docker, and ECS Fargate, and (6) comprehensive documentation and workshop materials. The key difference is using SageMaker AI (JumpStart) models instead of Bedrock models.
 
 ## Glossary
 

@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This specification defines the requirements for creating Module 7: Building Multi-Agent with Strands using Amazon Bedrock model hosting. Building on the foundational concepts from Workshop 4 Modules 1-6, this 5-step progressive implementation demonstrates how to build, enhance, and deploy a multi-agent system using Strands Agents SDK with Amazon Bedrock, progressing from command-line interface to production web deployment.
+This specification defines the requirements for creating Module 7: Building Multi-Agent with Strands using Amazon Bedrock model hosting. Building on the foundational concepts from Workshop 4 Modules 1-6, this 6-step progressive implementation demonstrates how to build, enhance, and deploy a multi-agent system using Strands Agents SDK with Amazon Bedrock: (1) CLI multi-agent system using Teacher's Assistant pattern, (2) Streamlit web interface integration, (3) Bedrock Knowledge Base enhancement, (4) Memory integration and enhanced UI features, (5) production deployment using AWS CDK, Docker, and ECS Fargate, and (6) comprehensive documentation and workshop materials.
 
 ## Glossary
 
