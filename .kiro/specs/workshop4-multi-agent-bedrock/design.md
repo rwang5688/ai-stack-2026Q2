@@ -2,11 +2,11 @@
 
 ## Overview
 
-This design focuses on Module 7: Building Multi-Agent with Strands using Amazon Bedrock model hosting. The design follows a 4-step progressive approach: (1) CLI multi-agent system using Teacher's Assistant pattern, (2) Streamlit web interface integration, (3) Bedrock Knowledge Base enhancement, and (4) production deployment using AWS CDK, Docker, and ECS Fargate. Strands Agents SDK provides the multi-agent framework while Amazon Bedrock hosts the foundation models.
+This design focuses on Module 7: Building Multi-Agent with Strands using Amazon Bedrock model hosting. The design follows a 6-step progressive approach: (1) CLI multi-agent system using Teacher's Assistant pattern, (2) Streamlit web interface integration, (3) Bedrock Knowledge Base enhancement, (4) Memory integration and enhanced UI features, (5) production deployment using AWS CDK, Docker, and ECS Fargate, and (6) comprehensive documentation and workshop materials. Strands Agents SDK provides the multi-agent framework while Amazon Bedrock hosts the foundation models.
 
 ## Architecture
 
-### High-Level 4-Step Architecture
+### High-Level 6-Step Architecture
 
 ```mermaid
 graph TB
@@ -30,17 +30,30 @@ graph TB
         ENHANCED_AGENTS[Knowledge-Enhanced Agents]
     end
     
-    subgraph "Step 4: Production Deployment"
+    subgraph "Step 4: Memory Integration & Enhanced UI"
+        MEMORY[Memory Agent with OpenSearch]
+        MODEL_SELECT[Model Selection Dropdown]
+        AGENT_TOGGLES[Teacher Agent Toggles]
+        AGENT_TYPES[Agent Type Selection]
+    end
+    
+    subgraph "Step 5: Production Deployment"
         DOCKER[Docker Container]
         CDK[AWS CDK Infrastructure]
         ECS[ECS Fargate Cluster]
         PROD_APP[Production Streamlit App]
     end
     
+    subgraph "Step 6: Documentation & Materials"
+        DOCS[Workshop Documentation]
+        GUIDES[Setup & Tutorial Guides]
+        MATERIALS[Instructor Materials]
+    end
+    
     subgraph "Amazon Bedrock Model Hosting"
         BEDROCK[Amazon Bedrock Service]
-        CLAUDE[Claude Models]
-        TITAN[Titan Models]
+        NOVA[Nova Models - Pro/Lite/Micro]
+        CLAUDE[Claude Models - 3.5 Haiku/3.7 Sonnet/Sonnet 4]
     end
     
     subgraph "Strands Framework Integration"
@@ -61,9 +74,17 @@ graph TB
     KB --> S3
     ENHANCED_AGENTS --> KB
     
+    MEMORY --> ENHANCED_AGENTS
+    MODEL_SELECT --> BEDROCK
+    AGENT_TOGGLES --> TEACHER
+    AGENT_TYPES --> MEMORY
+    
     DOCKER --> PROD_APP
     CDK --> ECS
     ECS --> DOCKER
+    
+    DOCS --> GUIDES
+    GUIDES --> MATERIALS
     
     MATH --> BEDROCK
     ENG --> BEDROCK
@@ -71,8 +92,8 @@ graph TB
     CS --> BEDROCK
     GEN --> BEDROCK
     
+    BEDROCK --> NOVA
     BEDROCK --> CLAUDE
-    BEDROCK --> TITAN
     
     STRANDS --> TEACHER
     STRANDS --> TOOLS
@@ -81,12 +102,14 @@ graph TB
 
 ### Component Architecture
 
-The system follows a progressive 4-step architecture with clear learning progression:
+The system follows a progressive 6-step architecture with clear learning progression:
 
 1. **Step 1 - CLI Foundation**: Teacher's Assistant pattern with 5 specialized agents using Tool-Agent Pattern
 2. **Step 2 - Web Interface**: Streamlit integration for user-friendly web-based interactions
 3. **Step 3 - Knowledge Enhancement**: Bedrock Knowledge Base integration with S3 document storage
-4. **Step 4 - Production Deployment**: AWS CDK infrastructure with Docker containerization and ECS Fargate hosting
+4. **Step 4 - Memory Integration & Enhanced UI**: Memory agent integration, model selection, and agent customization
+5. **Step 5 - Production Deployment**: AWS CDK infrastructure with Docker containerization and ECS Fargate hosting
+6. **Step 6 - Documentation & Materials**: Comprehensive workshop documentation and instructor resources
 
 ## Components and Interfaces
 
@@ -132,23 +155,62 @@ The system follows a progressive 4-step architecture with clear learning progres
 - Knowledge base querying and retrieval patterns
 - Integration with existing specialized agents
 
-### Step 4: Production Deployment
+### Step 4: Memory Integration and Enhanced UI Features
+
+**Memory Agent Integration**
+- Integration of memory capabilities from workshop4/modules/module5/memory_agent.py
+- OpenSearch backend support with graceful fallback when OPENSEARCH_HOST is undefined
+- Memory operations: store, retrieve, and list functionality
+- User-specific memory management with USER_ID support
+
+**Enhanced UI Features**
+- Model selection dropdown with multiple Bedrock model options:
+  - us.amazon.nova-pro-v1:0 (Amazon Nova Pro)
+  - us.amazon.nova-lite-v1:0 (Amazon Nova Lite) 
+  - us.amazon.nova-micro-v1:0 (Amazon Nova Micro)
+  - anthropic.claude-3-5-haiku-20241022-v1:0 (Claude 3.5 Haiku)
+  - anthropic.claude-3-7-sonnet-20250219-v1:0 (Claude 3.7 Sonnet)
+  - anthropic.claude-sonnet-4-20250514-v1:0 (Claude Sonnet 4)
+
+**Teacher Agent Customization**
+- Individual toggle controls for each specialized teacher agent
+- Dynamic agent selection: Math, Language, Computer Science, English assistants
+- Configurable agent combinations based on user preferences
+- Maintains existing Tool-Agent Pattern with selective activation
+
+### Step 5: Production Deployment
 
 **Containerization**
-- Docker container packaging of the Streamlit multi-agent application
-- Container optimization for production deployment
-- Environment configuration and dependency management
+- Docker container packaging of the Streamlit multi-agent application with memory integration
+- Container optimization for production deployment with all enhanced features
+- Environment configuration and dependency management for memory backends
+- Testing container locally with full feature set validation
 
 **AWS CDK Infrastructure**
-- Infrastructure as Code for ECS Fargate cluster
-- Supporting AWS services (VPC, Load Balancer, etc.)
-- Monitoring and logging infrastructure
-- Cost optimization and resource management
+- Infrastructure as Code for ECS Fargate cluster deployment
+- Supporting AWS services (VPC, Load Balancer, etc.) with memory backend support
+- Monitoring and logging infrastructure for multi-agent system
+- Cost optimization and resource management for production workloads
 
 **ECS Fargate Deployment**
-- Serverless container hosting for the multi-agent application
+- Serverless container hosting for the enhanced multi-agent application
 - Auto-scaling and high availability configuration
 - Production monitoring and maintenance procedures
+- Integration with OpenSearch backend for memory functionality
+
+### Step 6: Documentation and Workshop Materials
+
+**Comprehensive Documentation**
+- Complete 6-step workshop documentation with setup guides
+- Detailed tutorials for each step with clear progression
+- Troubleshooting and FAQ documentation for memory integration
+- Instructor guide and presentation materials
+
+**Modular Component Documentation**
+- Reusable multi-agent patterns and components
+- Customization and adaptation guides for model selection and agent toggles
+- Integration APIs and interface documentation
+- Performance tuning guides for different Bedrock models
 
 ## Data Models
 
@@ -204,22 +266,24 @@ interface BedrockModelConfig {
 After analyzing all acceptance criteria, several properties can be consolidated to eliminate redundancy:
 
 - Properties 1.1 and related documentation requirements can be combined into "Material Completeness"
-- Properties 1.2-1.5 all relate to step completion and can be grouped under "4-Step Progression Correctness"
+- Properties 1.2-1.7 all relate to step completion and can be grouped under "6-Step Progression Correctness"
 - Properties 2.1-2.5 all relate to CLI multi-agent functionality and can be consolidated into "CLI Multi-Agent System Functionality"
 - Properties 3.1-3.5 all relate to web interface and can be consolidated into "Web Interface Integration"
 - Properties 4.1-4.5 all relate to knowledge base integration and can be consolidated into "Knowledge Base Integration"
-- Properties 5.1-5.5 all relate to deployment and can be consolidated into "Production Deployment Correctness"
-- Properties 6.1-6.5 all relate to modularity and reusability and can be consolidated into "System Modularity"
+- Properties 5.1-5.5 all relate to memory integration and enhanced UI and can be consolidated into "Memory Integration and Enhanced UI"
+- Properties 6.1-6.5 all relate to modularity and reusability and can be consolidated into "System Modularity and Configuration"
+- Properties 7.1-7.5 all relate to production deployment and can be consolidated into "Production Deployment Correctness"
+- Properties 8.1-8.5 all relate to documentation and materials and can be consolidated into "Material Completeness"
 
 ### Core Properties
 
 **Property 1: Material Completeness**
-*For any* workshop step (1-4), all required documentation, setup instructions, and tutorial materials should be present and accessible
-**Validates: Requirements 1.1**
+*For any* workshop step (1-6), all required documentation, setup instructions, and tutorial materials should be present and accessible
+**Validates: Requirements 1.1, 8.1, 8.2, 8.3, 8.4, 8.5**
 
-**Property 2: 4-Step Progression Correctness**
-*For any* completed workshop step, the implementation should work correctly and enable progression to the next step (CLI → UI → Knowledge → Deployment)
-**Validates: Requirements 1.2, 1.3, 1.4, 1.5**
+**Property 2: 6-Step Progression Correctness**
+*For any* completed workshop step, the implementation should work correctly and enable progression to the next step (CLI → UI → Knowledge → Memory/UI → Deployment → Documentation)
+**Validates: Requirements 1.2, 1.3, 1.4, 1.5, 1.6, 1.7**
 
 **Property 3: CLI Multi-Agent System Functionality**
 *For any* query submitted to the Teacher's Assistant system, it should route correctly to the appropriate specialized agent and return a proper response using Bedrock models
@@ -233,12 +297,16 @@ After analyzing all acceptance criteria, several properties can be consolidated 
 *For any* document stored in the Bedrock Knowledge Base, agents should be able to retrieve and use relevant information correctly in their responses
 **Validates: Requirements 4.1, 4.2, 4.3, 4.4, 4.5**
 
-**Property 6: Production Deployment Correctness**
-*For any* production deployment using CDK, Docker, and ECS Fargate, the containerized multi-agent application should run correctly with proper monitoring and maintenance capabilities
+**Property 6: Memory Integration and Enhanced UI**
+*For any* memory operation (store/retrieve) and UI enhancement (model selection/agent toggles), the system should integrate correctly with existing multi-agent functionality while providing graceful fallbacks
 **Validates: Requirements 5.1, 5.2, 5.3, 5.4, 5.5**
 
-**Property 7: System Modularity**
-*For any* customization or extension of the multi-agent system, modular components should be configurable, reusable, and maintain clear separation between application logic and infrastructure
+**Property 7: Production Deployment Correctness**
+*For any* production deployment using CDK, Docker, and ECS Fargate, the containerized multi-agent application should run correctly with proper monitoring and maintenance capabilities
+**Validates: Requirements 7.1, 7.2, 7.3, 7.4, 7.5**
+
+**Property 8: System Modularity and Configuration**
+*For any* customization or extension of the multi-agent system, modular components should be configurable, reusable, and maintain clear separation between application logic and configuration
 **Validates: Requirements 6.1, 6.2, 6.3, 6.4, 6.5**
 
 ## Error Handling

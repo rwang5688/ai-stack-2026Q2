@@ -1,8 +1,8 @@
 # Implementation Plan
 
-- [ ] 1. Set up project structure for 4-step multi-agent workshop with SageMaker AI
+- [ ] 1. Set up project structure for 6-step multi-agent workshop with SageMaker AI
   - Create workshop4/multi_agent_sagemaker_ai directory with organized subdirectories for each step
-  - Set up Step 1 (CLI), Step 2 (UI), Step 3 (Knowledge), Step 4 (Deployment) folders for SageMaker AI integration
+  - Set up Step 1 (CLI), Step 2 (UI), Step 3 (Knowledge), Step 4 (Memory/UI), Step 5 (Deployment), Step 6 (Documentation) folders for SageMaker AI integration
   - Create shared resources and documentation structure for SageMaker workflows
   - Set up testing framework for multi-agent scenarios with SageMaker AI models
   - _Requirements: 1.1_
@@ -131,84 +131,139 @@
   - Verify document management and indexing workflows work properly with SageMaker AI
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
 
-- [ ] 8. Implement Step 4: Production Deployment with SageMaker AI and Memory
-  - [ ] 8.1 Add session memory and conversation persistence for SageMaker workflows
-    - Implement session memory for conversation context with SageMaker-based agents
-    - Add conversation history persistence across sessions for SageMaker workflows
-    - Create memory management and cleanup utilities for SageMaker AI
-    - Integrate memory capabilities with web interface for SageMaker integration
+- [ ] 8. Implement Step 4: Memory Integration and Enhanced UI Features with SageMaker AI
+  - [ ] 8.1 Integrate memory agent capabilities from module5 with SageMaker AI
+    - Import and adapt memory agent functionality from workshop4/modules/module5/memory_agent.py for SageMaker models
+    - Add OpenSearch backend support with graceful fallback when OPENSEARCH_HOST is undefined
+    - Implement memory operations: store, retrieve, and list functionality with SageMaker-powered agents
+    - Add user-specific memory management with USER_ID support for SageMaker model interactions
     - _Requirements: 5.1_
 
-  - [ ] 8.2 Create Docker container for SageMaker-based application
-    - Create Dockerfile for Streamlit multi-agent application with SageMaker AI integration
-    - Optimize container for production deployment with SageMaker model access
-    - Add environment configuration and dependency management for SageMaker AI workflows
-    - Test container locally and validate SageMaker integration functionality
+  - [ ] 8.2 Add SageMaker AI model selection dropdown to Streamlit interface
+    - Implement dropdown selection for multiple SageMaker JumpStart model IDs and custom endpoints
+    - Support models: Foundation models from SageMaker AI JumpStart catalog, custom fine-tuned models, classification models as Lambda functions
+    - Update all agents (teacher, knowledge base, memory) to use selected SageMaker AI model
+    - Add SageMaker AI model information display in sidebar with endpoint status
     - _Requirements: 5.2_
 
-  - [ ] 8.3 Implement AWS CDK infrastructure for SageMaker AI deployment
-    - Create CDK stack for ECS Fargate cluster deployment with SageMaker AI access and permissions
-    - Add VPC, load balancer, and supporting AWS services configured for SageMaker integration
-    - Configure auto-scaling and high availability for SageMaker workflows
-    - Add monitoring and logging infrastructure for SageMaker AI model performance
+  - [ ] 8.3 Implement teacher agent toggle controls for SageMaker AI models
+    - Add individual toggle checkboxes for each specialized teacher agent using SageMaker AI models
+    - Enable/disable Math, Language, Computer Science, English assistants with SageMaker AI integration
+    - Update teacher agent initialization to only include toggled agents with SageMaker AI models
+    - Maintain Tool-Agent Pattern with selective activation using SageMaker AI
     - _Requirements: 5.3_
 
-  - [ ] 8.4 Deploy SageMaker-based application to production and add operational procedures
-    - Deploy containerized SageMaker-based application to ECS Fargate
-    - Validate production deployment and SageMaker AI integration functionality
-    - Add monitoring dashboards and alerting for SageMaker model performance
-    - Create cleanup and maintenance procedures for SageMaker AI workflows
+  - [ ] 8.4 Add agent type selection (Teacher, Knowledge Base, Memory) for SageMaker AI workflows
+    - Implement agent type dropdown in sidebar for SageMaker AI-based agents
+    - Route queries to appropriate agent type based on user selection with SageMaker AI integration
+    - Maintain existing query routing logic for teacher and knowledge base with SageMaker models
+    - Add memory agent as third option with OpenSearch backend check for SageMaker AI workflows
     - _Requirements: 5.4, 5.5_
 
-  - [ ]* 8.5 Write property test for production deployment correctness with SageMaker AI
-    - **Property 6: Production Deployment Correctness**
+  - [ ]* 8.5 Write property test for memory integration and enhanced UI with SageMaker AI
+    - **Property 6: Memory Integration and Enhanced UI**
     - **Validates: Requirements 5.1, 5.2, 5.3, 5.4, 5.5**
 
-- [ ] 9. Create comprehensive documentation and materials for SageMaker AI workshop
-  - [ ] 9.1 Write complete 4-step workshop documentation for SageMaker AI
+- [ ] 9. Checkpoint - Step 4 memory integration and enhanced UI with SageMaker AI complete
+  - Ensure memory agent integration works correctly with OpenSearch backend and fallback for SageMaker AI workflows
+  - Validate SageMaker AI model selection dropdown updates all agent types appropriately
+  - Verify teacher agent toggles enable/disable individual agents correctly with SageMaker AI models
+  - Test agent type selection routes queries to appropriate systems with SageMaker AI integration
+  - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
+
+- [ ] 10. Implement Step 5: Production Deployment with SageMaker AI
+  - [ ] 10.1 Create Docker container for enhanced SageMaker-based application
+    - Create Dockerfile for Streamlit multi-agent application with SageMaker AI integration
+    - Optimize container for production deployment with all enhanced features and SageMaker AI model access
+    - Add environment configuration and dependency management for SageMaker AI workflows and memory backends
+    - Test container locally with full feature set validation including SageMaker model integration
+    - _Requirements: 7.1_
+
+  - [ ] 10.2 Implement AWS CDK infrastructure with SageMaker AI access and memory backend support
+    - Create CDK stack for ECS Fargate cluster deployment with SageMaker AI access and permissions
+    - Add VPC, load balancer, and supporting AWS services configured for SageMaker integration and memory backend support
+    - Configure auto-scaling and high availability for enhanced SageMaker-based application
+    - Add monitoring and logging infrastructure for SageMaker AI model performance and multi-agent system
+    - _Requirements: 7.2_
+
+  - [ ] 10.3 Deploy SageMaker-based application to production and validate functionality
+    - Deploy containerized SageMaker-based application to ECS Fargate
+    - Validate production deployment with all enhanced features and SageMaker AI integration
+    - Test memory integration, SageMaker model selection, and agent toggles in production
+    - Verify all agent types work correctly in production environment with SageMaker models
+    - _Requirements: 7.3_
+
+  - [ ] 10.4 Add monitoring, logging, and maintenance procedures for SageMaker AI
+    - Add monitoring dashboards and alerting for SageMaker AI production environment
+    - Implement logging for multi-agent interactions and memory operations with SageMaker models
+    - Create cleanup and maintenance procedures for SageMaker AI production environment
+    - Add cost monitoring and optimization recommendations for SageMaker AI usage
+    - _Requirements: 7.4, 7.5_
+
+  - [ ]* 10.5 Write property test for production deployment correctness with SageMaker AI
+    - **Property 7: Production Deployment Correctness**
+    - **Validates: Requirements 7.1, 7.2, 7.3, 7.4, 7.5**
+
+- [ ] 11. Checkpoint - Step 5 production deployment with SageMaker AI complete
+  - Ensure containerized SageMaker-based application deploys successfully to ECS Fargate
+  - Validate all enhanced features work correctly in production with SageMaker AI
+  - Verify monitoring, logging, and maintenance procedures are operational for SageMaker workflows
+  - Test end-to-end functionality from CLI to production deployment with SageMaker AI
+  - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
+
+- [ ] 12. Implement Step 6: Comprehensive Documentation and Workshop Materials for SageMaker AI
+- [ ] 12. Implement Step 6: Comprehensive Documentation and Workshop Materials for SageMaker AI
+  - [ ] 12.1 Write complete 6-step workshop documentation for SageMaker AI
     - Create comprehensive setup and installation guide for all steps with SageMaker AI integration
     - Write detailed tutorials for each step with clear progression using SageMaker models
-    - Add troubleshooting and FAQ documentation for SageMaker AI workflows
-    - Create instructor guide and presentation materials for SageMaker AI track
-    - _Requirements: 1.1_
+    - Add troubleshooting and FAQ documentation for SageMaker AI workflows and memory integration
+    - Include cross-platform compatibility notes and environment setup for SageMaker AI
+    - _Requirements: 8.1, 8.2_
 
-  - [ ]* 9.2 Write property test for material completeness for SageMaker AI
+  - [ ] 12.2 Create instructor guide and presentation materials for SageMaker AI
+    - Create instructor guide with teaching notes and timing recommendations for SageMaker AI track
+    - Develop presentation materials and slides for SageMaker AI workshop delivery
+    - Add demonstration scripts and sample queries for each step with SageMaker models
+    - Include assessment criteria and learning objectives for SageMaker AI integration
+    - _Requirements: 8.3, 8.4_
+
+  - [ ] 12.3 Create modular and reusable components documentation for SageMaker AI
+    - Document all reusable multi-agent patterns and components for SageMaker AI implementations
+    - Create customization and adaptation guides for SageMaker model selection and agent toggles
+    - Add integration APIs and interface documentation for SageMaker AI workflows
+    - Create performance tuning guides for different SageMaker models, endpoints, and memory backends
+    - _Requirements: 8.5_
+
+  - [ ]* 12.4 Write property test for material completeness for SageMaker AI
     - **Property 1: Material Completeness**
-    - **Validates: Requirements 1.1**
+    - **Validates: Requirements 8.1, 8.2, 8.3, 8.4, 8.5**
 
-  - [ ] 9.3 Create modular and reusable components documentation for SageMaker AI
-    - Document all reusable multi-agent patterns and components for SageMaker AI
-    - Create customization and adaptation guides for SageMaker workflows
-    - Add integration APIs and interface documentation for SageMaker AI
-    - Create performance tuning and optimization guides for SageMaker models
-    - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
-
-  - [ ]* 9.4 Write property test for system modularity with SageMaker AI
-    - **Property 7: System Modularity**
+  - [ ]* 12.5 Write property test for system modularity and configuration with SageMaker AI
+    - **Property 8: System Modularity and Configuration**
     - **Validates: Requirements 6.1, 6.2, 6.3, 6.4, 6.5**
 
-- [ ] 10. Final integration and testing for SageMaker AI workshop
-  - [ ] 10.1 Conduct end-to-end 4-step progression testing with SageMaker AI
+- [ ] 13. Final integration and testing for SageMaker AI workshop
+  - [ ] 13.1 Conduct end-to-end 6-step progression testing with SageMaker AI
     - Test complete progression from CLI to production deployment with SageMaker AI
     - Validate each step builds correctly on the previous step using SageMaker models
     - Test cross-platform compatibility and performance with SageMaker AI integration
-    - Verify all SageMaker AI integrations work correctly across all steps
-    - _Requirements: 1.2, 1.3, 1.4, 1.5_
+    - Verify all SageMaker AI integrations and enhanced features work correctly across all steps
+    - _Requirements: 1.2, 1.3, 1.4, 1.5, 1.6, 1.7_
 
-  - [ ]* 10.2 Write property test for 4-step progression correctness with SageMaker AI
-    - **Property 2: 4-Step Progression Correctness**
-    - **Validates: Requirements 1.2, 1.3, 1.4, 1.5**
+  - [ ]* 13.2 Write property test for 6-step progression correctness with SageMaker AI
+    - **Property 2: 6-Step Progression Correctness**
+    - **Validates: Requirements 1.2, 1.3, 1.4, 1.5, 1.6, 1.7**
 
-  - [ ] 10.3 Create final workshop package for SageMaker AI track
+  - [ ] 13.3 Create final workshop package for SageMaker AI track
     - Organize all deliverables for SageMaker AI workshop delivery
-    - Create distribution-ready package with all 4 steps for SageMaker AI
+    - Create distribution-ready package with all 6 steps for SageMaker AI
     - Include setup verification and validation checklist for SageMaker workflows
     - Add instructor resources and presentation materials for SageMaker AI track
-    - _Requirements: 1.1, 6.5_
+    - _Requirements: 8.1, 8.4_
 
-- [ ] 11. Final checkpoint - SageMaker AI workshop ready for delivery
-  - Ensure all tests pass and 4-step progression works end-to-end with SageMaker AI
+- [ ] 14. Final checkpoint - SageMaker AI workshop ready for delivery
+  - Ensure all tests pass and 6-step progression works end-to-end with SageMaker AI
   - Validate workshop materials are complete and consistent for SageMaker AI track
   - Verify production deployment and cleanup procedures work with SageMaker AI
-  - Confirm SageMaker AI workshop is ready for instructor delivery as side-by-side analog to Bedrock version
-  - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 6.5_
+  - Confirm SageMaker AI workshop is ready for instructor delivery as side-by-side analog to Bedrock version with all enhanced features
+  - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 8.1, 8.2, 8.3, 8.4, 8.5_

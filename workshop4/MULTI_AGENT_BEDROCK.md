@@ -1,4 +1,4 @@
-# Module 7: Building Multi-Agent with Strands using Amazon Bedrock
+# Building Multi-Agent with Strands Agents SDK using Amazon Bedrock
 
 **AWS Workshop Link:** [Module 7: Building Multi-Agent with Strands](https://catalog.workshops.aws/strands/en-US/module-7-building-multi-agent-with-strands)
 

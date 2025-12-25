@@ -131,84 +131,139 @@
   - Verify document management and indexing workflows work properly
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
 
-- [ ] 8. Implement Step 4: Production Deployment with Memory
-  - [ ] 8.1 Add session memory and conversation persistence
-    - Implement session memory for conversation context
-    - Add conversation history persistence across sessions
-    - Create memory management and cleanup utilities
-    - Integrate memory capabilities with web interface
+- [ ] 8. Checkpoint - Step 4 memory integration and enhanced UI complete
+  - Ensure memory agent integration works correctly with OpenSearch backend and fallback
+  - Validate model selection dropdown updates all agent types appropriately
+  - Verify teacher agent toggles enable/disable individual agents correctly
+  - Test agent type selection routes queries to appropriate systems
+  - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
+
+- [ ] 8. Implement Step 4: Memory Integration and Enhanced UI Features
+  - [ ] 8.1 Integrate memory agent capabilities from module5
+    - Import and adapt memory agent functionality from workshop4/modules/module5/memory_agent.py
+    - Add OpenSearch backend support with graceful fallback when OPENSEARCH_HOST is undefined
+    - Implement memory operations: store, retrieve, and list functionality
+    - Add user-specific memory management with USER_ID support
     - _Requirements: 5.1_
 
-  - [ ] 8.2 Create Docker container for the application
-    - Create Dockerfile for Streamlit multi-agent application
-    - Optimize container for production deployment
-    - Add environment configuration and dependency management
-    - Test container locally and validate functionality
+  - [ ] 8.2 Add model selection dropdown to Streamlit interface
+    - Implement dropdown selection for multiple Bedrock model IDs
+    - Support models: Nova Pro, Nova Lite, Nova Micro, Claude 3.5 Haiku, Claude 3.7 Sonnet, Claude Sonnet 4
+    - Update all agents (teacher, knowledge base, memory) to use selected model
+    - Add model information display in sidebar
     - _Requirements: 5.2_
 
-  - [ ] 8.3 Implement AWS CDK infrastructure
-    - Create CDK stack for ECS Fargate cluster deployment
-    - Add VPC, load balancer, and supporting AWS services
-    - Configure auto-scaling and high availability
-    - Add monitoring and logging infrastructure
+  - [ ] 8.3 Implement teacher agent toggle controls
+    - Add individual toggle checkboxes for each specialized teacher agent
+    - Enable/disable Math, Language, Computer Science, English assistants
+    - Update teacher agent initialization to only include toggled agents
+    - Maintain Tool-Agent Pattern with selective activation
     - _Requirements: 5.3_
 
-  - [ ] 8.4 Deploy to production and add operational procedures
-    - Deploy containerized application to ECS Fargate
-    - Validate production deployment and functionality
-    - Add monitoring dashboards and alerting
-    - Create cleanup and maintenance procedures
+  - [ ] 8.4 Add agent type selection (Teacher, Knowledge Base, Memory)
+    - Implement agent type dropdown in sidebar
+    - Route queries to appropriate agent type based on user selection
+    - Maintain existing query routing logic for teacher and knowledge base
+    - Add memory agent as third option with OpenSearch backend check
     - _Requirements: 5.4, 5.5_
 
-  - [ ]* 8.5 Write property test for production deployment correctness
-    - **Property 6: Production Deployment Correctness**
+  - [ ]* 8.5 Write property test for memory integration and enhanced UI
+    - **Property 6: Memory Integration and Enhanced UI**
     - **Validates: Requirements 5.1, 5.2, 5.3, 5.4, 5.5**
 
-- [ ] 9. Create comprehensive documentation and materials
-  - [ ] 9.1 Write complete 4-step workshop documentation
+- [ ] 9. Implement Step 5: Production Deployment
+  - [ ] 9.1 Create Docker container for enhanced application
+    - Create Dockerfile for Streamlit multi-agent application
+    - Optimize container for production deployment with all enhanced features
+    - Add environment configuration and dependency management for memory backends
+    - Test container locally with full feature set validation
+    - _Requirements: 7.1_
+
+  - [ ] 9.2 Implement AWS CDK infrastructure with memory backend support
+    - Create CDK stack for ECS Fargate cluster deployment
+    - Add VPC, load balancer, and supporting AWS services with memory backend support
+    - Configure auto-scaling and high availability for enhanced application
+    - Add monitoring and logging infrastructure for multi-agent system
+    - _Requirements: 7.2_
+
+  - [ ] 9.3 Deploy to production and validate functionality
+    - Deploy containerized application to ECS Fargate
+    - Validate production deployment with all enhanced features
+    - Test memory integration, model selection, and agent toggles in production
+    - Verify all agent types work correctly in production environment
+    - _Requirements: 7.3_
+
+  - [ ] 9.4 Add monitoring, logging, and maintenance procedures
+    - Add monitoring dashboards and alerting for production environment
+    - Implement logging for multi-agent interactions and memory operations
+    - Create cleanup and maintenance procedures for production environment
+    - Add cost monitoring and optimization recommendations
+    - _Requirements: 7.4, 7.5_
+
+  - [ ]* 9.5 Write property test for production deployment correctness
+    - **Property 7: Production Deployment Correctness**
+    - **Validates: Requirements 7.1, 7.2, 7.3, 7.4, 7.5**
+
+- [ ] 10. Checkpoint - Step 5 production deployment complete
+  - Ensure containerized application deploys successfully to ECS Fargate
+  - Validate all enhanced features work correctly in production
+  - Verify monitoring, logging, and maintenance procedures are operational
+  - Test end-to-end functionality from CLI to production deployment
+  - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
+
+- [ ] 11. Implement Step 6: Comprehensive Documentation and Workshop Materials
+- [ ] 11. Implement Step 6: Comprehensive Documentation and Workshop Materials
+  - [ ] 11.1 Write complete 6-step workshop documentation
     - Create comprehensive setup and installation guide for all steps
     - Write detailed tutorials for each step with clear progression
-    - Add troubleshooting and FAQ documentation
-    - Create instructor guide and presentation materials
-    - _Requirements: 1.1_
+    - Add troubleshooting and FAQ documentation for memory integration and enhanced features
+    - Include cross-platform compatibility notes and environment setup
+    - _Requirements: 8.1, 8.2_
 
-  - [ ]* 9.2 Write property test for material completeness
-    - **Property 1: Material Completeness**
-    - **Validates: Requirements 1.1**
+  - [ ] 11.2 Create instructor guide and presentation materials
+    - Create instructor guide with teaching notes and timing recommendations
+    - Develop presentation materials and slides for workshop delivery
+    - Add demonstration scripts and sample queries for each step
+    - Include assessment criteria and learning objectives
+    - _Requirements: 8.3, 8.4_
 
-  - [ ] 9.3 Create modular and reusable components documentation
+  - [ ] 11.3 Create modular and reusable components documentation
     - Document all reusable multi-agent patterns and components
-    - Create customization and adaptation guides
+    - Create customization and adaptation guides for model selection and agent toggles
     - Add integration APIs and interface documentation
-    - Create performance tuning and optimization guides
-    - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5_
+    - Create performance tuning guides for different Bedrock models and memory backends
+    - _Requirements: 8.5_
 
-  - [ ]* 9.4 Write property test for system modularity
-    - **Property 7: System Modularity**
+  - [ ]* 11.4 Write property test for material completeness
+    - **Property 8: Material Completeness**
+    - **Validates: Requirements 8.1, 8.2, 8.3, 8.4, 8.5**
+
+  - [ ]* 11.5 Write property test for system modularity and configuration
+    - **Property 9: System Modularity and Configuration**
     - **Validates: Requirements 6.1, 6.2, 6.3, 6.4, 6.5**
 
-- [ ] 10. Final integration and testing
-  - [ ] 10.1 Conduct end-to-end 4-step progression testing
+- [ ] 12. Final integration and testing
+  - [ ] 12.1 Conduct end-to-end 6-step progression testing
     - Test complete progression from CLI to production deployment
     - Validate each step builds correctly on the previous step
     - Test cross-platform compatibility and performance
-    - Verify all Bedrock integrations work correctly
-    - _Requirements: 1.2, 1.3, 1.4, 1.5_
+    - Verify all Bedrock integrations and enhanced features work correctly
+    - _Requirements: 1.2, 1.3, 1.4, 1.5, 1.6, 1.7_
 
-  - [ ]* 10.2 Write property test for 4-step progression correctness
-    - **Property 2: 4-Step Progression Correctness**
-    - **Validates: Requirements 1.2, 1.3, 1.4, 1.5**
+  - [ ]* 12.2 Write property test for 6-step progression correctness
+    - **Property 2: 6-Step Progression Correctness**
+    - **Validates: Requirements 1.2, 1.3, 1.4, 1.5, 1.6, 1.7**
 
-  - [ ] 10.3 Create final workshop package
+  - [ ] 12.3 Create final workshop package
     - Organize all deliverables for workshop delivery
-    - Create distribution-ready package with all 4 steps
+    - Create distribution-ready package with all 6 steps
     - Include setup verification and validation checklist
     - Add instructor resources and presentation materials
-    - _Requirements: 1.1, 6.5_
+    - _Requirements: 8.1, 8.4_
 
-- [ ] 11. Final checkpoint - Workshop ready for delivery
-  - Ensure all tests pass and 4-step progression works end-to-end
+- [ ] 13. Final checkpoint - Workshop ready for delivery
+  - Ensure all tests pass and 6-step progression works end-to-end
   - Validate workshop materials are complete and consistent
   - Verify production deployment and cleanup procedures work
-  - Confirm workshop is ready for instructor delivery
-  - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 6.5_
+  - Confirm workshop is ready for instructor delivery with all enhanced features
+  - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6, 1.7, 8.1, 8.2, 8.3, 8.4, 8.5_

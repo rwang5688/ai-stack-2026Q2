@@ -2,11 +2,11 @@
 
 ## Overview
 
-This design focuses on Module 7: Building Multi-Agent with Strands using Amazon SageMaker AI model hosting as a side-by-side analog to the Bedrock version. The design follows the same 4-step progressive approach: (1) CLI multi-agent system using Teacher's Assistant pattern, (2) Streamlit web interface integration, (3) knowledge base enhancement, and (4) production deployment using AWS CDK, Docker, and ECS Fargate. The key difference is using SageMaker AI (JumpStart) models instead of Bedrock models for agent model hosting and inference.
+This design focuses on Module 7: Building Multi-Agent with Strands using Amazon SageMaker AI model hosting as a side-by-side analog to the Bedrock version. The design follows a 6-step progressive approach: (1) CLI multi-agent system using Teacher's Assistant pattern, (2) Streamlit web interface integration, (3) knowledge base enhancement, (4) Memory integration and enhanced UI features, (5) production deployment using AWS CDK, Docker, and ECS Fargate, and (6) comprehensive documentation and workshop materials. The key difference is using SageMaker AI (JumpStart) models instead of Bedrock models for agent model hosting and inference.
 
 ## Architecture
 
-### High-Level 4-Step Architecture
+### High-Level 6-Step Architecture
 
 ```mermaid
 graph TB
@@ -30,17 +30,31 @@ graph TB
         ENHANCED_AGENTS[Knowledge-Enhanced Agents]
     end
     
-    subgraph "Step 4: Production Deployment"
+    subgraph "Step 4: Memory Integration & Enhanced UI"
+        MEMORY[Memory Agent with OpenSearch]
+        MODEL_SELECT[SageMaker Model Selection]
+        AGENT_TOGGLES[Teacher Agent Toggles]
+        AGENT_TYPES[Agent Type Selection]
+    end
+    
+    subgraph "Step 5: Production Deployment"
         DOCKER[Docker Container]
         CDK[AWS CDK Infrastructure]
         ECS[ECS Fargate Cluster]
         PROD_APP[Production Streamlit App]
     end
     
+    subgraph "Step 6: Documentation & Materials"
+        DOCS[Workshop Documentation]
+        GUIDES[Setup & Tutorial Guides]
+        MATERIALS[Instructor Materials]
+    end
+    
     subgraph "Amazon SageMaker AI Model Hosting"
         SAGEMAKER[Amazon SageMaker AI]
-        JUMPSTART[SageMaker JumpStart]
+        JUMPSTART[SageMaker JumpStart Models]
         ENDPOINTS[Model Endpoints]
+        CUSTOM[Custom Fine-tuned Models]
     end
     
     subgraph "Strands Framework Integration"
@@ -61,9 +75,17 @@ graph TB
     KB --> STORAGE
     ENHANCED_AGENTS --> KB
     
+    MEMORY --> ENHANCED_AGENTS
+    MODEL_SELECT --> SAGEMAKER
+    AGENT_TOGGLES --> TEACHER
+    AGENT_TYPES --> MEMORY
+    
     DOCKER --> PROD_APP
     CDK --> ECS
     ECS --> DOCKER
+    
+    DOCS --> GUIDES
+    GUIDES --> MATERIALS
     
     MATH --> SAGEMAKER
     ENG --> SAGEMAKER
@@ -73,6 +95,7 @@ graph TB
     
     SAGEMAKER --> JUMPSTART
     SAGEMAKER --> ENDPOINTS
+    SAGEMAKER --> CUSTOM
     
     STRANDS --> TEACHER
     STRANDS --> TOOLS
@@ -81,12 +104,14 @@ graph TB
 
 ### Component Architecture
 
-The system follows the same progressive 4-step architecture as the Bedrock version with SageMaker AI model hosting:
+The system follows the same progressive 6-step architecture as the Bedrock version with SageMaker AI model hosting:
 
 1. **Step 1 - CLI Foundation**: Teacher's Assistant pattern with 5 specialized agents using Tool-Agent Pattern with SageMaker JumpStart models
 2. **Step 2 - Web Interface**: Streamlit integration for user-friendly web-based interactions with SageMaker-powered agents
 3. **Step 3 - Knowledge Enhancement**: Knowledge base integration compatible with SageMaker AI model hosting
-4. **Step 4 - Production Deployment**: AWS CDK infrastructure with Docker containerization and ECS Fargate hosting with SageMaker AI access
+4. **Step 4 - Memory Integration & Enhanced UI**: Memory agent integration, SageMaker model selection, and agent customization
+5. **Step 5 - Production Deployment**: AWS CDK infrastructure with Docker containerization and ECS Fargate hosting with SageMaker AI access
+6. **Step 6 - Documentation & Materials**: Comprehensive workshop documentation and instructor resources for SageMaker AI
 
 ## Components and Interfaces
 
@@ -132,7 +157,60 @@ The system follows the same progressive 4-step architecture as the Bedrock versi
 - Knowledge base querying and retrieval patterns optimized for SageMaker workflows
 - Integration with existing SageMaker-based specialized agents
 
-### Step 4: Production Deployment with SageMaker AI
+### Step 4: Memory Integration and Enhanced UI Features with SageMaker AI
+
+**Memory Agent Integration**
+- Integration of memory capabilities from workshop4/modules/module5/memory_agent.py with SageMaker AI models
+- OpenSearch backend support with graceful fallback when OPENSEARCH_HOST is undefined
+- Memory operations: store, retrieve, and list functionality using SageMaker-powered agents
+- User-specific memory management with USER_ID support for SageMaker model interactions
+
+**Enhanced UI Features for SageMaker Models**
+- Model selection dropdown with multiple SageMaker JumpStart model options and custom endpoints:
+  - Foundation models from SageMaker JumpStart catalog
+  - Custom fine-tuned models deployed as SageMaker endpoints
+  - Classification models deployed as Lambda functions
+  - Hybrid model configurations for different agent types
+
+**Teacher Agent Customization with SageMaker Models**
+- Individual toggle controls for each specialized teacher agent using SageMaker models
+- Dynamic agent selection: Math, Language, Computer Science, English assistants with SageMaker integration
+- Configurable agent combinations based on user preferences and model availability
+- Maintains existing Tool-Agent Pattern with selective activation using SageMaker AI
+
+### Step 5: Production Deployment with SageMaker AI
+
+**Containerization**
+- Docker container packaging of the Streamlit multi-agent application with SageMaker AI and memory integration
+- Container optimization for production deployment with all enhanced features and SageMaker model access
+- Environment configuration and dependency management for SageMaker AI workflows and memory backends
+- Testing container locally with full feature set validation including SageMaker model integration
+
+**AWS CDK Infrastructure**
+- Infrastructure as Code for ECS Fargate cluster deployment with SageMaker AI access and permissions
+- Supporting AWS services (VPC, Load Balancer, etc.) configured for SageMaker integration and memory backend support
+- Monitoring and logging infrastructure for SageMaker model performance and multi-agent system
+- Cost optimization and resource management for SageMaker AI usage and production workloads
+
+**ECS Fargate Deployment**
+- Serverless container hosting for the enhanced SageMaker-based multi-agent application
+- Auto-scaling and high availability configuration with SageMaker model integration
+- Production monitoring and maintenance procedures for SageMaker AI workflows
+- Integration with OpenSearch backend for memory functionality and SageMaker model coordination
+
+### Step 6: Documentation and Workshop Materials for SageMaker AI
+
+**Comprehensive Documentation**
+- Complete 6-step workshop documentation with SageMaker AI setup guides and model configuration
+- Detailed tutorials for each step with clear progression for SageMaker AI integration
+- Troubleshooting and FAQ documentation for SageMaker AI, memory integration, and model deployment
+- Instructor guide and presentation materials for SageMaker AI workshop delivery
+
+**Modular Component Documentation**
+- Reusable multi-agent patterns and components for SageMaker AI implementations
+- Customization and adaptation guides for SageMaker model selection and agent toggles
+- Integration APIs and interface documentation for SageMaker AI workflows
+- Performance tuning guides for different SageMaker models, endpoints, and memory backends
 
 **Containerization**
 - Docker container packaging of the Streamlit multi-agent application with SageMaker AI integration
@@ -211,22 +289,24 @@ interface ClassificationModelConfig {
 After analyzing all acceptance criteria, several properties can be consolidated to eliminate redundancy:
 
 - Properties 1.1 and related documentation requirements can be combined into "Material Completeness"
-- Properties 1.2-1.5 all relate to step completion and can be grouped under "4-Step Progression Correctness"
+- Properties 1.2-1.7 all relate to step completion and can be grouped under "6-Step Progression Correctness"
 - Properties 2.1-2.5 all relate to CLI multi-agent functionality and can be consolidated into "CLI Multi-Agent System Functionality"
 - Properties 3.1-3.5 all relate to web interface and can be consolidated into "Web Interface Integration"
 - Properties 4.1-4.5 all relate to knowledge base integration and can be consolidated into "Knowledge Base Integration"
-- Properties 5.1-5.5 all relate to deployment and can be consolidated into "Production Deployment Correctness"
-- Properties 6.1-6.5 all relate to modularity and reusability and can be consolidated into "System Modularity"
+- Properties 5.1-5.5 all relate to memory integration and enhanced UI and can be consolidated into "Memory Integration and Enhanced UI"
+- Properties 6.1-6.5 all relate to modularity and reusability and can be consolidated into "System Modularity and Configuration"
+- Properties 7.1-7.5 all relate to production deployment and can be consolidated into "Production Deployment Correctness"
+- Properties 8.1-8.5 all relate to documentation and materials and can be consolidated into "Material Completeness"
 
 ### Core Properties
 
 **Property 1: Material Completeness**
-*For any* workshop step (1-4), all required documentation, setup instructions, and tutorial materials should be present and accessible for SageMaker AI integration
-**Validates: Requirements 1.1**
+*For any* workshop step (1-6), all required documentation, setup instructions, and tutorial materials should be present and accessible for SageMaker AI integration
+**Validates: Requirements 1.1, 8.1, 8.2, 8.3, 8.4, 8.5**
 
-**Property 2: 4-Step Progression Correctness**
-*For any* completed workshop step, the SageMaker AI implementation should work correctly and enable progression to the next step (CLI → UI → Knowledge → Deployment)
-**Validates: Requirements 1.2, 1.3, 1.4, 1.5**
+**Property 2: 6-Step Progression Correctness**
+*For any* completed workshop step, the SageMaker AI implementation should work correctly and enable progression to the next step (CLI → UI → Knowledge → Memory/UI → Deployment → Documentation)
+**Validates: Requirements 1.2, 1.3, 1.4, 1.5, 1.6, 1.7**
 
 **Property 3: CLI Multi-Agent System Functionality**
 *For any* query submitted to the Teacher's Assistant system, it should route correctly to the appropriate specialized agent and return a proper response using SageMaker AI models
@@ -240,11 +320,15 @@ After analyzing all acceptance criteria, several properties can be consolidated 
 *For any* document stored in the knowledge base system, SageMaker-powered agents should be able to retrieve and use relevant information correctly in their responses
 **Validates: Requirements 4.1, 4.2, 4.3, 4.4, 4.5**
 
-**Property 6: Production Deployment Correctness**
-*For any* production deployment using CDK, Docker, and ECS Fargate, the containerized SageMaker-based multi-agent application should run correctly with proper monitoring and maintenance capabilities
+**Property 6: Memory Integration and Enhanced UI**
+*For any* memory operation (store/retrieve) and UI enhancement (SageMaker model selection/agent toggles), the system should integrate correctly with existing multi-agent functionality while providing graceful fallbacks
 **Validates: Requirements 5.1, 5.2, 5.3, 5.4, 5.5**
 
-**Property 7: System Modularity**
+**Property 7: Production Deployment Correctness**
+*For any* production deployment using CDK, Docker, and ECS Fargate, the containerized SageMaker-based multi-agent application should run correctly with proper monitoring and maintenance capabilities
+**Validates: Requirements 7.1, 7.2, 7.3, 7.4, 7.5**
+
+**Property 8: System Modularity and Configuration**
 *For any* customization or extension of the SageMaker-based multi-agent system, modular components should be configurable, reusable, and maintain clear separation between application logic and SageMaker AI infrastructure
 **Validates: Requirements 6.1, 6.2, 6.3, 6.4, 6.5**
 

@@ -21,15 +21,17 @@ This specification defines the requirements for creating Module 7: Building Mult
 
 ### Requirement 1
 
-**User Story:** As a workshop instructor, I want a 4-step progressive multi-agent workshop using Strands Agents SDK with Amazon SageMaker AI, so that I can teach students how to build from basic CLI agents to production-deployed web applications using SageMaker models.
+**User Story:** As a workshop instructor, I want a 6-step progressive multi-agent workshop using Strands Agents SDK with Amazon SageMaker AI, so that I can teach students how to build from basic CLI agents to production-deployed web applications using SageMaker models.
 
 #### Acceptance Criteria
 
-1. WHEN the workshop materials are accessed THEN the Workshop System SHALL provide complete documentation for the 4-step progression (CLI → UI → Knowledge → Deployment) using SageMaker AI models
+1. WHEN the workshop materials are accessed THEN the Workshop System SHALL provide complete documentation for the 6-step progression (CLI → UI → Knowledge → Memory/UI → Deployment → Documentation) using SageMaker AI models
 2. WHEN students complete Step 1 THEN the Workshop System SHALL enable successful implementation of the Teacher's Assistant pattern with 5 specialized agents using SageMaker JumpStart models
 3. WHEN students complete Step 2 THEN the Workshop System SHALL enable successful integration of Streamlit web UI with the SageMaker-based multi-agent system
 4. WHEN students complete Step 3 THEN the Workshop System SHALL enable successful integration of knowledge base capabilities with SageMaker AI model hosting
-5. WHEN students complete Step 4 THEN the Workshop System SHALL enable successful deployment using AWS CDK, Docker, and ECS Fargate with SageMaker model integration
+5. WHEN students complete Step 4 THEN the Workshop System SHALL enable successful integration of memory capabilities with SageMaker model selection and agent customization
+6. WHEN students complete Step 5 THEN the Workshop System SHALL enable successful deployment using AWS CDK, Docker, and ECS Fargate with SageMaker model integration
+7. WHEN students complete Step 6 THEN the Workshop System SHALL provide comprehensive documentation and workshop materials for instructor delivery
 
 ### Requirement 2
 
@@ -69,24 +71,48 @@ This specification defines the requirements for creating Module 7: Building Mult
 
 ### Requirement 5
 
-**User Story:** As a student, I want to add memory capabilities and deploy my SageMaker-based multi-agent system to production, so that I can understand session persistence and AWS deployment patterns with SageMaker AI integration.
+**User Story:** As a student, I want to add memory capabilities and enhanced UI features to my SageMaker-based multi-agent system, so that I can understand memory integration, model selection, and agent customization patterns with SageMaker AI.
 
 #### Acceptance Criteria
 
-1. WHEN implementing memory THEN the Workshop System SHALL demonstrate adding session memory and conversation persistence to the SageMaker-based multi-agent system
-2. WHEN containerizing the application THEN the Workshop System SHALL show how to create a Docker container for the Streamlit multi-agent application with SageMaker AI integration
-3. WHEN deploying infrastructure THEN the Workshop System SHALL provide AWS CDK code for provisioning ECS Fargate cluster with SageMaker AI access and supporting resources
-4. WHEN deploying to production THEN the Workshop System SHALL enable successful deployment of the containerized SageMaker-based application to AWS ECS Fargate
-5. WHILE maintaining the deployment THEN the Workshop System SHALL include monitoring, logging, and cleanup procedures for the SageMaker AI production environment
+1. WHEN implementing memory THEN the Workshop System SHALL demonstrate integrating memory agent capabilities from module5 with OpenSearch backend support for SageMaker-based agents
+2. WHEN selecting models THEN the Workshop System SHALL provide dropdown selection for multiple SageMaker JumpStart model IDs and endpoint configurations
+3. WHEN customizing agents THEN the Workshop System SHALL enable toggling individual teacher agents (math, language, computer science, english) on and off with SageMaker models
+4. WHEN OpenSearch is unavailable THEN the Workshop System SHALL gracefully disable OpenSearch backend option if OPENSEARCH_HOST environment variable is not defined
+5. WHILE using memory features THEN the Workshop System SHALL maintain compatibility with existing knowledge base and teacher agent functionality using SageMaker AI
 
 ### Requirement 6
 
-**User Story:** As a technical lead, I want reusable multi-agent patterns and deployment components for SageMaker AI, so that I can adapt the SageMaker implementation for different business contexts and deployment scenarios.
+**User Story:** As a technical lead, I want reusable multi-agent patterns and flexible configuration options for SageMaker AI, so that I can adapt the system for different business contexts and deployment scenarios.
 
 #### Acceptance Criteria
 
-1. WHEN customizing agents THEN the Workshop System SHALL support modular specialized agent creation and configuration with SageMaker AI models
-2. WHEN adapting for use cases THEN the Workshop System SHALL provide configurable agent roles, tools, and system prompts optimized for SageMaker JumpStart models
-3. WHEN reusing deployment patterns THEN the Workshop System SHALL maintain clear separation between application logic and SageMaker AI infrastructure deployment
+1. WHEN customizing agents THEN the Workshop System SHALL support modular specialized agent creation and configuration with toggle controls for SageMaker models
+2. WHEN adapting for use cases THEN the Workshop System SHALL provide configurable agent roles, tools, system prompts, and SageMaker model selection
+3. WHEN integrating memory systems THEN the Workshop System SHALL provide clear patterns for memory integration with fallback options for SageMaker-based agents
 4. WHEN integrating with existing systems THEN the Workshop System SHALL provide clear APIs and interfaces for extending the SageMaker-based multi-agent system
-5. WHERE performance optimization is required THEN the Workshop System SHALL provide guidance on SageMaker AI model selection, endpoint configuration, and system tuning
+5. WHERE performance optimization is required THEN the Workshop System SHALL provide guidance on SageMaker AI model selection, endpoint configuration, memory backends, and system tuning
+
+### Requirement 7
+
+**User Story:** As a student, I want to deploy my enhanced SageMaker-based multi-agent system to production, so that I can understand containerization and AWS deployment patterns with full SageMaker AI integration.
+
+#### Acceptance Criteria
+
+1. WHEN containerizing the application THEN the Workshop System SHALL show how to create a Docker container for the Streamlit multi-agent application with SageMaker AI and memory integration
+2. WHEN deploying infrastructure THEN the Workshop System SHALL provide AWS CDK code for provisioning ECS Fargate cluster with SageMaker AI access and memory backend support
+3. WHEN deploying to production THEN the Workshop System SHALL enable successful deployment of the containerized SageMaker-based application to AWS ECS Fargate
+4. WHEN monitoring the deployment THEN the Workshop System SHALL include monitoring, logging, and alerting for the SageMaker AI production environment
+5. WHILE maintaining the deployment THEN the Workshop System SHALL include cleanup and maintenance procedures for the SageMaker AI production environment
+
+### Requirement 8
+
+**User Story:** As a workshop instructor, I want comprehensive documentation and materials for the SageMaker AI workshop, so that I can deliver the workshop effectively and students can reference complete guides.
+
+#### Acceptance Criteria
+
+1. WHEN accessing workshop materials THEN the Workshop System SHALL provide complete 6-step workshop documentation with SageMaker AI setup guides
+2. WHEN following tutorials THEN the Workshop System SHALL provide detailed step-by-step instructions with clear progression for SageMaker AI integration
+3. WHEN troubleshooting issues THEN the Workshop System SHALL provide comprehensive FAQ and troubleshooting documentation for SageMaker AI and memory integration
+4. WHEN preparing for instruction THEN the Workshop System SHALL provide instructor guides and presentation materials for SageMaker AI workshop delivery
+5. WHERE customization is needed THEN the Workshop System SHALL provide modular component documentation and adaptation guides for SageMaker AI implementations

@@ -9,20 +9,21 @@ Progressive learning from basic MCP tools to complex agent interactions, prepari
 
 **Location**: `workshop4/modules/`
 **Spec**: `.kiro/specs/workshop4-modules/`
-**Documentation**: [Foundational Modules Guide](MODULES.md)
+**Documentation**: [Strands Agents SDK Foundational Modules](FOUNDATIONAL_MODULES.md)
 
 ### 2. Multi-Agent System using Strands Agents and Amazon Bedrock
-4-step progressive implementation: CLI → Web UI → Knowledge Base → Production Deployment
+6-step progressive implementation: CLI → Web UI → Knowledge Base → Memory/Enhanced UI → Production Deployment → Documentation
 
 **Location**: `workshop4/multi_agent_bedrock/`
 **Spec**: `.kiro/specs/workshop4-multi-agent-bedrock/`
-**Documentation**: [Multi-Agent Bedrock Guide](MULTI_AGENT_BEDROCK.md)
+**Documentation**: [Building Multi-Agent with Strands Agents SDK using Amazon Bedrock](MULTI_AGENT_BEDROCK.md)
 
 ### 3. Multi-Agent System using Strands Agents and Amazon SageMaker AI
-Side-by-side analog of the Bedrock version using SageMaker AI (JumpStart) models
+Side-by-side analog of the Bedrock version using SageMaker AI (JumpStart) models with 6-step progression
 
 **Location**: `workshop4/multi_agent_sagemaker_ai/` (planned)
 **Spec**: `.kiro/specs/workshop4-multi-agent-sagemaker-ai/`
+**Documentation**: [Building Multi-Agent with Strands Agents SDK using Amazon SageMaker AI (JumpStart)](MULTI_AGENT_SAGEMAKER_AI.md)
 
 ## Quick Start
 
@@ -101,7 +102,7 @@ python -c "import strands_agents; print('Strands Agents SDK installed successful
 
 ### Multi-Agent Implementations
 
-Both multi-agent workshops follow the same 4-step progressive architecture:
+Both multi-agent workshops follow the same 6-step progressive architecture:
 
 #### Step 1: CLI Multi-Agent System
 - **Teacher's Assistant Pattern**: Central orchestrator routing queries to specialized agents
@@ -119,11 +120,21 @@ Both multi-agent workshops follow the same 4-step progressive architecture:
 - **Knowledge Retrieval**: Enhanced agent capabilities with document access
 - **Augmented Responses**: Knowledge-enhanced agent responses
 
-#### Step 4: Production Deployment
-- **Memory Integration**: Session persistence and conversation history
-- **Containerization**: Docker packaging for production deployment
-- **AWS CDK Infrastructure**: ECS Fargate cluster with supporting services
-- **Monitoring & Maintenance**: Production-ready operational procedures
+#### Step 4: Memory Integration & Enhanced UI Features
+- **Memory Agent Integration**: Session persistence and conversation history using OpenSearch backend
+- **Model Selection**: Dropdown for multiple model options (Bedrock: Nova/Claude variants, SageMaker: JumpStart/Custom models)
+- **Agent Customization**: Individual toggle controls for specialized teacher agents
+- **Agent Type Selection**: Choose between Teacher, Knowledge Base, and Memory agents
+
+#### Step 5: Production Deployment
+- **Containerization**: Docker packaging for production deployment with enhanced features
+- **AWS CDK Infrastructure**: ECS Fargate cluster with supporting services and memory backend support
+- **Monitoring & Maintenance**: Production-ready operational procedures with cost optimization
+
+#### Step 6: Documentation & Workshop Materials
+- **Comprehensive Documentation**: Complete setup guides and tutorials for all 6 steps
+- **Instructor Resources**: Teaching materials, presentation slides, and assessment criteria
+- **Modular Components**: Reusable patterns and customization guides
 
 ## Development Workflow
 
@@ -154,14 +165,18 @@ Both multi-agent workshops follow the same 4-step progressive architecture:
 - **Step 1**: ✅ COMPLETED - CLI multi-agent system with 5 specialized agents (Linux/Windows compatible)
 - **Step 2**: ✅ COMPLETED - Streamlit web interface
 - **Step 3**: ✅ COMPLETED - Knowledge Base integration with personal information storage/retrieval
-- **Step 4**: 🔄 READY TO IMPLEMENT - Production deployment (Memory + Docker + AWS CDK + ECS Fargate)
+- **Step 4**: 🔄 READY TO IMPLEMENT - Memory integration & enhanced UI (model selection, agent toggles)
+- **Step 5**: 📋 PLANNED - Production deployment (Docker + AWS CDK + ECS Fargate)
+- **Step 6**: 📋 PLANNED - Documentation and workshop materials
 
 ### Multi-Agent SageMaker AI (workshop4-multi-agent-sagemaker-ai)
-- **Status**: 📋 SPEC COMPLETE - Ready for implementation
+- **Status**: � SPECN COMPLETE - Ready for implementation with 6-step approach
 - **Step 1**: 🔄 PLANNED - CLI Teacher's Assistant system with SageMaker models
 - **Step 2**: 🔄 PLANNED - Streamlit web interface
 - **Step 3**: 🔄 PLANNED - Knowledge base integration
-- **Step 4**: 🔄 PLANNED - Production deployment
+- **Step 4**: 🔄 PLANNED - Memory integration & enhanced UI with SageMaker model selection
+- **Step 5**: 🔄 PLANNED - Production deployment
+- **Step 6**: 🔄 PLANNED - Documentation and workshop materials
 
 ## Key Learning Objectives
 
@@ -205,5 +220,5 @@ Both multi-agent workshops follow the same 4-step progressive architecture:
 
 1. **Complete Foundational Modules**: Work through modules 1-6 to build understanding
 2. **Choose Implementation Track**: Select Bedrock or SageMaker AI for advanced multi-agent work
-3. **Follow 4-Step Progression**: Build from CLI to production deployment
+3. **Follow 6-Step Progression**: Build from CLI to production deployment with enhanced UI features
 4. **Compare Approaches**: Explore both tracks to understand different model integration patterns
