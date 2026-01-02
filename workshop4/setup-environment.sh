@@ -30,12 +30,12 @@ fi
 PYTHON_VERSION=$($PYTHON_CMD -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}')")
 MAJOR_MINOR=$($PYTHON_CMD -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
 
-# Check for supported Python versions (3.10, 3.11, 3.12)
-if ! $PYTHON_CMD -c "import sys; exit(0 if (3, 10) <= sys.version_info[:2] <= (3, 12) else 1)" 2>/dev/null; then
+# Check for supported Python versions (3.12 or above)
+if ! $PYTHON_CMD -c "import sys; exit(0 if sys.version_info[:2] >= (3, 12) else 1)" 2>/dev/null; then
     echo "❌ Python $PYTHON_VERSION found with '$PYTHON_CMD'."
-    echo "   Supported versions: Python 3.10.x, 3.11.x, or 3.12.x"
-    echo "   Recommended: Python 3.12.10"
-    echo "   Note: Python 3.13+ may cause package compilation issues on Windows."
+    echo "   Supported versions: Python 3.12.x or above"
+    echo "   Recommended: Python 3.12.10 or newer"
+    echo "   Note: Newer Python versions may require compatible package versions."
     exit 1
 fi
 

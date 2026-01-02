@@ -11,9 +11,11 @@ Troubleshooting Python environment setup issues for Workshop 4, specifically add
 - Removed misplaced workshop-specific steering file
 
 ## Issues & Resolutions
-- **Issue**: `ruamel-yaml-clibz==0.3.4` failing to compile on Windows with Python 3.13.11
-  - **Root Cause**: Python 3.13 is too new; many packages with C extensions don't have precompiled wheels yet
-  - **Resolution**: Updated setup script and documentation to limit Python versions to 3.10.x, 3.11.x, or 3.12.x (recommended: 3.12.10)
+- **Issue**: `ruamel-yaml-clibz==0.3.4` failing to compile on Windows with Python 3.13.11 and 3.12.10
+  - **Root Cause**: Missing Microsoft Visual C++ Build Tools (not a Python version issue)
+  - **Lesson Learned**: Python installer has optional checkbox for build tools that only appears during initial install
+  - **Why not Chocolatey**: Chocolatey installs its own Python version, creating conflicts with existing installations
+  - **Resolution**: Install Visual Studio Build Tools directly from Microsoft (cleanest approach)
 
 - **Issue**: Workshop-specific documentation in .kiro/steering/
   - **Root Cause**: workshop-virtual-environment.md was misplaced in steering directory
@@ -29,6 +31,12 @@ Troubleshooting Python environment setup issues for Workshop 4, specifically add
 - [ ] User to install Python 3.12.10 to resolve compilation issues
 - [ ] Test updated setup script with Python 3.12
 - [ ] Verify workshop environment works without C++ compilation errors
+
+## Current Status (Latest Update)
+- User has deinstalled Python and needs to start fresh
+- Visual Studio Build Tools are confirmed installed at: C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools
+- Decision: Install Python 3.14.2 (assuming 3.13.2) and test with VS Build Tools
+- Need to update setup script to allow newer Python versions for testing
 
 ## Resources
 - [Microsoft Visual C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) - Alternative solution if user wants to keep Python 3.13
