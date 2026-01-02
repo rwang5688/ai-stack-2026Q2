@@ -29,7 +29,8 @@ Side-by-side analog of the Bedrock version using SageMaker AI (JumpStart) models
 
 ### Prerequisites
 
-- **All Operating Systems**: Python 3.12 or higher
+- **All Operating Systems**: Python 3.10.x, 3.11.x, or 3.12.x (recommended: 3.12.10)
+- **Important**: Python 3.13+ may cause package compilation issues on Windows
 - **Linux**: Git (typically pre-installed)
 - **Windows**: Git for Windows (includes Git Bash terminal)
 
@@ -203,7 +204,8 @@ Both multi-agent workshops follow the same 6-step progressive architecture:
 
 ### Common Issues
 
-- **Python not found**: Ensure Python 3.12+ is installed and in PATH
+- **Python not found**: Ensure Python 3.10-3.12 is installed and in PATH
+- **Python 3.13+ compilation errors**: Use Python 3.12.10 or earlier for best compatibility
 - **Git Bash issues**: Install Git for Windows with Git Bash option
 - **Package conflicts**: Try creating a fresh virtual environment
 - **Module 5 (Memory Agent)**: Known issue with mem0 library and modern AWS auth

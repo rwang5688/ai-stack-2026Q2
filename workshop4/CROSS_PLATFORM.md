@@ -2,6 +2,20 @@
 
 This guide helps you work with Workshop 4 examples across different operating systems, with specific focus on Git Bash compatibility on Windows.
 
+## Python Version Requirements
+
+**Important**: This workshop requires Python 3.10.x, 3.11.x, or 3.12.x (recommended: 3.12.10)
+
+**Python 3.13+ Compatibility Issues:**
+- Many packages with C extensions don't have precompiled wheels for Python 3.13 yet
+- This causes compilation failures on Windows (requires Microsoft Visual C++ Build Tools)
+- Use Python 3.12.10 or earlier for best compatibility
+
+**Installation Recommendations:**
+- **Windows**: Download Python 3.12.10 from python.org
+- **Linux**: Use your distribution's package manager (e.g., `apt install python3.12`)
+- **macOS**: Use Homebrew (`brew install python@3.12`) or python.org installer
+
 ## Quick Reference
 
 ### Essential Commands for Workshop
@@ -58,6 +72,87 @@ netstat -an | findstr :8000  # Windows CMD
 | Check port | `netstat -an \| grep :8000` | `netstat -an \| grep :8000` | `netstat -an \| findstr :8000` |
 | Kill process | `kill -9 PID` | `kill -9 PID` | `taskkill /PID PID /F` |
 | Find process | `ps aux \| grep python` | `ps aux \| grep python` | `tasklist \| findstr python` |
+
+## Environment Setup
+
+### Virtual Environment Strategy
+
+**Important**: All sample code in workshop4 shares the same virtual environment located at `workshop4/venv`. This approach ensures consistency and reduces setup complexity.
+
+### UV Package Manager Setup
+
+UV is a fast, cross-platform Python package manager that provides consistent behavior across platforms.
+
+**Installation (same command for all platforms via Git Bash/Terminal):**
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+source ~/.bashrc  # or restart terminal
+```
+
+**Virtual Environment Setup with UV:**
+```bash
+# Navigate to workshop directory
+cd workshop4
+
+# Create virtual environment
+uv venv
+
+# Activate virtual environment (same command for all platforms)
+source .venv/bin/activate
+
+# Install dependencies
+uv pip install -r requirements.txt
+```
+
+**Alternative: Standard Python (Fallback):**
+```bash
+# Navigate to workshop directory
+cd workshop4
+
+# Create virtual environment
+python -m venv venv
+
+# Activate virtual environment (same command for all platforms)
+source venv/bin/activate
+
+# Install dependencies
+pip install -r requirements.txt
+```
+
+### Requirements Management
+
+- Use `requirements.txt` with OS-independent package specifications
+- Avoid OS-specific packages in the main requirements file
+- Document any OS-specific requirements separately
+
+**Example Requirements Structure:**
+```
+workshop4/
+├── requirements.txt          # Core dependencies (OS-independent)
+├── requirements-linux.txt    # Linux-specific additions (if needed)
+├── requirements-windows.txt  # Windows-specific additions (if needed)
+├── venv/                    # Virtual environment (shared)
+└── sample-code/             # All sample code using shared venv
+```
+
+### Development Workflow Best Practices
+
+1. **Always activate the virtual environment first:**
+   ```bash
+   # From workshop4 directory (same command for all platforms)
+   source .venv/bin/activate
+   ```
+
+2. **All sample code assumes the shared virtual environment is activated**
+
+3. **Use relative imports and paths where possible**
+
+4. **Use forward slashes in paths** (works in Git Bash and Linux)
+
+5. **When adding new dependencies:**
+   - Update `requirements.txt` with OS-independent packages
+   - Test on both Windows (Git Bash) and Linux if possible
+   - Document any OS-specific considerations
 
 ## Environment Setup
 
@@ -125,6 +220,22 @@ $env:AWS_SECRET_ACCESS_KEY="your_secret"
 $env:AWS_DEFAULT_REGION="us-east-1"
 ```
 
+### Setup Troubleshooting
+
+#### Git Bash Setup Issues
+- Ensure Git for Windows is installed with Git Bash option
+- Verify Python is accessible from Git Bash terminal
+- Add Python to PATH if necessary
+
+#### Environment Variables
+- Document any required environment variables
+- Use Linux-style syntax (works in Git Bash)
+
+#### Package Conflicts
+- If OS-specific packages are needed, use separate requirements files
+- Document the installation order and any special considerations
+- Try creating a fresh virtual environment if issues persist
+
 ## Runtime Execution
 
 ### Runtime Command Equivalents
@@ -137,6 +248,30 @@ $env:AWS_DEFAULT_REGION="us-east-1"
 | Run Python script | `uv run script.py` | `uv run script.py` | `uv run script.py` |
 
 ## Platform-Specific Coding Issues
+
+### Path Handling
+
+**Linux/macOS:**
+```python
+import os
+path = "workshop4/modules/module1"
+full_path = os.path.join("workshop4", "modules", "module1")
+```
+
+**Windows (Git Bash Compatible):**
+```python
+import os
+# Use forward slashes - Git Bash handles them correctly
+path = "workshop4/modules/module1"
+full_path = os.path.join("workshop4", "modules", "module1")  # Still use os.path.join
+```
+
+**Windows (Native):**
+```python
+import os
+path = "workshop4\\modules\\module1"
+full_path = os.path.join("workshop4", "modules", "module1")
+```
 
 ### MCP Client Windows Connection
 
@@ -321,27 +456,3 @@ Available tools:
 **Step 2 (Streamlit):** Import `cross_platform_tools` in `app.py`
 **Step 3 (Knowledge Base):** Enhanced agents maintain cross-platform compatibility
 **Step 4 (Production):** Docker containers can use appropriate base images per platform
-
-### Path Handling
-
-**Linux/macOS:**
-```python
-import os
-path = "workshop4/modules/module1"
-full_path = os.path.join("workshop4", "modules", "module1")
-```
-
-**Windows (Git Bash Compatible):**
-```python
-import os
-# Use forward slashes - Git Bash handles them correctly
-path = "workshop4/modules/module1"
-full_path = os.path.join("workshop4", "modules", "module1")  # Still use os.path.join
-```
-
-**Windows (Native):**
-```python
-import os
-path = "workshop4\\modules\\module1"
-full_path = os.path.join("workshop4", "modules", "module1")
-```

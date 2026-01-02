@@ -21,16 +21,21 @@ for cmd in python python3; do
 done
 
 if [ -z "$PYTHON_CMD" ]; then
-    echo "❌ Python not found. Please install Python 3.12 or higher."
+    echo "❌ Python not found. Please install Python 3.12.x (recommended: 3.12.10)."
     echo "   Tried: python, python3"
+    echo "   Note: Python 3.13+ may have package compatibility issues."
     exit 1
 fi
 
-PYTHON_VERSION=$($PYTHON_CMD -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
-REQUIRED_VERSION="3.12"
+PYTHON_VERSION=$($PYTHON_CMD -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}')")
+MAJOR_MINOR=$($PYTHON_CMD -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')")
 
-if ! $PYTHON_CMD -c "import sys; exit(0 if sys.version_info >= (3, 12) else 1)" 2>/dev/null; then
-    echo "❌ Python $PYTHON_VERSION found with '$PYTHON_CMD', but Python $REQUIRED_VERSION or higher is required."
+# Check for supported Python versions (3.10, 3.11, 3.12)
+if ! $PYTHON_CMD -c "import sys; exit(0 if (3, 10) <= sys.version_info[:2] <= (3, 12) else 1)" 2>/dev/null; then
+    echo "❌ Python $PYTHON_VERSION found with '$PYTHON_CMD'."
+    echo "   Supported versions: Python 3.10.x, 3.11.x, or 3.12.x"
+    echo "   Recommended: Python 3.12.10"
+    echo "   Note: Python 3.13+ may cause package compilation issues on Windows."
     exit 1
 fi
 
