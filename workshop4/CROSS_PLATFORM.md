@@ -6,15 +6,67 @@ This guide helps you work with Workshop 4 examples across different operating sy
 
 **Important**: This workshop requires Python 3.10.x, 3.11.x, or 3.12.x (recommended: 3.12.10)
 
-**Python 3.13+ Compatibility Issues:**
-- Many packages with C extensions don't have precompiled wheels for Python 3.13 yet
-- This causes compilation failures on Windows (requires Microsoft Visual C++ Build Tools)
-- Use Python 3.12.10 or earlier for best compatibility
+## Python Version Requirements
+
+**Recommended**: Python 3.12.x or 3.13.x for optimal experience
+
+**Cross-Platform Consistency:**
+- **Linux**: Python 3.12.x (stable, mature ecosystem)
+- **Windows**: Python 3.12.x or 3.13.x (both work excellently with proper build tools)
+
+**Why These Versions:**
+- Pre-compiled wheels available for most packages (fast installation)
+- Only specialized packages (like Bedrock AgentCore) require compilation
+- Stable, well-tested ecosystem
 
 **Installation Recommendations:**
-- **Windows**: Download Python 3.12.10 from python.org
+- **Windows**: Download from python.org + Visual Studio Build Tools (see detailed steps below)
 - **Linux**: Use your distribution's package manager (e.g., `apt install python3.12`)
 - **macOS**: Use Homebrew (`brew install python@3.12`) or python.org installer
+
+## Windows-Specific Setup Requirements
+
+**CRITICAL for Windows Users**: Python packages that require compilation need Microsoft Visual C++ Build Tools.
+
+### Optimal Windows Setup Process
+
+#### Step 1: Install Python (Clean Installation)
+1. Download Python 3.12.x or 3.13.x from [python.org](https://python.org)
+2. **IMPORTANT**: During installation:
+   - ✅ **DO**: Check "Add Python to PATH"
+   - ❌ **DON'T**: Check Chocolatey checkbox (causes conflicts)
+   - ❌ **DON'T**: Install VS Build Tools from Python installer (incomplete installation)
+3. Use default installation settings
+
+#### Step 2: Install Visual Studio Build Tools (Separately)
+1. Download "Build Tools for Visual Studio 2022" from: https://visualstudio.microsoft.com/visual-cpp-build-tools/
+2. Run the VS Build Tools installer
+3. **CRITICAL**: Click **"Modify"** (not "Launch") to access workload selection
+4. Under **Workloads**, check **"Desktop development with C++"**
+   - This installs the complete C++ toolchain (~6GB)
+   - Don't try to minimize components - full workload prevents issues
+5. Click "Modify" to install
+6. **Reboot your system** after installation
+
+#### Step 3: Verify Build Tools Installation
+Open a new terminal and run:
+```cmd
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvars64.bat" && where cl
+```
+You should see the path to `cl.exe` (the C++ compiler).
+
+#### Step 4: Run Workshop Setup
+```bash
+cd workshop4
+./setup-environment.sh
+```
+
+### Why This Approach Works Best
+- **Separate installations**: Avoids conflicts between Python installer and VS Build Tools
+- **Complete toolchain**: Full "Desktop development with C++" workload includes everything needed
+- **Fast package installation**: Pre-compiled wheels for common packages (NumPy, pandas, etc.)
+- **Minimal compilation**: Only specialized packages (Bedrock AgentCore) need compilation
+- **Cross-platform consistency**: Same Python versions work on Linux and Windows
 
 ## Quick Reference
 

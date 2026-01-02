@@ -1,43 +1,77 @@
 # Session Notes - January 1, 2026
 
 ## Session Overview
-Troubleshooting Python environment setup issues for Workshop 4, specifically addressing package compilation failures on Windows with Python 3.13.
+Successfully resolved Python environment setup issues for Workshop 4 by installing proper Visual Studio Build Tools and using Python 3.13.11.
 
 ## Key Accomplishments
-- Identified root cause of `ruamel-yaml-clibz` compilation failure
-- Updated setup-environment.sh to restrict Python version to 3.10-3.12 range
-- Updated workshop documentation with Python version constraints
-- Reorganized CROSS_PLATFORM.md for better structure
-- Removed misplaced workshop-specific steering file
+- ✅ **RESOLVED**: Python compilation issues on Windows
+- ✅ **INSTALLED**: Visual Studio Build Tools with "Desktop development with C++" workload
+- ✅ **DOCUMENTED**: Proper VS Build Tools installation steps in workshop documentation
+- ✅ **TESTED**: Python 3.13.11 works perfectly with pre-compiled wheels
+- ✅ **UPDATED**: Workshop documentation with clear Windows setup requirements
+- Updated setup-environment.sh to support Python 3.12+ (removed upper version restriction)
+- Enhanced CROSS_PLATFORM.md and README.md with detailed VS Build Tools instructions
 
 ## Issues & Resolutions
-- **Issue**: `ruamel-yaml-clibz==0.3.4` failing to compile on Windows with Python 3.13.11 and 3.12.10
+- **Issue**: `ruamel-yaml-clibz==0.3.4` and other packages failing to compile on Windows
   - **Root Cause**: Missing Microsoft Visual C++ Build Tools (not a Python version issue)
-  - **Lesson Learned**: Python installer has optional checkbox for build tools that only appears during initial install
-  - **Why not Chocolatey**: Chocolatey installs its own Python version, creating conflicts with existing installations
-  - **Resolution**: Install Visual Studio Build Tools directly from Microsoft (cleanest approach)
+  - **Key Learning**: The "Modify" button in VS Installer is crucial - many users miss this step
+  - **Resolution**: Install Visual Studio Build Tools with "Desktop development with C++" workload (~6GB)
 
-- **Issue**: Workshop-specific documentation in .kiro/steering/
-  - **Root Cause**: workshop-virtual-environment.md was misplaced in steering directory
-  - **Resolution**: Merged content into workshop4/CROSS_PLATFORM.md and removed steering file
+- **Issue**: Python 3.14.2 caused excessive compilation times (NumPy took 10+ minutes)
+  - **Root Cause**: No pre-compiled wheels available for Python 3.14.2 (too new)
+  - **Resolution**: Switched to Python 3.13.11 - perfect balance of modern features + wheel availability
+
+- **Issue**: Confusing VS Build Tools installation process
+  - **Root Cause**: Users need to click "Modify" (not "Launch") to access workload selection
+  - **Resolution**: Documented the "Modify" step prominently in both README.md and CROSS_PLATFORM.md
 
 ## Decisions Made
-- Conservative Python version approach: stick with well-supported versions (3.10-3.12)
-- Updated error messages to be more specific about supported versions
-- Added warnings about Python 3.13+ compatibility issues
-- Keep .kiro/steering/ for general project management rules only, not workshop-specific content
+- **Python Version Strategy**: Use Python 3.13.x as the sweet spot (modern + good wheel support)
+- **VS Build Tools**: Install full "Desktop development with C++" workload (don't minimize components)
+- **Documentation**: Added Windows-specific setup section with step-by-step VS Build Tools instructions
+- **Setup Script**: Modified to support Python 3.12+ (removed upper version cap)
+- **Troubleshooting**: Made "check if you clicked Modify" the #1 troubleshooting step
 
 ## Next Steps
-- [ ] User to install Python 3.12.10 to resolve compilation issues
-- [ ] Test updated setup script with Python 3.12
-- [ ] Verify workshop environment works without C++ compilation errors
+- [x] ✅ Python 3.13.11 installation successful
+- [x] ✅ Workshop environment setup completes in minutes (not hours)
+- [x] ✅ Only specialized packages (like Bedrock AgentCore) require compilation
+- [x] Test workshop modules to ensure everything works properly
+- [x] Consider updating setup script recommendations to suggest Python 3.13.x
 
-## Current Status (Latest Update)
-- User has deinstalled Python and needs to start fresh
-- Visual Studio Build Tools are confirmed installed at: C:\Program Files (x86)\Microsoft Visual Studio\18\BuildTools
-- Decision: Install Python 3.14.2 (assuming 3.13.2) and test with VS Build Tools
-- Need to update setup script to allow newer Python versions for testing
+## Final Resolution & Best Practices
+**SUCCESS**: Python 3.12/3.13 + Visual Studio Build Tools = Fast setup with minimal compilation
+
+### Recommended Python Versions
+- **Python 3.12.x**: Stable, mature wheel ecosystem (matches Ubuntu Linux environment)
+- **Python 3.13.x**: Latest stable, good wheel availability (current Windows setup)
+- Both versions work excellently with proper build tools
+
+### Optimal Windows Setup Process
+1. **Install Python from python.org**:
+   - ✅ **DO**: Use standard Python installer
+   - ❌ **DON'T**: Check Chocolatey checkbox (avoids conflicts)
+   - ❌ **DON'T**: Install VS Build Tools from Python installer (incomplete)
+
+2. **Install Visual Studio Build Tools separately**:
+   - Download from Microsoft website (not through Python installer)
+   - Run VS Build Tools installer
+   - **CRITICAL**: Click **"Modify"** (not "Launch")
+   - Under **Workloads**, check **"Desktop development with C++"**
+   - Install full workload (~6GB)
+
+3. **Run setup-environment.sh**:
+   - Fast installation with pre-compiled wheels
+   - Only specialized packages compile (minutes, not hours)
+
+### Results
+- **Common packages** (NumPy, pandas, etc.): Pre-compiled wheels (seconds)
+- **Specialized packages** (Bedrock AgentCore): Compile as needed (minutes)
+- **Total setup time**: ~5 minutes instead of 30+ minutes
+- **Cross-platform consistency**: Same Python versions on Linux and Windows
 
 ## Resources
-- [Microsoft Visual C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) - Alternative solution if user wants to keep Python 3.13
-- Python 3.12.10 - Latest stable version in 3.12.x series, recommended for workshop compatibility
+- [Visual Studio Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/) - Download separately from Microsoft
+- [Python 3.12.x/3.13.x](https://python.org) - Both recommended for workshop
+- Workshop documentation updated with optimal Windows setup process

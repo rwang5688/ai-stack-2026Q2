@@ -21,9 +21,9 @@ for cmd in python python3; do
 done
 
 if [ -z "$PYTHON_CMD" ]; then
-    echo "❌ Python not found. Please install Python 3.12.x (recommended: 3.12.10)."
+    echo "❌ Python not found. Please install Python 3.12.x or 3.13.x."
     echo "   Tried: python, python3"
-    echo "   Note: Python 3.13+ may have package compatibility issues."
+    echo "   Recommended: Python 3.12.x (stable) or 3.13.x (latest)"
     exit 1
 fi
 
@@ -33,9 +33,9 @@ MAJOR_MINOR=$($PYTHON_CMD -c "import sys; print(f'{sys.version_info.major}.{sys.
 # Check for supported Python versions (3.12 or above)
 if ! $PYTHON_CMD -c "import sys; exit(0 if sys.version_info[:2] >= (3, 12) else 1)" 2>/dev/null; then
     echo "❌ Python $PYTHON_VERSION found with '$PYTHON_CMD'."
-    echo "   Supported versions: Python 3.12.x or above"
-    echo "   Recommended: Python 3.12.10 or newer"
-    echo "   Note: Newer Python versions may require compatible package versions."
+    echo "   Supported versions: Python 3.12.x or 3.13.x"
+    echo "   Recommended: Python 3.12.x (stable) or 3.13.x (latest)"
+    echo "   Note: Ensure Visual Studio Build Tools are installed on Windows."
     exit 1
 fi
 
@@ -85,13 +85,41 @@ echo "✅ Virtual environment ready for $PLATFORM"
 # Activate virtual environment and install dependencies
 echo "📦 Installing dependencies..."
 source "$ACTIVATE_PATH"
-uv pip install -r requirements.txt
+
+# Try to install dependencies, with fallback for compilation issues
+echo "🔧 Attempting to install all dependencies..."
+if ! uv pip install -r requirements.txt; then
+    echo "⚠️  Some packages failed to compile. Trying alternative approach..."
+    echo "📦 Installing packages that don't require compilation first..."
+    
+    # Install packages that typically don't require compilation
+    uv pip install boto3 litellm pandas streamlit tqdm retrying opensearch-py
+    uv pip install strands-agents "strands-agents-tools[mem0_memory]"
+    uv pip install aws-opentelemetry-distro
+    uv pip install "mcp[cli]"
+    uv pip install nova-act
+    
+    # Try bedrock packages with pre-compiled wheels
+    echo "🔧 Attempting bedrock packages with pre-compiled wheels..."
+    if ! uv pip install bedrock-agentcore bedrock-agentcore-starter-toolkit --only-binary=all; then
+        echo "⚠️  Bedrock packages require compilation. Installing core bedrock-agentcore only..."
+        uv pip install bedrock-agentcore --only-binary=all || echo "❌ bedrock-agentcore also failed"
+    fi
+fi
 
 echo "🧪 Verifying installation..."
 if $PYTHON_CMD -c "from strands import Agent; print('✅ Strands Agents SDK installed successfully')" 2>/dev/null; then
-    echo "✅ All dependencies installed successfully"
+    echo "✅ Core dependencies installed successfully"
+    
+    # Check for optional bedrock components
+    if $PYTHON_CMD -c "import bedrock_agentcore; print('✅ Bedrock AgentCore available')" 2>/dev/null; then
+        echo "✅ Bedrock AgentCore toolkit available"
+    else
+        echo "⚠️  Bedrock AgentCore toolkit not available (compilation issues)"
+        echo "   You can still use most workshop features without it"
+    fi
 else
-    echo "❌ Installation verification failed"
+    echo "❌ Core installation verification failed"
     exit 1
 fi
 

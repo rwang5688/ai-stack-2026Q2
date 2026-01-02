@@ -29,10 +29,41 @@ Side-by-side analog of the Bedrock version using SageMaker AI (JumpStart) models
 
 ### Prerequisites
 
-- **All Operating Systems**: Python 3.10.x, 3.11.x, or 3.12.x (recommended: 3.12.10)
-- **Important**: Python 3.13+ may cause package compilation issues on Windows
+- **All Operating Systems**: Python 3.12.x or 3.13.x (both recommended)
+- **Windows**: Microsoft Visual Studio Build Tools (see setup steps below)
 - **Linux**: Git (typically pre-installed)
 - **Windows**: Git for Windows (includes Git Bash terminal)
+
+### Windows-Specific Setup (IMPORTANT)
+
+**For optimal Windows experience, install Python and VS Build Tools separately:**
+
+#### Step 1: Install Python
+1. **Download Python 3.12.x or 3.13.x** from [python.org](https://python.org)
+2. **During installation**:
+   - ✅ **DO**: Check "Add Python to PATH"
+   - ❌ **DON'T**: Check Chocolatey checkbox (causes conflicts)
+   - ❌ **DON'T**: Install VS Build Tools from Python installer (incomplete)
+
+#### Step 2: Install Visual Studio Build Tools (Separately)
+1. **Download "Build Tools for Visual Studio 2022"**: https://visualstudio.microsoft.com/visual-cpp-build-tools/
+2. **Run the installer**
+3. **CRITICAL**: Click **"Modify"** (not "Launch") to access workload selection
+4. **Under Workloads**: Check **"Desktop development with C++"** (~6GB)
+5. **Install and reboot your system**
+
+#### Step 3: Verify Installation
+```cmd
+"C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvars64.bat" && where cl
+```
+
+#### Step 4: Run Workshop Setup
+```bash
+cd workshop4
+./setup-environment.sh
+```
+
+**Why this approach works best**: Separate installations avoid conflicts, provide complete toolchain, and enable fast package installation with minimal compilation.
 
 ### Environment Setup
 
@@ -204,12 +235,41 @@ Both multi-agent workshops follow the same 6-step progressive architecture:
 
 ### Common Issues
 
-- **Python not found**: Ensure Python 3.10-3.12 is installed and in PATH
-- **Python 3.13+ compilation errors**: Use Python 3.12.10 or earlier for best compatibility
+- **Python not found**: Ensure Python 3.12+ is installed and in PATH
+- **"Microsoft Visual C++ 14.0 or greater is required" on Windows**: Install Visual Studio Build Tools (see Prerequisites section)
+- **Compilation errors on Windows**: Ensure you installed the full "Desktop development with C++" workload, not just minimal build tools
 - **Git Bash issues**: Install Git for Windows with Git Bash option
 - **Package conflicts**: Try creating a fresh virtual environment
 - **Module 5 (Memory Agent)**: Known issue with mem0 library and modern AWS auth
 - **Module 6 (Windows)**: Use `meta_tooling_windows.py` for Windows compatibility
+
+### Build Tools Troubleshooting (Windows)
+
+If you're still getting compilation errors after installing Visual Studio Build Tools:
+
+1. **Verify you installed VS Build Tools separately (not through Python installer)**:
+   - Python installer's VS Build Tools option is incomplete
+   - Download and install from Microsoft website instead
+
+2. **Check if you clicked "Modify" instead of "Launch"**:
+   - Re-run the Visual Studio Installer
+   - If you see "Build Tools for Visual Studio 2022" listed, click **"Modify"**
+   - Ensure "Desktop development with C++" workload is checked
+   - If not checked, select it and click "Modify" to install
+
+3. **Verify installation path**:
+   ```cmd
+   dir "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools"
+   ```
+
+4. **Check if compiler is available**:
+   ```cmd
+   "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvars64.bat" && where cl
+   ```
+
+5. **If still failing**: Uninstall and reinstall Build Tools, ensuring you select "Desktop development with C++" workload
+
+6. **Alternative**: Use the modified setup script which attempts to install packages without compilation when possible
 
 ### Getting Help
 
