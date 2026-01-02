@@ -202,7 +202,7 @@ Both multi-agent workshops follow the same 6-step progressive architecture:
 - **Step 6**: 📋 PLANNED - Documentation and workshop materials
 
 ### Multi-Agent SageMaker AI (workshop4-multi-agent-sagemaker-ai)
-- **Status**: � SPECN COMPLETE - Ready for implementation with 6-step approach
+- **Status**: 🔄 SPEC COMPLETE - Ready for implementation with 6-step approach
 - **Step 1**: 🔄 PLANNED - CLI Teacher's Assistant system with SageMaker models
 - **Step 2**: 🔄 PLANNED - Streamlit web interface
 - **Step 3**: 🔄 PLANNED - Knowledge base integration
