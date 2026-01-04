@@ -209,9 +209,16 @@ class BedrockKnowledgeBase:
                 Description='Policy for accessing foundation model',
             )
         except self.iam_client.exceptions.EntityAlreadyExistsException:
-            fm_policy = self.iam_client.get_policy(
-                PolicyArn=f"arn:aws:iam::{self.account_number}:policy/{self.fm_policy_name}"
+            fm_policy_arn = f"arn:aws:iam::{self.account_number}:policy/{self.fm_policy_name}"
+            print(f"Foundation model policy {fm_policy_arn} already exists, updating with correct region")
+            # Update the existing policy with the correct region
+            self.iam_client.create_policy_version(
+                PolicyArn=fm_policy_arn,
+                PolicyDocument=json.dumps(foundation_model_policy_document),
+                SetAsDefault=True
             )
+            print(f"Updated foundation model policy to use region {self.region_name}")
+            fm_policy = self.iam_client.get_policy(PolicyArn=fm_policy_arn)
 
         try:
             s3_policy = self.iam_client.create_policy(
@@ -219,9 +226,16 @@ class BedrockKnowledgeBase:
                 PolicyDocument=json.dumps(s3_policy_document),
                 Description='Policy for reading documents from s3')
         except self.iam_client.exceptions.EntityAlreadyExistsException:
-            s3_policy = self.iam_client.get_policy(
-                PolicyArn=f"arn:aws:iam::{self.account_number}:policy/{self.s3_policy_name}"
+            s3_policy_arn = f"arn:aws:iam::{self.account_number}:policy/{self.s3_policy_name}"
+            print(f"S3 policy {s3_policy_arn} already exists, updating with correct bucket")
+            # Update the existing policy with the correct bucket
+            self.iam_client.create_policy_version(
+                PolicyArn=s3_policy_arn,
+                PolicyDocument=json.dumps(s3_policy_document),
+                SetAsDefault=True
             )
+            print(f"Updated S3 policy to use bucket {self.bucket_name}")
+            s3_policy = self.iam_client.get_policy(PolicyArn=s3_policy_arn)
         # create bedrock execution role
         try:
             bedrock_kb_execution_role = self.iam_client.create_role(
