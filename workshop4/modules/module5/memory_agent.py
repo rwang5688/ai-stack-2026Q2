@@ -51,7 +51,7 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 USER_ID = os.getenv('USER_ID', 'J')
-AWS_DEFAULT_REGION = os.getenv('AWS_DEFAULT_REGION', 'us-west-2')
+AWS_REGION = os.getenv('AWS_REGION', 'us-east-1')
 
 # System prompt for the memory agent
 MEMORY_SYSTEM_PROMPT = f"""You are a personal assistant that maintains context by remembering user details.
@@ -86,7 +86,7 @@ if USE_AGENTCORE_MEMORY:
         actor_id=USER_ID,               # Required
         session_id="session-789",       # Required
         namespace="default",            # Required
-        region=AWS_DEFAULT_REGION       # Optional, defaults to us-west-2
+        region=AWS_REGION       # Optional, defaults to us-east-1
     )
     memory_tool = provider.tools
 else:

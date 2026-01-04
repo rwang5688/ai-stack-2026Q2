@@ -255,21 +255,21 @@ source .venv/Scripts/activate
 ```bash
 export AWS_ACCESS_KEY_ID=your_key
 export AWS_SECRET_ACCESS_KEY=your_secret
-export AWS_DEFAULT_REGION=us-east-1
+export AWS_REGION=us-east-1
 ```
 
 **Windows CMD:**
 ```cmd
 set AWS_ACCESS_KEY_ID=your_key
 set AWS_SECRET_ACCESS_KEY=your_secret
-set AWS_DEFAULT_REGION=us-east-1
+set AWS_REGION=us-east-1
 ```
 
 **Windows PowerShell:**
 ```powershell
 $env:AWS_ACCESS_KEY_ID="your_key"
 $env:AWS_SECRET_ACCESS_KEY="your_secret"
-$env:AWS_DEFAULT_REGION="us-east-1"
+$env:AWS_REGION="us-east-1"
 ```
 
 ### Setup Troubleshooting

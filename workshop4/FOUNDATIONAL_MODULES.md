@@ -202,50 +202,8 @@ The module showcases:
 - **AWS credentials** with IAM permissions for Amazon Bedrock, S3, and related services
 - **Amazon Bedrock region support** - ensure you're in a region that supports Amazon Bedrock Knowledge Bases
 - **Python 3.12+** with uv package manager
-- **Processing Time**: Knowledge Base creation takes approximately 7-9 minutes to complete
 
-### Step 1: Create Bedrock Knowledge Base with Python
-
-This step automates the creation of an Amazon Bedrock Knowledge Base using a Python script that handles the entire setup process.
-
-#### 🧹 Important: Cleanup First Workflow
-
-**CRITICAL**: Always run cleanup before creating a new Knowledge Base to prevent IAM policy conflicts.
-
-```bash
-# Navigate to module directory
-cd modules/module3
-
-# STEP 1: Clean up any existing resources (REQUIRED)
-uv run cleanup.py
-
-# STEP 2: Create new Knowledge Base
-uv run create_knowledge_base.py
-```
-
-**Why cleanup first?**
-- Prevents "policy already exists" errors
-- Ensures IAM roles and policies align with S3, OpenSearch, and Bedrock resources
-- Removes orphaned policies from previous runs
-- Guarantees clean resource state for reliable creation
-
-**What cleanup removes:**
-- Knowledge Bases and data sources
-- S3 buckets (bedrock-kb-bucket-*)
-- OpenSearch Serverless collections
-- IAM roles (AmazonBedrockExecutionRoleForKnowledgeBase_*)
-- IAM policies (AmazonBedrock*PolicyForKnowledgeBase_*)
-
-#### What the Script Does:
-- Downloads sample knowledge base files (pets-kb-files.zip)
-- Creates an S3 bucket with random suffix for data storage
-- Sets up an Amazon Bedrock Knowledge Base with custom data source
-- Synchronizes the S3 bucket with the Knowledge Base
-- Configures vector embeddings and search capabilities
-
-#### How to Run:
-
-If are not already in module directory, navigate to module directory.
+If you are not already in module directory, navigate to module directory:
 
 **All Platforms (Linux/macOS/Windows):**
 ```bash
@@ -253,44 +211,136 @@ If are not already in module directory, navigate to module directory.
 cd modules/module3
 ```
 
-Once you have changed to module directory, run the knowledge base creation script.
+If you have not alrady set your AWS region, please set **AWS_REGION** to your desired region.
+
+For now, [Amazon Nova Forge](https://aws.amazon.com/blogs/aws/introducing-amazon-nova-forge-build-your-own-frontier-models-using-nova/) is only available in `us-east-1`:
 
 **All Platforms (Linux/macOS/Windows):**
 ```bash
 # Set AWS region (if not already set)
-export AWS_DEFAULT_REGION="$AWS_REGION"
+export AWS_REGION="us-east-1"
+```
 
-# Run the knowledge base creation script
+Alternatively, you can also set to `us-west-2`, where Amazon Bedrock and Amazon SageMaker AI features are fully available:
+
+**All Platforms (Linux/macOS/Windows):**
+```bash
+# Set AWS region (if not already set)
+export AWS_REGION="us-west-2"
+```
+
+### Step 1: Create Bedrock Knowledge Base with Python and Configure Environment Variables
+
+This step automates the creation of an Amazon Bedrock Knowledge Base using a Python script that handles the entire setup process.
+
+- **Processing Time**: Knowledge Base creation takes approximately 7-9 minutes to complete
+
+#### Create Bedrock Knowledge Base (One-time setup)
+
+##### STEP 1.1: Run Targeted Cleanup Script 🎯 
+
+**CRITICAL**: Always run cleanup before creating a new Knowledge Base to prevent resource conflicts and ensure clean deployment.
+
+**Why cleanup first?**
+- Prevents "resource already exists" errors
+- Ensures clean slate for reliable Knowledge Base creation
+- Removes only resources actually used by previous Knowledge Bases
+- Guarantees optimal resource state for new deployment
+
+**What the NEW targeted cleanup does:**
+- **🔍 Smart Discovery**: Uses Bedrock APIs to identify exact resources used by Knowledge Bases
+- **🎯 Surgical Precision**: Only deletes resources actually created by Knowledge Bases in current region
+- **✅ User Confirmation**: Shows exactly what will be deleted and requires your approval
+- **🛡️ Maximum Safety**: Zero risk of deleting unrelated AWS resources
+
+**Resources cleaned up (only if used by Knowledge Bases):**
+- Knowledge Bases and their data sources
+- S3 buckets (identified via Bedrock data source APIs)
+- OpenSearch Serverless collections (identified via Knowledge Base configuration)
+- IAM roles (identified via Knowledge Base execution role)
+- IAM policies (identified via role attachments)
+
+**Interactive cleanup process:**
+```bash
+# STEP 1.1: Clean up existing Knowledge Base resources (REQUIRED)
+uv run python cleanup.py
+
+# The script will:
+# 1. Discover resources used by Knowledge Bases
+# 2. Show you exactly what will be deleted
+# 3. Ask for your confirmation before proceeding
+# 4. Perform targeted cleanup of only those resources
+```
+
+**Sample cleanup output:**
+```
+🔍 Discovering resources to cleanup...
+✅ Discovery complete!
+
+🎯 TARGETED CLEANUP - Resources to be deleted:
+============================================================
+
+📚 Knowledge Bases (1):
+  • pets-kb-abc123 (ABCD1234567890)
+
+🗑️  S3 Buckets (1):
+  • bedrock-kb-bucket-us-east-1-xyz789
+
+🔍 OpenSearch Collections (1):
+  • bedrock-kb-collection-def456
+
+👤 IAM Roles (1):
+  • AmazonBedrockExecutionRoleForKnowledgeBase_ghi789
+
+📋 IAM Policies (1):
+  • AmazonBedrockKnowledgeBasePolicy_jkl012
+
+⚠️  This will delete 5 resources in region: us-east-1
+⚠️  This action cannot be undone!
+
+Do you want to proceed with cleanup? (yes/no):
+```
+
+**📝 Note**: If you need the old cleanup behavior (not recommended), the previous script is available as `cleanup_old.py`. However, the new targeted approach is much safer and is the recommended method.
+
+##### STEP 1.2: Run Create Knowledge Base Script
+
+**What the create knowledge base script does:**
+- Checks for local pets-kb-files directory with PDF files
+- Creates an S3 bucket with random suffix for data storage
+- Sets up an Amazon Bedrock Knowledge Base with custom data source
+- Uploads PDF files from local directory to S3 bucket
+- Synchronizes the S3 bucket with the Knowledge Base
+- Configures vector embeddings and search capabilities
+
+**Prerequisites for this step:**
+- Ensure the `pets-kb-files` directory exists in the `modules/module3` directory
+- The directory should contain PDF files for the knowledge base
+
+From module directory, run the create knowledge base script.
+
+**All Platforms (Linux/macOS/Windows):**
+```bash
+# STEP 1.2: Create new Knowledge Base
 uv run create_knowledge_base.py
+```
+
+##### STEP 1.3: Configure Environment Variables
+
+Add the required environment variables with existing Knowledge Base ID and OpenSearch endpoint:
+
+**All Platforms (Linux/macOS/Windows):**
+```bash
+# Get Knowledge Base ID
+export STRANDS_KNOWLEDGE_BASE_ID=$(aws bedrock-agent list-knowledge-bases --region $AWS_REGION --query 'knowledgeBaseSummaries[].knowledgeBaseId' --output text)
+
+# Persist to bashrc for future sessions
+echo "export STRANDS_KNOWLEDGE_BASE_ID=\"${STRANDS_KNOWLEDGE_BASE_ID}\"" >> ~/.bashrc
 ```
 
 ### Step 2: Build Knowledge-Base Agent with Strands
 
-This step demonstrates how to create a Strands agent that can intelligently store and retrieve information from the Amazon Bedrock Knowledge Base created in Step 1.
-
-#### Setup Environment Variables
-
-First, configure the required environment variables with the Knowledge Base ID and OpenSearch endpoint:
-
-```bash
-# Get Knowledge Base ID and OpenSearch details
-export STRANDS_KNOWLEDGE_BASE_ID=$(aws bedrock-agent list-knowledge-bases --region $AWS_REGION --query 'knowledgeBaseSummaries[].knowledgeBaseId' --output text)
-export OPENSEARCH_COLLECTION_ID=$(aws opensearchserverless list-collections --query "collectionSummaries[].id" --output text)
-export OPENSEARCH_ENDPOINT=$(aws opensearchserverless batch-get-collection --ids $OPENSEARCH_COLLECTION_ID --query 'collectionDetails[].collectionEndpoint' --output text)
-export OPENSEARCH_HOST="${OPENSEARCH_ENDPOINT#https://*}"
-
-# Persist to bashrc for future sessions
-echo "export STRANDS_KNOWLEDGE_BASE_ID=\"${STRANDS_KNOWLEDGE_BASE_ID}\"" >> ~/.bashrc
-echo "export OPENSEARCH_HOST=\"$OPENSEARCH_HOST\"" >> ~/.bashrc
-```
-
-#### How to Run
-
-**All Platforms (Linux/macOS/Windows):**
-```bash
-cd modules/module3
-uv run knowledge_base_agent.py
-```
+This step demonstrates how to create a Strands agent that can intelligently store and retrieve information from the Amazon Bedrock Knowledge Base created and configured in Step 1.
 
 #### What the Agent Does
 
@@ -306,6 +356,21 @@ The knowledge base agent demonstrates a **code-defined workflow** that:
 - **Specialized prompts** for classification and response generation
 - **Memory tool** for storing/retrieving with semantic similarity
 - **LLM integration** for natural language processing
+
+#### Set and Confirm Environment Variables
+
+**All Platforms (Linux/macOS/Windows):**
+```bash
+source ~/.bashrc
+echo "STRANDS_KNOWLEDGE_BASE_ID=\"${STRANDS_KNOWLEDGE_BASE_ID}\""
+```
+
+#### How to Run
+
+**All Platforms (Linux/macOS/Windows):**
+```bash
+uv run knowledge_base_agent.py
+```
 
 #### Sample Interactions
 
@@ -348,7 +413,6 @@ The agent uses two primary tools:
 **Verify setup:**
 - Check environment variables: `echo $STRANDS_KNOWLEDGE_BASE_ID`
 - Confirm Knowledge Base exists in Amazon Bedrock console
-- Verify OpenSearch collection is accessible
 
 ### Troubleshooting
 
@@ -611,13 +675,13 @@ The Memory Agent implements a **single agent with memory management** approach:
 ### How to Run
 
 **Prerequisites:**
-Ensure the `OPENSEARCH_HOST` environment variable is properly set:
+Ensure you have completed Module 3 and have the required environment variables set:
 
 ```bash
-# Check if environment variable is set
+# Check if environment variables are set
 tail -3 ~/.bashrc
 source ~/.bashrc
-echo "OPENSEARCH_HOST=\"$OPENSEARCH_HOST\""
+echo "STRANDS_KNOWLEDGE_BASE_ID=\"${STRANDS_KNOWLEDGE_BASE_ID}\""
 
 # Set user ID (optional, defaults to 'J')
 export USER_ID="J"  # Feel free to change this to another name

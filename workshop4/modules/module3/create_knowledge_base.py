@@ -3,15 +3,10 @@ import json
 import logging
 import os
 import re
-import requests
 import time
 import uuid
-import zipfile
-
 
 from knowledge_base import BedrockKnowledgeBase
-from tqdm import tqdm
-from urllib.parse import urlparse
 
 
 logging.basicConfig(format='[%(asctime)s] p%(process)s {%(filename)s:%(lineno)d} %(levelname)s - %(message)s', level=logging.INFO)
@@ -29,56 +24,9 @@ s3_client = boto3.client('s3', region)
 bedrock_agent_client = boto3.client('bedrock-agent', region)
 bedrock_agent_runtime_client = boto3.client('bedrock-agent-runtime', region)
 
-
-def download_file(url):
-    destination = os.path.basename(urlparse(url).path)
-    try:
-        response = requests.get(url, stream=True)
-        response.raise_for_status()
-        file_size = int(response.headers.get('content-length', 0))
-
-        with open(destination, 'wb') as file, tqdm(
-            desc=destination,
-            total=file_size,
-            unit='B',
-            unit_scale=True,
-            unit_divisor=1024,
-        ) as progress_bar:
-            for chunk in response.iter_content(chunk_size=8192):
-                if chunk:
-                    file.write(chunk)
-                    progress_bar.update(len(chunk))
-        return True
-    except Exception as e:
-        print(f"Error downloading file: {e}")
-        return False
-
-def extract_zip_file(zip_path):
-    try:
-        n_files = 0
-        with zipfile.ZipFile(zip_path, 'r') as f:
-            file_list = f.namelist()
-            print(f"Extracting files from {zip_path}")
-            for file in tqdm(file_list, desc="Extracting"):
-                if file.startswith('__') or '.DS_Store' in file:
-                    print(f'Skipping file: {file}')
-                    continue
-                clean_filename = re.sub(r'[\s-]+', '-', file).lower()
-                f.extract(file, '.')
-                os.rename(file, clean_filename)
-                n_files += 1
-        print(f"Successfully extracted {n_files} files")
-        return True
-    except zipfile.BadZipFile:
-        print(f"Error: {zip_path} is not a valid zip file")
-        return False
-    except Exception as e:
-        print(f"Error extracting zip file: {e}")
-        return False
-
 def create_s3_bucket_with_random_suffix(prefix):
     random_suffix = str(uuid.uuid4())[:8]
-    bucket_name = f"{prefix.lower()}-{random_suffix.lower()}"
+    bucket_name = f"{prefix.lower()}-{region}-{random_suffix.lower()}"
     try:
         if region == "us-east-1":
             # For us-east-1, we don't specify LocationConstraint
@@ -139,7 +87,7 @@ def check_bucket_has_files(bucket_name, expected_files):
 def get_or_create_s3_bucket():
     """Get existing bucket or create new one if needed"""
     buckets = s3_client.list_buckets()['Buckets']
-    s3_buckets = [b['Name'] for b in buckets if b['Name'].startswith('bedrock-kb-bucket')]
+    s3_buckets = [b['Name'] for b in buckets if b['Name'].startswith(f'bedrock-kb-bucket-{region}')]
     
     if s3_buckets:
         print(f"Found existing bucket: {s3_buckets[0]}")
@@ -203,16 +151,22 @@ def ingest_knowledge_base_documents(knowledge_base_id, data_source_id, s3_bucket
 def main():
     folder = 'pets-kb-files'
     
-    # Step 1: Check if local folder exists, if not download and extract
+    # Check if local folder exists
     if not os.path.isdir(folder):
-        print("Local folder doesn't exist, downloading and extracting files...")
-        download_file('https://d3k0crbaw2nl4d.cloudfront.net/pets-kb-files.zip')
-        extract_zip_file('pets-kb-files.zip')
-    else:
-        print(f"Local folder '{folder}' already exists with PDF files")
+        print(f"❌ Error: Local folder '{folder}' not found!")
+        print(f"Please ensure the '{folder}' directory exists in the current directory.")
+        print(f"This directory should contain the PDF files for the knowledge base.")
+        return
+    
+    print(f"✅ Found local folder '{folder}' with PDF files")
     
     # Get list of PDF files that should be in S3
     pdf_files = [f for f in os.listdir(folder) if f.endswith('.pdf')]
+    if not pdf_files:
+        print(f"❌ Error: No PDF files found in '{folder}' directory!")
+        print(f"Please add PDF files to the '{folder}' directory and try again.")
+        return
+        
     print(f"Found {len(pdf_files)} PDF files to upload: {pdf_files}")
     
     # Step 2: Get or create S3 bucket
