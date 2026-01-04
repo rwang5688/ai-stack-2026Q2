@@ -9,6 +9,7 @@
 
 import json
 import boto3
+import os
 import time
 from botocore.exceptions import ClientError
 from opensearchpy import OpenSearch, RequestsHttpConnection, AWSV4SignerAuth, RequestError
@@ -60,7 +61,7 @@ class BedrockKnowledgeBase:
             embedding_model (str): embedding model to use
         """
         boto3_session = boto3.session.Session()
-        self.region_name = boto3_session.region_name
+        self.region_name = os.getenv('AWS_REGION', boto3_session.region_name)
         self.iam_client = boto3_session.client('iam')
         self.account_number = boto3.client('sts').get_caller_identity().get('Account')
         self.suffix = str(self.account_number)[:4]
