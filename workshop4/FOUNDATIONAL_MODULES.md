@@ -229,15 +229,13 @@ Alternatively, you can also set to `us-west-2`, where Amazon Bedrock and Amazon 
 export AWS_REGION="us-west-2"
 ```
 
-### Step 1: Create Bedrock Knowledge Base with Python and Configure Environment Variables
+### Step 1: Create Bedrock Knowledge Base with Python (Region-specific)
 
 This step automates the creation of an Amazon Bedrock Knowledge Base using a Python script that handles the entire setup process.
 
 - **Processing Time**: Knowledge Base creation takes approximately 7-9 minutes to complete
 
-#### Create Bedrock Knowledge Base (One-time setup)
-
-##### STEP 1.1: Run Targeted Cleanup Script 🎯 
+#### STEP 1.1: Run Targeted Cleanup Script 🎯
 
 **CRITICAL**: Always run cleanup before creating a new Knowledge Base to prevent resource conflicts and ensure clean deployment.
 
@@ -262,6 +260,7 @@ This step automates the creation of an Amazon Bedrock Knowledge Base using a Pyt
 
 **Interactive cleanup process:**
 ```bash
+echo "AWS_REGION=\"${AWS_REGION}\""
 # STEP 1.1: Clean up existing Knowledge Base resources (REQUIRED)
 uv run python cleanup.py
 
@@ -303,7 +302,7 @@ Do you want to proceed with cleanup? (yes/no):
 
 **📝 Note**: If you need the old cleanup behavior (not recommended), the previous script is available as `cleanup_old.py`. However, the new targeted approach is much safer and is the recommended method.
 
-##### STEP 1.2: Run Create Knowledge Base Script
+#### STEP 1.2: Run Create Knowledge Base Script
 
 **What the create knowledge base script does:**
 - Checks for local pets-kb-files directory with PDF files
@@ -321,21 +320,9 @@ From module directory, run the create knowledge base script.
 
 **All Platforms (Linux/macOS/Windows):**
 ```bash
+echo "AWS_REGION=\"${AWS_REGION}\""
 # STEP 1.2: Create new Knowledge Base
 uv run create_knowledge_base.py
-```
-
-##### STEP 1.3: Configure Environment Variables
-
-Add the required environment variables with existing Knowledge Base ID and OpenSearch endpoint:
-
-**All Platforms (Linux/macOS/Windows):**
-```bash
-# Get Knowledge Base ID
-export STRANDS_KNOWLEDGE_BASE_ID=$(aws bedrock-agent list-knowledge-bases --region $AWS_REGION --query 'knowledgeBaseSummaries[].knowledgeBaseId' --output text)
-
-# Persist to bashrc for future sessions
-echo "export STRANDS_KNOWLEDGE_BASE_ID=\"${STRANDS_KNOWLEDGE_BASE_ID}\"" >> ~/.bashrc
 ```
 
 ### Step 2: Build Knowledge-Base Agent with Strands
@@ -357,15 +344,35 @@ The knowledge base agent demonstrates a **code-defined workflow** that:
 - **Memory tool** for storing/retrieving with semantic similarity
 - **LLM integration** for natural language processing
 
-#### Set and Confirm Environment Variables
+#### STEP 2.1: Configure Environment Variables (Region-specific)
+
+**IMPORTANT**: The Knowledge Base ID is region-specific and must be configured for your current AWS region.
+
+Add the required environment variables with existing Knowledge Base ID:
+
+**All Platforms (Linux/macOS/Windows):**
+```bash
+# Get Knowledge Base ID for current region
+export STRANDS_KNOWLEDGE_BASE_ID=$(aws bedrock-agent list-knowledge-bases --region $AWS_REGION --query 'knowledgeBaseSummaries[].knowledgeBaseId' --output text)
+
+# Persist to bashrc for future sessions
+echo "export STRANDS_KNOWLEDGE_BASE_ID=\"${STRANDS_KNOWLEDGE_BASE_ID}\"" >> ~/.bashrc
+
+echo "AWS_REGION=\"${AWS_REGION}\""
+echo "STRANDS_KNOWLEDGE_BASE_ID=\"${STRANDS_KNOWLEDGE_BASE_ID}\""
+```
+
+#### STEP 2.2: Confirm Environment Variables
 
 **All Platforms (Linux/macOS/Windows):**
 ```bash
 source ~/.bashrc
+
+echo "AWS_REGION=\"${AWS_REGION}\""
 echo "STRANDS_KNOWLEDGE_BASE_ID=\"${STRANDS_KNOWLEDGE_BASE_ID}\""
 ```
 
-#### How to Run
+##### STEP 2.3: Run the Knowledge Base Agent
 
 **All Platforms (Linux/macOS/Windows):**
 ```bash
