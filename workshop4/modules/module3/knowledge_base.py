@@ -69,10 +69,12 @@ class BedrockKnowledgeBase:
         self.account_number = boto3_session.client('sts').get_caller_identity().get('Account')
         self.suffix = str(self.account_number)[:4]
         self.identity = boto3_session.client('sts').get_caller_identity()['Arn']
+        print(f"DEBUG: Current identity ARN: {self.identity}")
+        print(f"DEBUG: Using region: {self.region_name}")
         self.aoss_client = boto3_session.client('opensearchserverless')
         self.s3_client = boto3_session.client('s3')
         self.bedrock_agent_client = boto3_session.client('bedrock-agent')
-        credentials = boto3.Session().get_credentials()
+        credentials = boto3_session.get_credentials()
         self.awsauth = AWSV4SignerAuth(credentials, self.region_name, 'aoss')
 
         self.kb_name = kb_name
@@ -250,7 +252,7 @@ class BedrockKnowledgeBase:
     def create_oss_policy_attach_bedrock_execution_role(self, collection_id):
         """
         Create OpenSearch Serverless policy and attach it to the Knowledge Base Execution role.
-        If policy already exists, attaches it
+        If policy already exists, update it with the correct collection ID
         """
         # define oss policy document
         oss_policy_document = {
@@ -278,7 +280,14 @@ class BedrockKnowledgeBase:
             )
             created = True
         except self.iam_client.exceptions.EntityAlreadyExistsException:
-            print(f"Policy {oss_policy_arn} already exists, skipping creation")
+            print(f"Policy {oss_policy_arn} already exists, updating with correct collection ID")
+            # Update the existing policy with the correct collection ID
+            self.iam_client.create_policy_version(
+                PolicyArn=oss_policy_arn,
+                PolicyDocument=json.dumps(oss_policy_document),
+                SetAsDefault=True
+            )
+            print(f"Updated policy to point to collection {collection_id}")
         print("Opensearch serverless arn: ", oss_policy_arn)
 
         self.iam_client.attach_role_policy(
@@ -286,6 +295,67 @@ class BedrockKnowledgeBase:
             PolicyArn=oss_policy_arn
         )
         return created
+
+    def update_access_policy_with_bedrock_role(self):
+        """
+        Update the OpenSearch access policy to include the Bedrock execution role
+        """
+        try:
+            # First check if the policy already includes the Bedrock role
+            current_policy = self.aoss_client.get_access_policy(
+                name=self.access_policy_name,
+                type='data'
+            )
+            
+            bedrock_role_arn = self.bedrock_kb_execution_role['Role']['Arn']
+            current_principals = current_policy['accessPolicyDetail']['policy'][0]['Principal']
+            
+            print(f"DEBUG: Current access policy principals: {current_principals}")
+            print(f"DEBUG: Bedrock role ARN: {bedrock_role_arn}")
+            
+            if bedrock_role_arn in current_principals:
+                print("Access policy already includes Bedrock execution role")
+                return
+            
+            # Update the access policy to include the Bedrock execution role
+            updated_policy = [
+                {
+                    'Rules': [
+                        {
+                            'Resource': ['collection/' + self.vector_store_name],
+                            'Permission': [
+                                'aoss:CreateCollectionItems',
+                                'aoss:DeleteCollectionItems',
+                                'aoss:UpdateCollectionItems',
+                                'aoss:DescribeCollectionItems'],
+                            'ResourceType': 'collection'
+                        },
+                        {
+                            'Resource': ['index/' + self.vector_store_name + '/*'],
+                            'Permission': [
+                                'aoss:CreateIndex',
+                                'aoss:DeleteIndex',
+                                'aoss:UpdateIndex',
+                                'aoss:DescribeIndex',
+                                'aoss:ReadDocument',
+                                'aoss:WriteDocument'],
+                            'ResourceType': 'index'
+                        }],
+                    'Principal': [self.identity, bedrock_role_arn],
+                    'Description': 'Easy data policy'}
+            ]
+            
+            self.aoss_client.update_access_policy(
+                name=self.access_policy_name,
+                policy=json.dumps(updated_policy),
+                type='data'
+            )
+            print("Updated access policy to include Bedrock execution role")
+            print("Waiting for access policy changes to propagate...")
+            interactive_sleep(120)  # Wait 2 minutes for policy propagation
+        except Exception as e:
+            print(f"Error updating access policy: {e}")
+            pp.pprint(e)
 
     def create_policies_in_oss(self):
         """
@@ -353,7 +423,7 @@ class BedrockKnowledgeBase:
                                         'aoss:WriteDocument'],
                                     'ResourceType': 'index'
                                 }],
-                            'Principal': [self.identity, self.bedrock_kb_execution_role['Role']['Arn']],
+                            'Principal': [self.identity],
                             'Description': 'Easy data policy'}
                     ]),
                 type='data'
@@ -397,6 +467,8 @@ class BedrockKnowledgeBase:
         # create opensearch serverless access policy and attach it to Bedrock execution role
         try:
             created = self.create_oss_policy_attach_bedrock_execution_role(collection_id)
+            # Update the access policy to include the Bedrock execution role
+            self.update_access_policy_with_bedrock_role()
             if created:
                 # It can take up to a minute for data access rules to be enforced
                 print("Sleeping for a minute to ensure data access rules have been enforced")
@@ -484,6 +556,14 @@ class BedrockKnowledgeBase:
 
         # The embedding model used by Bedrock to embed ingested documents, and realtime prompts
         embedding_model_arn = f"arn:aws:bedrock:{self.region_name}::foundation-model/{self.embedding_model}"
+        
+        # Debug: Print the configuration being sent
+        print("DEBUG: Knowledge Base Configuration:")
+        print(f"  Collection ARN: {self.collection_arn}")
+        print(f"  Vector Index Name: {self.index_name}")
+        print(f"  Role ARN: {self.bedrock_kb_execution_role['Role']['Arn']}")
+        print(f"  Embedding Model ARN: {embedding_model_arn}")
+        
         try:
             create_kb_response = self.bedrock_agent_client.create_knowledge_base(
                 name=self.kb_name,
