@@ -60,8 +60,11 @@ class BedrockKnowledgeBase:
             data_bucket_name (str): name of s3 bucket to connect with knowledge base
             embedding_model (str): embedding model to use
         """
-        boto3_session = boto3.session.Session()
-        self.region_name = os.getenv('AWS_REGION', boto3_session.region_name)
+        # Require AWS_REGION to be explicitly set
+        self.region_name = os.getenv('AWS_REGION')
+        if not self.region_name:
+            raise ValueError("AWS_REGION environment variable must be set")
+        boto3_session = boto3.session.Session(region_name=self.region_name)
         self.iam_client = boto3_session.client('iam')
         self.account_number = boto3_session.client('sts').get_caller_identity().get('Account')
         self.suffix = str(self.account_number)[:4]
