@@ -63,12 +63,12 @@ class BedrockKnowledgeBase:
         boto3_session = boto3.session.Session()
         self.region_name = os.getenv('AWS_REGION', boto3_session.region_name)
         self.iam_client = boto3_session.client('iam')
-        self.account_number = boto3.client('sts').get_caller_identity().get('Account')
+        self.account_number = boto3_session.client('sts').get_caller_identity().get('Account')
         self.suffix = str(self.account_number)[:4]
-        self.identity = boto3.client('sts').get_caller_identity()['Arn']
+        self.identity = boto3_session.client('sts').get_caller_identity()['Arn']
         self.aoss_client = boto3_session.client('opensearchserverless')
-        self.s3_client = boto3.client('s3')
-        self.bedrock_agent_client = boto3.client('bedrock-agent')
+        self.s3_client = boto3_session.client('s3')
+        self.bedrock_agent_client = boto3_session.client('bedrock-agent')
         credentials = boto3.Session().get_credentials()
         self.awsauth = AWSV4SignerAuth(credentials, self.region_name, 'aoss')
 
