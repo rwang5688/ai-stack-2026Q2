@@ -45,10 +45,16 @@ def get_resources_to_cleanup():
                 if role_arn:
                     resources['iam_roles'].add(role_arn)
                 
-                # Extract OpenSearch collection from vector configuration
+                # Extract OpenSearch collection from storage configuration
+                storage_config = kb_data.get('storageConfiguration', {})
+                if 'opensearchServerlessConfiguration' in storage_config:
+                    collection_arn = storage_config['opensearchServerlessConfiguration'].get('collectionArn')
+                    if collection_arn:
+                        resources['opensearch_collections'].add(collection_arn)
+                
+                # Also check vector configuration as fallback (for different KB types)
                 kb_config = kb_data.get('knowledgeBaseConfiguration', {})
                 vector_config = kb_config.get('vectorKnowledgeBaseConfiguration', {})
-                
                 if 'opensearchServerlessConfiguration' in vector_config:
                     collection_arn = vector_config['opensearchServerlessConfiguration'].get('collectionArn')
                     if collection_arn:
@@ -75,6 +81,22 @@ def get_resources_to_cleanup():
                                     # Extract bucket name from ARN: arn:aws:s3:::bucket-name
                                     bucket_name = bucket_arn.split(':::')[1] if ':::' in bucket_arn else bucket_arn
                                     resources['s3_buckets'].add(bucket_name)
+                            
+                            # For CUSTOM data sources, we need to find S3 buckets by pattern matching
+                            elif ds_config.get('type') == 'CUSTOM':
+                                # Look for S3 buckets that match our naming patterns
+                                s3_response = s3_client.list_buckets()
+                                all_buckets = [b['Name'] for b in s3_response['Buckets']]
+                                
+                                # Check both old and new naming patterns
+                                for bucket_name in all_buckets:
+                                    # New pattern: bedrock-kb-bucket-{region}-{suffix}
+                                    if bucket_name.startswith(f'bedrock-kb-bucket-{region}-'):
+                                        resources['s3_buckets'].add(bucket_name)
+                                    # Old pattern: bedrock-kb-bucket-{suffix} (no region)
+                                    elif bucket_name.startswith('bedrock-kb-bucket-') and len(bucket_name.split('-')) == 4:
+                                        # Old pattern has exactly 4 parts: bedrock-kb-bucket-{8char-suffix}
+                                        resources['s3_buckets'].add(bucket_name)
                         
                         except Exception as e:
                             print(f"    ⚠️  Warning: Could not get data source {ds_id}: {e}")
