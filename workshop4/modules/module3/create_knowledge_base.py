@@ -104,6 +104,8 @@ def create_bedrock_knowledge_base(name, description, s3_bucket):
         data_bucket_name=s3_bucket,
         embedding_model = "amazon.titan-embed-text-v2:0"
     )
+    # Actually create/retrieve the knowledge base resources
+    knowledge_base.create_or_retrieve_knowledge_base()
     print("Sleeping for 30 seconds.....")
     time.sleep(30)
     return knowledge_base
@@ -202,6 +204,23 @@ def main():
         data_source_ids = [ d['dataSourceId'] for d in data_sources ]
         if len(data_source_ids):
             data_source_id = data_source_ids[0]
+            
+            # CRITICAL: Update IAM policies for existing KB to ensure they point to current resources
+            print("🔧 Updating IAM policies for existing Knowledge Base...")
+            kb_wrapper = BedrockKnowledgeBase(
+                kb_name=knowledge_bases[0]['name'],
+                kb_description=knowledge_bases[0]['description'],
+                data_bucket_name=s3_bucket,
+                embedding_model="amazon.titan-embed-text-v2:0"
+            )
+            # Get the collection info for the existing KB
+            kb_details = bedrock_agent_client.get_knowledge_base(knowledgeBaseId=knowledge_base_id)
+            collection_arn = kb_details['knowledgeBase']['storageConfiguration']['opensearchServerlessConfiguration']['collectionArn']
+            kb_wrapper.collection_id = collection_arn.split('/')[-1]  # Extract collection ID from ARN
+            kb_wrapper.update_all_iam_policies_for_current_resources()
+            print("✅ IAM policies updated for existing Knowledge Base")
+            print("⏳ Waiting 30 seconds for IAM policy changes to propagate...")
+            time.sleep(30)
         else:
             print('Error: Data source not created. Please create a custom data source manually')
             return

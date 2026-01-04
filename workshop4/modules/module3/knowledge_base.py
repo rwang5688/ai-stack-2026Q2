@@ -97,6 +97,25 @@ class BedrockKnowledgeBase:
 
         self.vector_store_name = f'bedrock-sample-rag-{self.suffix}'
         self.index_name = f"bedrock-sample-rag-index-{self.suffix}"
+        
+        # Initialize to None - will be set when create_or_retrieve() is called
+        self.bedrock_kb_execution_role = None
+        self.encryption_policy = None
+        self.network_policy = None
+        self.access_policy = None
+        self.host = None
+        self.collection = None
+        self.collection_id = None
+        self.collection_arn = None
+        self.oss_client = None
+        self.knowledge_base = None
+        self.data_source = None
+
+    def create_or_retrieve_knowledge_base(self):
+        """
+        Create or retrieve all Knowledge Base resources.
+        This does the actual work that was previously in __init__.
+        """
         print("========================================================================================")
         print(f"Step 1 - Creating or retrieving {self.bucket_name} S3 bucket for Knowledge Base documents")
         self.create_s3_bucket()
@@ -125,6 +144,11 @@ class BedrockKnowledgeBase:
         print(f"Step 6 - Creating Knowledge Base")
         self.knowledge_base, self.data_source = self.create_knowledge_base()
         print("========================================================================================")
+        print(f"Step 7 - Updating all IAM policies to current resources")
+        self.update_all_iam_policies_for_current_resources()
+        print("========================================================================================")
+        
+        return self
 
     def create_s3_bucket(self):
         """
@@ -263,7 +287,106 @@ class BedrockKnowledgeBase:
         )
         return bedrock_kb_execution_role
 
+    def update_all_iam_policies_for_current_resources(self):
+        """
+        Update all IAM policies to point to current resources (region, bucket, collection).
+        This ensures policies are always up-to-date regardless of how the KB was created.
+        """
+        print("🔧 Updating all IAM policies to point to current resources...")
+        
+        # Update Foundation Model Policy
+        foundation_model_policy_document = {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                        "bedrock:InvokeModel",
+                    ],
+                    "Resource": [
+                        f"arn:aws:bedrock:{self.region_name}::foundation-model/{self.embedding_model}"
+                    ]
+                }
+            ]
+        }
+        
+        fm_policy_arn = f"arn:aws:iam::{self.account_number}:policy/{self.fm_policy_name}"
+        try:
+            self.iam_client.create_policy_version(
+                PolicyArn=fm_policy_arn,
+                PolicyDocument=json.dumps(foundation_model_policy_document),
+                SetAsDefault=True
+            )
+            print(f"✅ Updated foundation model policy to use region {self.region_name}")
+        except Exception as e:
+            print(f"❌ Failed to update foundation model policy: {e}")
+        
+        # Update S3 Policy
+        s3_policy_document = {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Action": [
+                        "s3:GetObject",
+                        "s3:ListBucket"
+                    ],
+                    "Resource": [
+                        f"arn:aws:s3:::{self.bucket_name}",
+                        f"arn:aws:s3:::{self.bucket_name}/*"
+                    ],
+                    "Condition": {
+                        "StringEquals": {
+                            "aws:ResourceAccount": f"{self.account_number}"
+                        }
+                    }
+                }
+            ]
+        }
+        
+        s3_policy_arn = f"arn:aws:iam::{self.account_number}:policy/{self.s3_policy_name}"
+        try:
+            self.iam_client.create_policy_version(
+                PolicyArn=s3_policy_arn,
+                PolicyDocument=json.dumps(s3_policy_document),
+                SetAsDefault=True
+            )
+            print(f"✅ Updated S3 policy to use bucket {self.bucket_name}")
+        except Exception as e:
+            print(f"❌ Failed to update S3 policy: {e}")
+        
+        # Update OSS Policy (if we have collection_id)
+        if hasattr(self, 'collection_id') and self.collection_id:
+            oss_policy_document = {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Action": [
+                            "aoss:APIAccessAll"
+                        ],
+                        "Resource": [
+                            f"arn:aws:aoss:{self.region_name}:{self.account_number}:collection/{self.collection_id}"
+                        ]
+                    }
+                ]
+            }
+            
+            oss_policy_arn = f"arn:aws:iam::{self.account_number}:policy/{self.oss_policy_name}"
+            try:
+                self.iam_client.create_policy_version(
+                    PolicyArn=oss_policy_arn,
+                    PolicyDocument=json.dumps(oss_policy_document),
+                    SetAsDefault=True
+                )
+                print(f"✅ Updated OSS policy to use collection {self.collection_id}")
+            except Exception as e:
+                print(f"❌ Failed to update OSS policy: {e}")
+        
+        print("🔧 IAM policy update complete!")
+
     def create_oss_policy_attach_bedrock_execution_role(self, collection_id):
+
         """
         Create OpenSearch Serverless policy and attach it to the Knowledge Base Execution role.
         If policy already exists, update it with the correct collection ID

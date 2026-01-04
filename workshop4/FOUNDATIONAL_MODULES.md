@@ -325,6 +325,20 @@ echo "AWS_REGION=\"${AWS_REGION}\""
 uv run create_knowledge_base.py
 ```
 
+##### Policy Synchronization for Existing Knowledge Bases
+
+**Important Note**: When working with existing Knowledge Bases, IAM policies may reference outdated resource identifiers (regions, collection IDs, bucket names) from previous deployments. The create script includes automatic policy synchronization to ensure all IAM policies point to current resources.
+
+**What happens automatically:**
+- **Foundation Model Policy**: Updates to current AWS region for embedding model access
+- **S3 Policy**: Updates to current bucket name and region
+- **OpenSearch Serverless Policy**: Updates to current collection ID and region
+- **Policy Propagation**: Waits 30 seconds for AWS policy changes to take effect
+
+**Technical Implementation**: The script creates a lightweight Knowledge Base wrapper instance to access the policy update methods, then calls `update_all_iam_policies_for_current_resources()` to ensure all policies reference current resources before document ingestion begins.
+
+This ensures reliable document processing regardless of previous deployment history or region changes.
+
 ### Step 2: Build Knowledge-Base Agent with Strands
 
 This step demonstrates how to create a Strands agent that can intelligently store and retrieve information from the Amazon Bedrock Knowledge Base created and configured in Step 1.
