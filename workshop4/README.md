@@ -152,11 +152,11 @@ Both multi-agent workshops follow the same 6-step progressive architecture:
 - **Knowledge Retrieval**: Enhanced agent capabilities with document access
 - **Augmented Responses**: Knowledge-enhanced agent responses
 
-#### Step 4: Memory Integration & Enhanced UI Features
-- **Memory Agent Integration**: Session persistence and conversation history using OpenSearch backend
-- **Model Selection**: Dropdown for multiple model options (Bedrock: Nova/Claude variants, SageMaker: JumpStart/Custom models)
-- **Agent Customization**: Individual toggle controls for specialized teacher agents
-- **Agent Type Selection**: Choose between Teacher, Knowledge Base, and Memory agents
+#### Step 4: Knowledge Base Integration & Enhanced UI Features
+- **Knowledge Base Agent Integration**: Personal information storage and retrieval using Bedrock Knowledge Base (Bedrock) or compatible system (SageMaker)
+- **Intelligent Dual Routing**: Auto-route queries between educational specialists and knowledge base based on query type
+- **Enhanced UI Features**: Model display and agent type selection (Teacher, Knowledge Base, Auto-Route)
+- **Persistent Debugging Info**: Technical details (Model, KB ID, AWS Region) displayed in sidebar for troubleshooting
 
 #### Step 5: Production Deployment
 - **Containerization**: Docker packaging for production deployment with enhanced features
@@ -193,11 +193,11 @@ Both multi-agent workshops follow the same 6-step progressive architecture:
 - **Module 6**: ✅ COMPLETED - Meta-Tooling Agent (Windows compatibility resolved)
 
 ### Multi-Agent Bedrock (workshop4-multi-agent-bedrock)
-- **Status**: ✅ STEP 3 COMPLETE - Knowledge Base integration implemented with intelligent dual routing
+- **Status**: ✅ STEP 4 COMPLETE - Knowledge Base integration with intelligent dual routing and enhanced UI
 - **Step 1**: ✅ COMPLETED - CLI multi-agent system with 5 specialized agents (Linux/Windows compatible)
 - **Step 2**: ✅ COMPLETED - Streamlit web interface
 - **Step 3**: ✅ COMPLETED - Knowledge Base integration with personal information storage/retrieval
-- **Step 4**: 🔄 READY TO IMPLEMENT - Memory integration & enhanced UI (model selection, agent toggles)
+- **Step 4**: ✅ COMPLETED - Enhanced UI (Bedrock model display, agent type selection)
 - **Step 5**: 📋 PLANNED - Production deployment (Docker + AWS CDK + ECS Fargate)
 - **Step 6**: 📋 PLANNED - Documentation and workshop materials
 
@@ -206,7 +206,7 @@ Both multi-agent workshops follow the same 6-step progressive architecture:
 - **Step 1**: 🔄 PLANNED - CLI Teacher's Assistant system with SageMaker models
 - **Step 2**: 🔄 PLANNED - Streamlit web interface
 - **Step 3**: 🔄 PLANNED - Knowledge base integration
-- **Step 4**: 🔄 PLANNED - Memory integration & enhanced UI with SageMaker model selection
+- **Step 4**: 🔄 PLANNED - Enhanced UI (SageMaker model display, agent type selection)
 - **Step 5**: 🔄 PLANNED - Production deployment
 - **Step 6**: 🔄 PLANNED - Documentation and workshop materials
 
