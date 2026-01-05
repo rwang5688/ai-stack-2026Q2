@@ -70,15 +70,14 @@ This specification defines the requirements for creating Module 7: Building Mult
 
 ### Requirement 5
 
-**User Story:** As a student, I want to add memory capabilities and enhanced UI features to my multi-agent system, so that I can understand memory integration, model selection, and agent customization patterns.
+**User Story:** As a student, I want to add enhanced UI features to my multi-agent system, so that I can understand model selection and agent customization patterns.
 
 #### Acceptance Criteria
 
-1. WHEN implementing memory THEN the Workshop System SHALL demonstrate integrating memory agent capabilities from module5 with OpenSearch backend support
-2. WHEN selecting models THEN the Workshop System SHALL provide dropdown selection for multiple Bedrock model IDs (Nova Pro, Nova Lite, Nova Micro, Claude variants)
-3. WHEN customizing agents THEN the Workshop System SHALL enable toggling individual teacher agents (math, language, computer science, english) on and off
-4. WHEN OpenSearch is unavailable THEN the Workshop System SHALL gracefully disable OpenSearch backend option if OPENSEARCH_HOST environment variable is not defined
-5. WHILE using memory features THEN the Workshop System SHALL maintain compatibility with existing knowledge base and teacher agent functionality
+1. WHEN selecting models THEN the Workshop System SHALL provide dropdown selection for multiple Bedrock model IDs (Nova Pro, Nova Lite, Nova Micro, Claude variants)
+2. WHEN customizing agents THEN the Workshop System SHALL enable toggling individual teacher agents (math, language, computer science, english) on and off
+3. WHEN selecting agent types THEN the Workshop System SHALL provide dropdown selection between Teacher Agent, Knowledge Base, and Auto-Route options
+4. WHILE using enhanced features THEN the Workshop System SHALL maintain compatibility with existing knowledge base and teacher agent functionality
 
 ### Requirement 6
 
@@ -88,18 +87,17 @@ This specification defines the requirements for creating Module 7: Building Mult
 
 1. WHEN customizing agents THEN the Workshop System SHALL support modular specialized agent creation and configuration with toggle controls
 2. WHEN adapting for use cases THEN the Workshop System SHALL provide configurable agent roles, tools, system prompts, and model selection
-3. WHEN integrating memory systems THEN the Workshop System SHALL provide clear patterns for memory integration with fallback options
-4. WHEN integrating with existing systems THEN the Workshop System SHALL provide clear APIs and interfaces for extending the multi-agent system
-5. WHERE performance optimization is required THEN the Workshop System SHALL provide guidance on Bedrock model selection, memory backends, and system tuning
+3. WHEN integrating with existing systems THEN the Workshop System SHALL provide clear APIs and interfaces for extending the multi-agent system
+4. WHERE performance optimization is required THEN the Workshop System SHALL provide guidance on Bedrock model selection and system tuning
 
 ### Requirement 7
 
-**User Story:** As a student, I want to deploy my enhanced multi-agent system to production, so that I can understand containerization and AWS deployment patterns with full feature integration.
+**User Story:** As a student, I want to deploy my enhanced multi-agent system to production, so that I can understand containerization and AWS deployment patterns.
 
 #### Acceptance Criteria
 
-1. WHEN containerizing the application THEN the Workshop System SHALL show how to create a Docker container for the Streamlit multi-agent application with memory integration
-2. WHEN deploying infrastructure THEN the Workshop System SHALL provide AWS CDK code for provisioning ECS Fargate cluster with memory backend support
+1. WHEN containerizing the application THEN the Workshop System SHALL show how to create a Docker container for the Streamlit multi-agent application
+2. WHEN deploying infrastructure THEN the Workshop System SHALL provide AWS CDK code for provisioning ECS Fargate cluster
 3. WHEN deploying to production THEN the Workshop System SHALL enable successful deployment of the containerized application to AWS ECS Fargate
 4. WHEN monitoring the deployment THEN the Workshop System SHALL include monitoring, logging, and alerting for the production environment
 5. WHILE maintaining the deployment THEN the Workshop System SHALL include cleanup and maintenance procedures for the production environment

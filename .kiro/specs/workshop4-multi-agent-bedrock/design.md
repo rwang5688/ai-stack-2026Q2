@@ -30,8 +30,7 @@ graph TB
         ENHANCED_AGENTS[Knowledge-Enhanced Agents]
     end
     
-    subgraph "Step 4: Memory Integration & Enhanced UI"
-        MEMORY[Memory Agent with OpenSearch]
+    subgraph "Step 4: Enhanced UI Features"
         MODEL_SELECT[Model Selection Dropdown]
         AGENT_TOGGLES[Teacher Agent Toggles]
         AGENT_TYPES[Agent Type Selection]
@@ -77,7 +76,7 @@ graph TB
     MEMORY --> ENHANCED_AGENTS
     MODEL_SELECT --> BEDROCK
     AGENT_TOGGLES --> TEACHER
-    AGENT_TYPES --> MEMORY
+    AGENT_TYPES --> ENHANCED_AGENTS
     
     DOCKER --> PROD_APP
     CDK --> ECS
@@ -107,7 +106,7 @@ The system follows a progressive 6-step architecture with clear learning progres
 1. **Step 1 - CLI Foundation**: Teacher's Assistant pattern with 5 specialized agents using Tool-Agent Pattern
 2. **Step 2 - Web Interface**: Streamlit integration for user-friendly web-based interactions
 3. **Step 3 - Knowledge Enhancement**: Bedrock Knowledge Base integration with S3 document storage
-4. **Step 4 - Memory Integration & Enhanced UI**: Memory agent integration, model selection, and agent customization
+4. **Step 4 - Enhanced UI Features**: Model selection and agent customization features
 5. **Step 5 - Production Deployment**: AWS CDK infrastructure with Docker containerization and ECS Fargate hosting
 6. **Step 6 - Documentation & Materials**: Comprehensive workshop documentation and instructor resources
 
@@ -155,16 +154,10 @@ The system follows a progressive 6-step architecture with clear learning progres
 - Knowledge base querying and retrieval patterns
 - Integration with existing specialized agents
 
-### Step 4: Memory Integration and Enhanced UI Features
+### Step 4: Enhanced UI Features
 
-**Memory Agent Integration**
-- Integration of memory capabilities from workshop4/modules/module5/memory_agent.py
-- OpenSearch backend support with graceful fallback when OPENSEARCH_HOST is undefined
-- Memory operations: store, retrieve, and list functionality
-- User-specific memory management with USER_ID support
-
-**Enhanced UI Features**
-- Model selection dropdown with multiple Bedrock model options:
+**Model Selection**
+- Dropdown selection for multiple Bedrock model options:
   - us.amazon.nova-pro-v1:0 (Amazon Nova Pro)
   - us.amazon.nova-lite-v1:0 (Amazon Nova Lite) 
   - us.amazon.nova-micro-v1:0 (Amazon Nova Micro)
@@ -178,17 +171,22 @@ The system follows a progressive 6-step architecture with clear learning progres
 - Configurable agent combinations based on user preferences
 - Maintains existing Tool-Agent Pattern with selective activation
 
+**Agent Type Selection**
+- Dropdown selection between Teacher Agent, Knowledge Base, and Auto-Route
+- Direct routing to specific agent types based on user preference
+- Auto-Route option maintains existing intelligent routing logic
+
 ### Step 5: Production Deployment
 
 **Containerization**
-- Docker container packaging of the Streamlit multi-agent application with memory integration
-- Container optimization for production deployment with all enhanced features
-- Environment configuration and dependency management for memory backends
+- Docker container packaging of the Streamlit multi-agent application
+- Container optimization for production deployment with enhanced features
+- Environment configuration and dependency management
 - Testing container locally with full feature set validation
 
 **AWS CDK Infrastructure**
 - Infrastructure as Code for ECS Fargate cluster deployment
-- Supporting AWS services (VPC, Load Balancer, etc.) with memory backend support
+- Supporting AWS services (VPC, Load Balancer, etc.)
 - Monitoring and logging infrastructure for multi-agent system
 - Cost optimization and resource management for production workloads
 
@@ -196,14 +194,13 @@ The system follows a progressive 6-step architecture with clear learning progres
 - Serverless container hosting for the enhanced multi-agent application
 - Auto-scaling and high availability configuration
 - Production monitoring and maintenance procedures
-- Integration with OpenSearch backend for memory functionality
 
 ### Step 6: Documentation and Workshop Materials
 
 **Comprehensive Documentation**
 - Complete 6-step workshop documentation with setup guides
 - Detailed tutorials for each step with clear progression
-- Troubleshooting and FAQ documentation for memory integration
+- Troubleshooting and FAQ documentation for enhanced features
 - Instructor guide and presentation materials
 
 **Modular Component Documentation**
@@ -297,9 +294,9 @@ After analyzing all acceptance criteria, several properties can be consolidated 
 *For any* document stored in the Bedrock Knowledge Base, agents should be able to retrieve and use relevant information correctly in their responses
 **Validates: Requirements 4.1, 4.2, 4.3, 4.4, 4.5**
 
-**Property 6: Memory Integration and Enhanced UI**
-*For any* memory operation (store/retrieve) and UI enhancement (model selection/agent toggles), the system should integrate correctly with existing multi-agent functionality while providing graceful fallbacks
-**Validates: Requirements 5.1, 5.2, 5.3, 5.4, 5.5**
+**Property 6: Enhanced UI Features**
+*For any* UI enhancement (model selection/agent toggles/agent type selection), the system should integrate correctly with existing multi-agent functionality while providing proper user controls
+**Validates: Requirements 5.1, 5.2, 5.3**
 
 **Property 7: Production Deployment Correctness**
 *For any* production deployment using CDK, Docker, and ECS Fargate, the containerized multi-agent application should run correctly with proper monitoring and maintenance capabilities
@@ -307,7 +304,7 @@ After analyzing all acceptance criteria, several properties can be consolidated 
 
 **Property 8: System Modularity and Configuration**
 *For any* customization or extension of the multi-agent system, modular components should be configurable, reusable, and maintain clear separation between application logic and configuration
-**Validates: Requirements 6.1, 6.2, 6.3, 6.4, 6.5**
+**Validates: Requirements 6.1, 6.2, 6.3, 6.4**
 
 ## Error Handling
 

@@ -32,11 +32,37 @@ Successfully debugged and fixed critical reliability issues in the AWS Bedrock K
 - **Region Consistency**: Enforce AWS_REGION environment variable usage throughout all boto3 sessions
 
 ## Next Steps
-- [ ] Add Bedrock Knowledge Base integration code to multi_agent_bedrock/app.py
-- [ ] Test complete multi-agent workflow with Knowledge Base integration
+- [x] Add Bedrock Knowledge Base integration code to multi_agent_bedrock/app.py
+- [x] Test complete multi-agent workflow with Knowledge Base integration
 - [ ] Deploy the application from Linux box
 - [ ] Verify end-to-end functionality in deployment environment
 - [ ] Document deployment process and any additional configuration needed
+
+## January 5, 2025 Follow-up Session
+
+### Additional Accomplishments
+- **Fixed Multi-Agent Routing Issues**: Resolved Knowledge Base agent routing that was misclassifying retrieve queries as store queries
+- **Resolved Environment Variable Problems**: Fixed AWS credentials not persisting across PowerShell sessions by updating ~/.bashrc
+- **Enhanced Action Determination Logic**: Updated prompts with better examples for medical/health queries and list retrieval
+- **Improved UI Debugging**: Moved technical details (Model, KB ID, AWS Region) to persistent sidebar, removed redundant banner
+- **Successfully Tested End-to-End**: Confirmed K-pop groups retrieval, medical queries, and educational routing all working correctly
+
+### Issues & Resolutions (January 5)
+- **Issue**: Knowledge Base queries like "list all k-pop groups that I like" were being classified as "store" instead of "retrieve"
+  - **Resolution**: Updated `KB_ACTION_SYSTEM_PROMPT` in both `app.py` and `knowledge_base_agent.py` with better examples
+
+- **Issue**: Medical queries like "what are symptoms of arthritis?" were routing to Teacher agent instead of Knowledge Base
+  - **Resolution**: Enhanced `ACTION_DETERMINATION_PROMPT` with examples showing medical/health queries should route to Knowledge Base
+
+- **Issue**: AWS credentials not persisting across PowerShell sessions causing Knowledge Base connection failures
+  - **Resolution**: User updated `~/.bashrc` with `AWS_REGION="us-east-1"` for persistent environment variables
+
+- **Issue**: Debugging information was in a banner that disappeared during conversations
+  - **Resolution**: Moved all technical details to persistent sidebar and removed redundant banner
+
+### Files Updated (January 5)
+- `workshop4/multi_agent_bedrock/app.py` - Enhanced routing prompts and UI improvements
+- `workshop4/modules/module3/knowledge_base_agent.py` - Updated action determination examples
 
 ## Resources
 - **Fixed Files**: 

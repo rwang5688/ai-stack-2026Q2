@@ -87,6 +87,71 @@ Teacher's Assistant (Orchestrator) + Knowledge Base Router
 - Access to Amazon Bedrock Nova Pro model (`us.amazon.nova-pro-v1:0`)
 - Streamlit installed (included in requirements.txt)
 
+### Environment Setup
+
+**The Proper Way (Git Bash/Linux/macOS):**
+
+Set your environment variables in `~/.bashrc`:
+
+```bash
+export STRANDS_KNOWLEDGE_BASE_ID="IMW46CITZE"
+export AWS_REGION="us-east-1"
+export AWS_ACCESS_KEY_ID="your-access-key"
+export AWS_SECRET_ACCESS_KEY="your-secret-key"
+export AWS_SESSION_TOKEN="your-session-token"  # For temporary credentials
+export BYPASS_TOOL_CONSENT="true"  # Skip tool consent prompts
+```
+
+Then source it: `source ~/.bashrc`
+
+**The Unfortunately Necessary PowerShell Way:**
+
+If you're using Kiro IDE (which is based on VS Code) on Windows, you're forced to use PowerShell. Follow these steps in order:
+
+**Step 1: Activate the virtual environment**
+```powershell
+# Activate the virtual environment (PowerShell way)
+venv\Scripts\Activate.ps1
+```
+
+**Step 2: Run the PowerShell script (hold your nose)**
+```powershell
+# Allow script execution (if needed)
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+# Run the environment setup script
+.\set-env.ps1
+```
+
+**Step 3: Set AWS temporary credentials manually**
+```powershell
+# Copy and paste your actual AWS temporary credentials
+$Env:AWS_ACCESS_KEY_ID="your-access-key-here"
+$Env:AWS_SECRET_ACCESS_KEY="your-secret-key-here"
+$Env:AWS_SESSION_TOKEN="your-session-token-here"
+```
+
+**Step 4: Run the Streamlit application (CRITICAL: Same terminal session!)**
+```powershell
+# IMPORTANT: Run this in the SAME PowerShell terminal where you set the credentials
+# Do NOT open a new terminal or the credentials will be lost!
+uv run streamlit run multi_agent_bedrock/app.py
+```
+
+**CRITICAL WARNING:**
+- All commands must be run in the SAME PowerShell terminal session
+- If you open a new terminal, the environment variables (including AWS credentials) will be lost
+- PowerShell environment variables only exist for the current session
+- This is why PowerShell sucks compared to proper Unix terminals
+
+**Why This Painful Process Exists:**
+- Kiro IDE is based on VS Code, which defaults to PowerShell on Windows
+- VS Code/Kiro doesn't give you a proper Unix terminal option
+- Temporary credentials should never be hardcoded in scripts
+- Each session requires fresh temporary credentials
+
+**Note:** The PowerShell script only sets variables for the current session. Use Git Bash whenever possible for a better development experience.
+
 ### Step 1: CLI Multi-Agent System
 
 **Command-line interface for direct agent interaction:**
@@ -145,34 +210,40 @@ In addition to the basic prerequisites, Step 3 requires:
 
 ```bash
 # For current session only
-export STRANDS_KNOWLEDGE_BASE_ID="your_knowledge_base_id_here"
+export AWS_REGION="us-east-1"
 export BYPASS_TOOL_CONSENT="true"
+export STRANDS_KNOWLEDGE_BASE_ID="your_knowledge_base_id_here"
 
-# Verify the variable is set
-echo $STRANDS_KNOWLEDGE_BASE_ID
+# Verify the environment variables are set
+echo "AWS_REGION: $AWS_REGION"
+echo "BYPASS_TOOL_CONSENT: $BYPASS_TOOL_CONSENT"
+echo "STRANDS_KNOWLEDGE_BASE_ID: $STRANDS_KNOWLEDGE_BASE_ID"
 ```
 
 **Option 2: Add to .bashrc for persistent setup (recommended):**
 
 ```bash
 # Add to your .bashrc file
-echo 'export STRANDS_KNOWLEDGE_BASE_ID="your_knowledge_base_id_here"' >> ~/.bashrc
+echo 'AWS_REGION="us-east-1"' >> ~/.bashrc
 echo 'export BYPASS_TOOL_CONSENT="true"' >> ~/.bashrc
+echo 'export STRANDS_KNOWLEDGE_BASE_ID="your_knowledge_base_id_here"' >> ~/.bashrc
 
 # Reload your shell configuration
 source ~/.bashrc
 
-# Verify the variables are set
-echo $STRANDS_KNOWLEDGE_BASE_ID
-echo $BYPASS_TOOL_CONSENT
+# Verify the environment variables are set
+echo "AWS_REGION: $AWS_REGION"
+echo "BYPASS_TOOL_CONSENT: $BYPASS_TOOL_CONSENT"
+echo "STRANDS_KNOWLEDGE_BASE_ID: $STRANDS_KNOWLEDGE_BASE_ID"
 ```
 
 **Option 3: For demonstration/testing without a real knowledge base:**
 
 ```bash
 # Use the default demo KB ID for testing
-export STRANDS_KNOWLEDGE_BASE_ID="demokb123"
+export AWS_REGION="us-east-1"
 export BYPASS_TOOL_CONSENT="true"
+export STRANDS_KNOWLEDGE_BASE_ID="demokb123"
 ```
 
 #### Running Step 3
@@ -181,9 +252,10 @@ export BYPASS_TOOL_CONSENT="true"
 # Navigate to the multi-agent directory
 cd workshop4/multi_agent_bedrock
 
-# Ensure environment variables are set
-echo "KB ID: $STRANDS_KNOWLEDGE_BASE_ID"
-echo "Tool Consent: $BYPASS_TOOL_CONSENT"
+# Verify the environment variables are set
+echo "AWS_REGION: $AWS_REGION"
+echo "BYPASS_TOOL_CONSENT: $BYPASS_TOOL_CONSENT"
+echo "STRANDS_KNOWLEDGE_BASE_ID: $STRANDS_KNOWLEDGE_BASE_ID"
 
 # Run the enhanced Streamlit web app with knowledge base
 streamlit run app.py

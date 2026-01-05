@@ -60,6 +60,11 @@ Examples:
 - "What do you know about me?" -> "knowledge"
 - "My favorite color is blue" -> "knowledge"
 - "What is my favorite color?" -> "knowledge"
+- "List all k-pop groups that I like" -> "knowledge"
+- "What are the symptoms of arthritis?" -> "knowledge"
+- "Based on knowledge base, what are symptoms of arthritis?" -> "knowledge"
+- "According to our knowledge base" -> "knowledge"
+- "What information do you have about" -> "knowledge"
 
 Only respond with "teacher" or "knowledge" - no explanation or other text.
 """
@@ -82,6 +87,12 @@ Examples:
 - "Who am I?" -> "retrieve"
 - "I live in Seattle" -> "store"
 - "Where do I live?" -> "retrieve"
+- "List all k-pop groups that I like" -> "retrieve"
+- "What are the symptoms of arthritis?" -> "retrieve"
+- "Show me all my favorite movies" -> "retrieve"
+- "Tell me about my hobbies" -> "retrieve"
+- "I like BTS and BLACKPINK" -> "store"
+- "My favorite hobby is reading" -> "store"
 
 Only respond with "store" or "retrieve" - no explanation, prefix, or any other text.
 """
@@ -127,26 +138,46 @@ MAX_RESULTS = os.getenv("MAX_RESULTS", "9")
 
 # Set up the page
 st.set_page_config(
-    page_title="TeachAssist - Educational Assistant with Knowledge Base", 
+    page_title="TeachAssist - Multi-Agent System with Agent Selection", 
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-st.title("🎓 TeachAssist - Educational Assistant with Knowledge Base")
-st.write("Ask educational questions or store/retrieve personal information. I'll route your query to the appropriate system.")
-
-# Display service and model information
-st.info("🤖 **Powered by Amazon Bedrock** | Model: `us.amazon.nova-pro-v1:0` (Amazon Nova Pro) | 🧠 **Knowledge Base**: Enabled")
+st.title("🎓 TeachAssist - Multi-Agent System with Agent Selection")
+st.write("Choose your agent type or let the system auto-route your queries to the most appropriate agent.")
 
 # Add sidebar with information
 with st.sidebar:
     st.header("🤖 AI Service Details")
-    st.markdown("""
+    aws_region = os.getenv("AWS_REGION", "Not Set")
+    st.markdown(f"""
     **Service**: Amazon Bedrock  
     **Model**: `us.amazon.nova-pro-v1:0`  
     **Foundation Model**: Amazon Nova Pro  
-    **Temperature**: 0.3
+    **Temperature**: 0.3  
+    **Knowledge Base**: {KB_ID}  
+    **AWS Region**: {aws_region}
     """)
+    
+    # Agent Type Selection
+    st.header("🎯 Agent Type Selection")
+    agent_type = st.selectbox(
+        "Choose Agent Type:",
+        ["Auto-Route", "Teacher Agent", "Knowledge Base"],
+        index=0,
+        help="Select which agent system to use for your queries"
+    )
+    
+    # Store agent type in session state
+    st.session_state.selected_agent_type = agent_type
+    
+    # Display agent type information
+    if agent_type == "Auto-Route":
+        st.info("🔄 **Auto-Route**: Automatically determines the best agent for your query")
+    elif agent_type == "Teacher Agent":
+        st.info("🎓 **Teacher Agent**: Routes to specialized educational assistants")
+    elif agent_type == "Knowledge Base":
+        st.info("🧠 **Knowledge Base**: Store and retrieve personal information")
     
     st.header("📚 Available Specialists")
     st.markdown("""
@@ -370,21 +401,38 @@ if query:
         message_placeholder = st.empty()
         
         try:
-            # Determine if query should go to teacher agent or knowledge base
-            with st.spinner("Analyzing query..."):
-                action = determine_action(query)
+            # Get selected agent type from session state
+            selected_agent_type = st.session_state.get('selected_agent_type', 'Auto-Route')
             
-            if action == "knowledge":
-                # Route to knowledge base agent
-                with st.spinner("Processing with Knowledge Base..."):
-                    response = run_kb_agent(query)
-                    content = str(response)
-            else:
-                # Route to teacher agent (existing functionality)
+            if selected_agent_type == "Teacher Agent":
+                # Route directly to teacher agent
                 with st.spinner("Routing to educational specialist..."):
                     teacher_agent = get_teacher_agent()
                     response = teacher_agent(query)
                     content = str(response)
+            
+            elif selected_agent_type == "Knowledge Base":
+                # Route directly to knowledge base agent
+                with st.spinner("Processing with Knowledge Base..."):
+                    response = run_kb_agent(query)
+                    content = str(response)
+            
+            else:  # Auto-Route
+                # Determine if query should go to teacher agent or knowledge base
+                with st.spinner("Analyzing query..."):
+                    action = determine_action(query)
+                
+                if action == "knowledge":
+                    # Route to knowledge base agent
+                    with st.spinner("Processing with Knowledge Base..."):
+                        response = run_kb_agent(query)
+                        content = str(response)
+                else:
+                    # Route to teacher agent (existing functionality)
+                    with st.spinner("Routing to educational specialist..."):
+                        teacher_agent = get_teacher_agent()
+                        response = teacher_agent(query)
+                        content = str(response)
             
             # Display the response
             message_placeholder.markdown(content)

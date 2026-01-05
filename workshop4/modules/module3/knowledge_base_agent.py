@@ -66,6 +66,12 @@ Examples:
 - "Who am I?" -> "retrieve"
 - "I live in Seattle" -> "store"
 - "Where do I live?" -> "retrieve"
+- "List all k-pop groups that I like" -> "retrieve"
+- "What are the symptoms of arthritis?" -> "retrieve"
+- "Show me all my favorite movies" -> "retrieve"
+- "Tell me about my hobbies" -> "retrieve"
+- "I like BTS and BLACKPINK" -> "store"
+- "My favorite hobby is reading" -> "store"
 
 Only respond with "store" or "retrieve" - no explanation, prefix, or any other text.
 """

@@ -131,45 +131,37 @@
   - Verify document management and indexing workflows work properly
   - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
 
-- [ ] 8. Checkpoint - Step 4 memory integration and enhanced UI complete
-  - Ensure memory agent integration works correctly with OpenSearch backend and fallback
-  - Validate model selection dropdown updates all agent types appropriately
-  - Verify teacher agent toggles enable/disable individual agents correctly
-  - Test agent type selection routes queries to appropriate systems
-  - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
-
-- [ ] 8. Implement Step 4: Memory Integration and Enhanced UI Features
-  - [ ] 8.1 Integrate memory agent capabilities from module5
-    - Import and adapt memory agent functionality from workshop4/modules/module5/memory_agent.py
-    - Add OpenSearch backend support with graceful fallback when OPENSEARCH_HOST is undefined
-    - Implement memory operations: store, retrieve, and list functionality
-    - Add user-specific memory management with USER_ID support
-    - _Requirements: 5.1_
-
-  - [ ] 8.2 Add model selection dropdown to Streamlit interface
+- [ ] 8. Implement Step 4: Enhanced UI Features
+  - [ ] 8.1 Add model selection dropdown to Streamlit interface
     - Implement dropdown selection for multiple Bedrock model IDs
     - Support models: Nova Pro, Nova Lite, Nova Micro, Claude 3.5 Haiku, Claude 3.7 Sonnet, Claude Sonnet 4
-    - Update all agents (teacher, knowledge base, memory) to use selected model
+    - Update all agents (teacher, knowledge base) to use selected model
     - Add model information display in sidebar
     - _Requirements: 5.2_
 
-  - [ ] 8.3 Implement teacher agent toggle controls
+  - [ ] 8.2 Implement teacher agent toggle controls
     - Add individual toggle checkboxes for each specialized teacher agent
     - Enable/disable Math, Language, Computer Science, English assistants
     - Update teacher agent initialization to only include toggled agents
     - Maintain Tool-Agent Pattern with selective activation
     - _Requirements: 5.3_
 
-  - [ ] 8.4 Add agent type selection (Teacher, Knowledge Base, Memory)
+  - [x] 8.3 Add agent type selection (Teacher, Knowledge Base)
     - Implement agent type dropdown in sidebar
     - Route queries to appropriate agent type based on user selection
     - Maintain existing query routing logic for teacher and knowledge base
-    - Add memory agent as third option with OpenSearch backend check
-    - _Requirements: 5.4, 5.5_
+    - Add Auto-Route option for automatic agent selection
+    - _Requirements: 5.4_
 
-  - [ ]* 8.5 Write property test for memory integration and enhanced UI
-    - **Property 6: Memory Integration and Enhanced UI**
-    - **Validates: Requirements 5.1, 5.2, 5.3, 5.4, 5.5**
+  - [ ]* 8.4 Write property test for enhanced UI
+    - **Property 6: Enhanced UI Features**
+    - **Validates: Requirements 5.2, 5.3, 5.4**
+
+- [ ] 9. Checkpoint - Step 4 enhanced UI complete
+  - Ensure model selection dropdown updates all agent types appropriately
+  - Validate teacher agent toggles enable/disable individual agents correctly
+  - Test agent type selection routes queries to appropriate systems
+  - _Requirements: 5.2, 5.3, 5.4_
 
 - [ ] 9. Implement Step 5: Production Deployment
   - [ ] 9.1 Create Docker container for enhanced application
