@@ -156,3 +156,32 @@ workshop4/deploy_multi_agent_bedrock/
 4. **Region verified** - us-east-1 configuration confirmed
 
 **Ready for deployment testing tomorrow!**
+
+## Next Steps for Tomorrow - Part 2: Setup and Bootstrap CDK
+
+### Step 4: Install CDK Dependencies (Use Existing Virtual Environment)
+```bash
+cd workshop4/deploy_multi_agent_bedrock
+# Use existing workshop4 virtual environment (already activated)
+pip install -r requirements.txt  # Install CDK dependencies (aws-cdk-lib + aws-cdk)
+cdk --version  # Verify CDK installation
+```
+
+### Step 5: Bootstrap CDK (One-time setup)
+```bash
+export AWS_ACCOUNT_ID=$(aws sts get-caller-identity --query "Account" --output text)
+echo "Running cdk bootstrap aws://${AWS_ACCOUNT_ID}/${AWS_REGION}"
+cdk bootstrap aws://${AWS_ACCOUNT_ID}/${AWS_REGION}
+```
+
+### Step 6: Test CDK Synthesis
+```bash
+cdk synth  # Generate CloudFormation template
+```
+
+### Step 7: Deploy to Production
+```bash
+cdk deploy  # Deploy the Multi-Agent Bedrock Streamlit app
+```
+
+**Expected Timeline**: 10-15 minutes for deployment
