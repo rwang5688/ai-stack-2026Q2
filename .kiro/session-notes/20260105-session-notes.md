@@ -163,9 +163,11 @@ workshop4/deploy_multi_agent_bedrock/
 ```bash
 cd workshop4/deploy_multi_agent_bedrock
 # Use existing workshop4 virtual environment (already activated)
-pip install -r requirements.txt  # Install CDK dependencies (aws-cdk-lib + aws-cdk)
-cdk --version  # Verify CDK installation
+uv pip install -r requirements.txt  # Install CDK Python library (aws-cdk-lib only)
+cdk --version  # Verify CDK CLI tool (Node.js, should already be installed)
 ```
+
+**CORRECTION**: `aws-cdk` is a Node.js package (installed via npm), not a Python package. The `requirements.txt` should only contain `aws-cdk-lib==2.160.0` (the Python CDK library). The CDK CLI tool should already be available on Ubuntu Code Server.
 
 ### Step 5: Bootstrap CDK (One-time setup)
 ```bash
