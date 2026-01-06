@@ -101,6 +101,10 @@ class CdkStack(Stack):
             f"{prefix}WebappTaskDef",
             memory_limit_mib=512,
             cpu=256,
+            runtime_platform=ecs.RuntimePlatform(
+                cpu_architecture=ecs.CpuArchitecture.ARM64,
+                operating_system_family=ecs.OperatingSystemFamily.LINUX
+            )
         )
 
         # Build Dockerfile from local folder and push to ECR
@@ -132,7 +136,13 @@ class CdkStack(Stack):
         bedrock_policy = iam.Policy(self, f"{prefix}BedrockPolicy",
                                     statements=[
                                         iam.PolicyStatement(
-                                            actions=["bedrock:InvokeModel"],
+                                            actions=[
+                                                "bedrock:InvokeModel",
+                                                "bedrock:InvokeModelWithResponseStream",
+                                                "bedrock:RetrieveAndGenerate",
+                                                "bedrock:Retrieve",
+                                                "ssm:GetParameter"
+                                            ],
                                             resources=["*"]
                                         )
                                     ]

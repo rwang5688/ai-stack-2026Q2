@@ -1,3 +1,48 @@
-streamlit==1.29.0
-boto3==1.33.11
-streamlit-cognito-auth==1.2.0
+# Multi-Agent Bedrock Streamlit Application Dependencies
+# Merged from workshop4/requirements.txt and original docker_app requirements
+
+# AWS observability and telemetry
+aws-opentelemetry-distro>=0.10.0
+
+# Amazon Bedrock AgentCore framework and toolkit
+bedrock-agentcore
+bedrock-agentcore-starter-toolkit
+
+# AWS SDK for Python
+boto3
+
+# LLM integration library
+litellm
+
+# Model Context Protocol with CLI tools
+mcp[cli]
+
+# AI action framework
+nova-act
+
+# OpenSearch Python client for vector operations
+opensearch-py
+
+# Data manipulation and analysis
+pandas
+
+# Retry utilities for robust operations
+retrying
+
+# Core Strands Agents SDK
+strands-agents
+
+# Strands Agents tools with memory capabilities
+strands-agents-tools[mem0_memory]
+
+# Web framework for interactive demos
+streamlit
+
+# Streamlit Cognito authentication
+streamlit-cognito-auth
+
+# Progress bars and utilities
+tqdm
+
+# Additional workshop dependencies
+ddgs
