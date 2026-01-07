@@ -2,7 +2,7 @@
 
 **AWS Workshop Link:** [Module 7: Building Multi-Agent with Strands](https://catalog.workshops.aws/strands/en-US/module-7-building-multi-agent-with-strands)
 
-**Strands Agents Docs on GitHub Link:** [teachers_assistant.py](https://github.com/strands-agents/docs/blob/main/docs/examples/python/teachers_assistant.py)
+**Strands Agents Docs on GitHub Link:** [teachers_assistant.py](https://github.com/strands-agents/docs/blob/main/docs/examples/python/multi_agent_example/teachers_assistant.py)
 
 ## Description
 
