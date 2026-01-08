@@ -55,7 +55,7 @@ This specification defines the requirements for fixing critical issues with the 
 
 ### Requirement 4
 
-**User Story:** As a system administrator, I want the CDK deployment to properly integrate Cognito authentication with CloudFront, so that the application is secure and follows AWS best practices.
+**User Story:** As a system administrator, I want the CDK deployment to properly integrate Cognito authentication with CloudFront and provide comprehensive Bedrock Knowledge Base permissions, so that the application is secure and fully functional following AWS best practices.
 
 #### Acceptance Criteria
 
@@ -63,11 +63,12 @@ This specification defines the requirements for fixing critical issues with the 
 2. WHEN CloudFront receives requests THEN the System SHALL validate authentication before serving content
 3. WHEN authentication is required THEN the System SHALL integrate Cognito with CloudFront using appropriate AWS services
 4. WHEN users access protected resources THEN the System SHALL enforce authentication at the CloudFront level
-5. WHERE authentication integration is complex THEN the System SHALL provide clear deployment validation steps
+5. WHEN the application accesses Bedrock Knowledge Base THEN the System SHALL have comprehensive IAM permissions for all KB operations
+6. WHERE authentication integration is complex THEN the System SHALL provide clear deployment validation steps
 
 ### Requirement 5
 
-**User Story:** As a developer, I want the Dockerfile to include proper environment variable configuration, so that the knowledge base functionality works in the deployed environment.
+**User Story:** As a developer, I want the Dockerfile to include proper environment variable configuration and the CDK stack to have comprehensive IAM permissions, so that the knowledge base functionality works fully in the deployed environment.
 
 #### Acceptance Criteria
 
@@ -75,4 +76,5 @@ This specification defines the requirements for fixing critical issues with the 
 2. WHEN the container runs THEN the System SHALL have access to the knowledge base configuration
 3. WHEN builders customize the deployment THEN the System SHALL provide clear comments about replacing the KB ID
 4. WHEN environment variables are missing THEN the System SHALL provide helpful error messages
-5. WHERE multiple environments are used THEN the System SHALL support environment-specific configuration
+5. WHEN the application accesses Bedrock Knowledge Base THEN the System SHALL have comprehensive IAM permissions including management, data source, and ingestion operations
+6. WHERE multiple environments are used THEN the System SHALL support environment-specific configuration

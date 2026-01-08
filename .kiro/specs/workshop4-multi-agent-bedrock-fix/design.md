@@ -85,20 +85,24 @@ Debug and fix the existing CDK stack by adding the missing authentication integr
 - Use existing Secrets Manager configuration
 - Maintain existing ALB custom header protection
 
-### 2. Environment Variable Configuration (Missing Feature)
+### 2. Environment Variable Configuration (Missing Feature) - COMPLETED ✅
 
 **Problem Analysis:**
-The existing Dockerfile in `workshop4/deploy_multi_agent_bedrock/docker_app/Dockerfile` doesn't include the STRANDS_KNOWLEDGE_BASE_ID environment variable, causing knowledge base functionality to fail in production.
+The existing Dockerfile in `workshop4/deploy_multi_agent_bedrock/docker_app/Dockerfile` didn't include the STRANDS_KNOWLEDGE_BASE_ID environment variable, causing knowledge base functionality to fail in production.
 
 **Current Dockerfile Analysis:**
 - ✅ Base Python 3.12 image with ARM64 platform
 - ✅ Port 8501 exposed for Streamlit
 - ✅ Requirements installation and app copying
-- ❌ Missing STRANDS_KNOWLEDGE_BASE_ID environment variable
+- ✅ **FIXED**: STRANDS_KNOWLEDGE_BASE_ID environment variable added
 - ✅ Streamlit run command configured
 
+**IAM Permissions Issue - COMPLETED ✅:**
+Additionally discovered that the CDK stack was missing comprehensive Bedrock Knowledge Base IAM permissions. The original policy only included basic retrieval permissions but lacked management, data source, and ingestion permissions.
+
 **Solution Components:**
-- **Dockerfile Enhancement**: Add environment variable to existing Dockerfile
+- ✅ **Dockerfile Enhancement**: Added environment variable to existing Dockerfile
+- ✅ **IAM Permissions Fix**: Added comprehensive Bedrock Knowledge Base permissions to CDK stack
 - **Builder Documentation**: Clear instructions for customization
 - **Source Code Synchronization**: Ensure docker_app matches multi_agent_bedrock
 - **Runtime Configuration**: Support environment-specific configuration
@@ -109,6 +113,33 @@ The existing Dockerfile in `workshop4/deploy_multi_agent_bedrock/docker_app/Dock
 # STRANDS_KNOWLEDGE_BASE_ID - Replace with your own Bedrock Knowledge Base ID
 # Current value is from the workshop setup - builders must replace with their own KB ID
 ENV STRANDS_KNOWLEDGE_BASE_ID="IMW46CITZE"
+```
+
+**CDK IAM Policy Enhancement:**
+```python
+# Enhanced Bedrock policy with comprehensive Knowledge Base permissions
+bedrock_policy = iam.Policy(self, f"{prefix}BedrockPolicy",
+    statements=[
+        iam.PolicyStatement(
+            actions=[
+                # Bedrock Model Invocation
+                "bedrock:InvokeModel",
+                "bedrock:InvokeModelWithResponseStream",
+                
+                # Bedrock Knowledge Base - Retrieval
+                "bedrock:RetrieveAndGenerate",
+                "bedrock:Retrieve",
+                
+                # Bedrock Knowledge Base - Management
+                "bedrock:GetKnowledgeBase",
+                "bedrock:ListKnowledgeBases",
+                
+                # Additional KB permissions...
+            ],
+            resources=["*"]
+        )
+    ]
+)
 ```
 
 ### 3. Source Code Synchronization

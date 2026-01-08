@@ -68,10 +68,19 @@ This implementation plan addresses two critical issues: (1) debugging and fixing
     - Maintain existing Dockerfile structure and commands
     - _Requirements: 2.1, 5.1, 5.3_
 
+  - [x] 5.1.1 Fix CDK IAM permissions for Bedrock Knowledge Base
+    - Add comprehensive Bedrock Knowledge Base permissions to CDK stack
+    - Include management permissions (GetKnowledgeBase, ListKnowledgeBases)
+    - Include data source permissions (GetDataSource, ListDataSources)
+    - Include ingestion permissions (StartIngestionJob, GetIngestionJob, ListIngestionJobs)
+    - Include agent integration permissions (AssociateAgentKnowledgeBase, etc.)
+    - _Requirements: 2.2, 2.3, 4.5, 5.5_
+
   - [ ] 5.2 Test Docker container environment configuration
     - Build Docker image with updated Dockerfile
     - Verify STRANDS_KNOWLEDGE_BASE_ID environment variable is set correctly
     - Test container startup and environment variable accessibility
+    - Verify IAM permissions allow Knowledge Base operations
     - _Requirements: 5.1, 5.2_
 
   - [ ]* 5.3 Write property test for environment variable configuration

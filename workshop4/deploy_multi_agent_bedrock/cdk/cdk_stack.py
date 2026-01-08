@@ -132,16 +132,38 @@ class CdkStack(Stack):
                 subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS),
         )
 
-        # Grant access to Bedrock
+        # Grant access to Bedrock and Knowledge Base
         bedrock_policy = iam.Policy(self, f"{prefix}BedrockPolicy",
                                     statements=[
                                         iam.PolicyStatement(
                                             actions=[
+                                                # Bedrock Model Invocation
                                                 "bedrock:InvokeModel",
                                                 "bedrock:InvokeModelWithResponseStream",
+                                                
+                                                # Bedrock Knowledge Base - Retrieval
                                                 "bedrock:RetrieveAndGenerate",
                                                 "bedrock:Retrieve",
-                                                "ssm:GetParameter"
+                                                
+                                                # Bedrock Knowledge Base - Management
+                                                "bedrock:GetKnowledgeBase",
+                                                "bedrock:ListKnowledgeBases",
+                                                
+                                                # Bedrock Knowledge Base - Data Source Operations
+                                                "bedrock:GetDataSource",
+                                                "bedrock:ListDataSources",
+                                                "bedrock:StartIngestionJob",
+                                                "bedrock:GetIngestionJob",
+                                                "bedrock:ListIngestionJobs",
+                                                
+                                                # Systems Manager Parameter Store
+                                                "ssm:GetParameter",
+                                                "ssm:GetParameters",
+                                                
+                                                # Additional permissions for Knowledge Base operations
+                                                "bedrock:AssociateAgentKnowledgeBase",
+                                                "bedrock:GetAgentKnowledgeBase",
+                                                "bedrock:ListAgentKnowledgeBases"
                                             ],
                                             resources=["*"]
                                         )

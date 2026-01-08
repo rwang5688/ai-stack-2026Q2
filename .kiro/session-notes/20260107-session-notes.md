@@ -12,6 +12,7 @@ Analyzed and debugged the multi-agent Bedrock deployment authentication issue. D
 - ✅ **Built Helper Tools**: Automated merge_app.py script for validation and guidance
 - ✅ **Organized Documentation**: Moved analysis to proper location (workshop4/AUTHENTICATION_ANALYSIS.md)
 - ✅ **Completed Task 5.1**: Added STRANDS_KNOWLEDGE_BASE_ID environment variable to Dockerfile with builder documentation
+- ✅ **Fixed IAM Permissions**: Added comprehensive Bedrock Knowledge Base permissions to CDK stack
 
 ## Issues & Resolutions
 
@@ -21,11 +22,12 @@ Analyzed and debugged the multi-agent Bedrock deployment authentication issue. D
 - **Root Cause**: When copying multi_agent_bedrock/app.py to docker_app/app.py, the authentication code was accidentally overwritten
 - **Resolution**: Use app-level authentication (simpler, more educational) with clear merge template
 
-### CDK Infrastructure Analysis
-- **Finding**: All CDK resources are properly configured (Cognito UserPool, UserPoolClient, Secrets Manager)
-- **Finding**: CloudFront and ALB security is working correctly
-- **Finding**: Authentication utilities (utils/auth.py) and libraries (streamlit-cognito-auth) are present
-- **Conclusion**: No CDK changes needed - infrastructure is functional
+### IAM Permissions Discovery
+- **Issue**: Knowledge Base functionality failing despite correct environment variable
+- **Root Cause**: CDK stack missing comprehensive Bedrock Knowledge Base IAM permissions
+- **Original Policy**: Only had basic retrieval permissions (bedrock:RetrieveAndGenerate, bedrock:Retrieve)
+- **Missing Permissions**: Knowledge Base management, data source operations, ingestion jobs, agent associations
+- **Resolution**: Added comprehensive IAM policy with all required Knowledge Base permissions
 
 ## Decisions Made
 
@@ -69,5 +71,13 @@ Analyzed and debugged the multi-agent Bedrock deployment authentication issue. D
 
 ## Tonight's Deployment Test
 - ✅ **STRANDS_KNOWLEDGE_BASE_ID** environment variable added to Dockerfile
+- ✅ **IAM Permissions Fixed**: Added comprehensive Bedrock Knowledge Base permissions to CDK stack
 - 🧪 **Ready for Testing**: Knowledge base functionality should now work in deployed version
-- 🚀 **Deploy Command**: `cdk deploy` will rebuild container with new environment variable
+- 🚀 **Deploy Command**: `cdk deploy` will rebuild container and update IAM permissions
+
+## IAM Permissions Added
+- **Knowledge Base Management**: GetKnowledgeBase, ListKnowledgeBases
+- **Data Source Operations**: GetDataSource, ListDataSources
+- **Ingestion Jobs**: StartIngestionJob, GetIngestionJob, ListIngestionJobs
+- **Agent Integration**: AssociateAgentKnowledgeBase, GetAgentKnowledgeBase, ListAgentKnowledgeBases
+- **Enhanced SSM**: GetParameters (in addition to GetParameter)

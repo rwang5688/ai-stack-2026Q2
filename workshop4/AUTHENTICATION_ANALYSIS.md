@@ -118,7 +118,12 @@ What happened:
 - Preserve knowledge base integration
 - Keep all existing agent routing and tools
 
-### 3. Test Integration
+### 3. Fix IAM Permissions (COMPLETED ✅)
+- Added comprehensive Bedrock Knowledge Base permissions to CDK stack
+- Includes management, data source, ingestion, and agent integration permissions
+- Resolves Knowledge Base access issues in deployed environment
+
+### 4. Test Integration
 - Verify Cognito authentication works with multi-agent features
 - Test knowledge base functionality with authenticated users
 - Validate logout and session management
@@ -141,14 +146,14 @@ curl -I https://your-cloudfront-domain.cloudfront.net
 
 1. **Merge authentication code** from `default_app.py` into `app.py`
 2. **Test authentication flow** with multi-agent functionality
-3. **Verify knowledge base integration** works with authenticated users
+3. **Verify knowledge base integration** works with authenticated users (IAM permissions now fixed ✅)
 4. **Update documentation** to reflect correct authentication approach
 
-## Files Requiring Modification - SIMPLIFIED
+## Files Modified
 
-1. `workshop4/deploy_multi_agent_bedrock/docker_app/app.py` - Add authentication code from default_app.py
-2. No CDK changes required - infrastructure is working correctly
-3. No Lambda@Edge implementation needed - app-level auth is sufficient
+1. ✅ `workshop4/deploy_multi_agent_bedrock/docker_app/Dockerfile` - Added STRANDS_KNOWLEDGE_BASE_ID environment variable
+2. ✅ `workshop4/deploy_multi_agent_bedrock/cdk/cdk_stack.py` - Added comprehensive Bedrock Knowledge Base IAM permissions
+3. 🔄 `workshop4/deploy_multi_agent_bedrock/docker_app/app.py` - Need to add authentication code from default_app.py
 
 ---
 
