@@ -1,5 +1,40 @@
+# =============================================================================
+# AUTHENTICATION SECTION - Required for Deployed Applications
+# =============================================================================
+# This section handles Cognito authentication for deployed applications.
+# For local development, you can comment out this section.
+# For deployment, this section must remain active.
+
 import streamlit as st
 import os
+from utils.auth import Auth
+from config_file import Config
+
+# Authentication Configuration
+SECRETS_MANAGER_ID = Config.SECRETS_MANAGER_ID
+DEPLOYMENT_REGION = Config.DEPLOYMENT_REGION
+
+# Initialize Cognito Authenticator
+authenticator = Auth.get_authenticator(SECRETS_MANAGER_ID, DEPLOYMENT_REGION)
+
+# Enforce Authentication - This stops execution if user is not logged in
+is_logged_in = authenticator.login()
+if not is_logged_in:
+    st.stop()
+
+# Authentication UI Components
+def logout():
+    """Handle user logout"""
+    authenticator.logout()
+
+# =============================================================================
+# APPLICATION LOGIC SECTION - Your Custom Application Code Goes Here
+# =============================================================================
+# This section contains your main application logic.
+# Students should copy their application code from multi_agent_bedrock/app.py
+# and paste it below this comment, replacing the existing application logic.
+
+# Import application dependencies
 from strands import Agent
 from strands.models import BedrockModel
 from strands_tools import memory, use_agent
@@ -148,6 +183,17 @@ st.write("Choose your agent type or let the system auto-route your queries to th
 
 # Add sidebar with information
 with st.sidebar:
+    # =============================================================================
+    # AUTHENTICATION UI - Shows user info and logout button
+    # =============================================================================
+    st.header("👤 User Authentication")
+    st.text(f"Welcome,\n{authenticator.get_username()}")
+    st.button("🚪 Logout", "logout_btn", on_click=logout)
+    st.divider()
+    
+    # =============================================================================
+    # APPLICATION UI - Your custom sidebar content goes here
+    # =============================================================================
     st.header("🤖 AI Service Details")
     aws_region = os.getenv("AWS_REGION", "Not Set")
     st.markdown(f"""
@@ -445,3 +491,13 @@ if query:
             st.error("Something went wrong while processing your request. Please try again.")
             message_placeholder.markdown(error_message)
             st.session_state.messages.append({"role": "assistant", "content": error_message})
+
+# =============================================================================
+# END OF APPLICATION LOGIC
+# =============================================================================
+# When merging your local app.py with this deployed version:
+# 1. Keep the AUTHENTICATION SECTION at the top (lines 1-25)
+# 2. Replace the APPLICATION LOGIC SECTION with your custom code
+# 3. Ensure the authentication UI remains in the sidebar
+# 4. Test that both authentication and your features work together
+# =============================================================================
