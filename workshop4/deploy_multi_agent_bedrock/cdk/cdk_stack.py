@@ -145,6 +145,9 @@ class CdkStack(Stack):
                                                 "bedrock:RetrieveAndGenerate",
                                                 "bedrock:Retrieve",
                                                 
+                                                # Bedrock Knowledge Base - Document Ingestion (CRITICAL for Strands memory tool)
+                                                "bedrock:IngestKnowledgeBaseDocuments",
+                                                
                                                 # Bedrock Knowledge Base - Management
                                                 "bedrock:GetKnowledgeBase",
                                                 "bedrock:ListKnowledgeBases",
@@ -156,39 +159,20 @@ class CdkStack(Stack):
                                                 "bedrock:GetIngestionJob",
                                                 "bedrock:ListIngestionJobs",
                                                 
-                                                # Bedrock Knowledge Base - Document Operations (for direct ingestion)
-                                                "bedrock:CreateDataSource",
-                                                "bedrock:UpdateDataSource",
-                                                "bedrock:DeleteDataSource",
-                                                "bedrock:BatchGetDataSource",
-                                                
-                                                # Bedrock Knowledge Base - Advanced Operations
-                                                "bedrock:PrepareAgent",
-                                                "bedrock:GetAgent",
-                                                "bedrock:ListAgents",
-                                                "bedrock:CreateAgent",
-                                                "bedrock:UpdateAgent",
-                                                
                                                 # Systems Manager Parameter Store
                                                 "ssm:GetParameter",
-                                                "ssm:GetParameters",
-                                                
-                                                # Additional permissions for Knowledge Base operations
-                                                "bedrock:AssociateAgentKnowledgeBase",
-                                                "bedrock:GetAgentKnowledgeBase",
-                                                "bedrock:ListAgentKnowledgeBases"
+                                                "ssm:GetParameters"
                                             ],
                                             resources=["*"]
                                         ),
-                                        # Additional statement for S3 operations (Knowledge Base storage)
+                                        # S3 operations for Knowledge Base storage
                                         iam.PolicyStatement(
                                             actions=[
                                                 "s3:GetObject",
                                                 "s3:PutObject",
                                                 "s3:DeleteObject",
                                                 "s3:ListBucket",
-                                                "s3:GetBucketLocation",
-                                                "s3:ListAllMyBuckets"
+                                                "s3:GetBucketLocation"
                                             ],
                                             resources=[
                                                 "arn:aws:s3:::*bedrock*",
@@ -199,7 +183,7 @@ class CdkStack(Stack):
                                                 "arn:aws:s3:::amazon-bedrock-*/*"
                                             ]
                                         ),
-                                        # OpenSearch Serverless permissions (if using vector storage)
+                                        # OpenSearch Serverless permissions for vector storage
                                         iam.PolicyStatement(
                                             actions=[
                                                 "aoss:APIAccessAll"
