@@ -120,12 +120,13 @@ What happened:
 
 ### 3. Fix IAM Permissions (COMPLETED ✅)
 - Added comprehensive Bedrock Knowledge Base permissions to CDK stack
-- Includes management, data source, ingestion, and agent integration permissions
-- Resolves Knowledge Base access issues in deployed environment
+- **Round 1**: Includes management, data source, ingestion, and agent integration permissions
+- **Round 2**: Added document operations and S3 storage permissions for write operations
+- Resolves Knowledge Base access issues in deployed environment (both read and write)
 
 ### 4. Test Integration
 - Verify Cognito authentication works with multi-agent features
-- Test knowledge base functionality with authenticated users
+- Test knowledge base functionality with authenticated users (read ✅, write ✅ after Round 2 fix)
 - Validate logout and session management
 
 ## Verification Steps
@@ -152,8 +153,21 @@ curl -I https://your-cloudfront-domain.cloudfront.net
 ## Files Modified
 
 1. ✅ `workshop4/deploy_multi_agent_bedrock/docker_app/Dockerfile` - Added STRANDS_KNOWLEDGE_BASE_ID environment variable
-2. ✅ `workshop4/deploy_multi_agent_bedrock/cdk/cdk_stack.py` - Added comprehensive Bedrock Knowledge Base IAM permissions
+2. ✅ `workshop4/deploy_multi_agent_bedrock/cdk/cdk_stack.py` - Added comprehensive Bedrock Knowledge Base IAM permissions (Round 1: read operations, Round 2: write operations + S3 storage)
 3. 🔄 `workshop4/deploy_multi_agent_bedrock/docker_app/app.py` - Need to add authentication code from default_app.py
+
+## IAM Permissions Evolution
+
+### Round 1 - Basic Knowledge Base Operations
+- Management permissions (GetKnowledgeBase, ListKnowledgeBases)
+- Data source permissions (GetDataSource, ListDataSources)
+- Ingestion job permissions (StartIngestionJob, GetIngestionJob, ListIngestionJobs)
+- Agent integration permissions
+
+### Round 2 - Write Operations Fix
+- Document operations (CreateDataSource, UpdateDataSource, DeleteDataSource, BatchGetDataSource)
+- S3 storage permissions (GetObject, PutObject, DeleteObject, ListBucket)
+- Resource patterns for Knowledge Base storage buckets (*bedrock*, *knowledge*)
 
 ---
 

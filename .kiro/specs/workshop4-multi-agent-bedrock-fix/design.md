@@ -115,7 +115,7 @@ Additionally discovered that the CDK stack was missing comprehensive Bedrock Kno
 ENV STRANDS_KNOWLEDGE_BASE_ID="IMW46CITZE"
 ```
 
-**CDK IAM Policy Enhancement:**
+**CDK IAM Policy Enhancement (Round 1 & 2):**
 ```python
 # Enhanced Bedrock policy with comprehensive Knowledge Base permissions
 bedrock_policy = iam.Policy(self, f"{prefix}BedrockPolicy",
@@ -126,17 +126,38 @@ bedrock_policy = iam.Policy(self, f"{prefix}BedrockPolicy",
                 "bedrock:InvokeModel",
                 "bedrock:InvokeModelWithResponseStream",
                 
-                # Bedrock Knowledge Base - Retrieval
+                # Bedrock Knowledge Base - Retrieval (Round 1)
                 "bedrock:RetrieveAndGenerate",
                 "bedrock:Retrieve",
                 
-                # Bedrock Knowledge Base - Management
+                # Bedrock Knowledge Base - Management (Round 1)
                 "bedrock:GetKnowledgeBase",
                 "bedrock:ListKnowledgeBases",
+                
+                # Bedrock Knowledge Base - Document Operations (Round 2)
+                "bedrock:CreateDataSource",
+                "bedrock:UpdateDataSource",
+                "bedrock:DeleteDataSource",
+                "bedrock:BatchGetDataSource",
                 
                 # Additional KB permissions...
             ],
             resources=["*"]
+        ),
+        # S3 Storage Permissions for Knowledge Base (Round 2)
+        iam.PolicyStatement(
+            actions=[
+                "s3:GetObject",
+                "s3:PutObject", 
+                "s3:DeleteObject",
+                "s3:ListBucket"
+            ],
+            resources=[
+                "arn:aws:s3:::*bedrock*",
+                "arn:aws:s3:::*bedrock*/*",
+                "arn:aws:s3:::*knowledge*",
+                "arn:aws:s3:::*knowledge*/*"
+            ]
         )
     ]
 )

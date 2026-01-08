@@ -76,11 +76,20 @@ This implementation plan addresses two critical issues: (1) debugging and fixing
     - Include agent integration permissions (AssociateAgentKnowledgeBase, etc.)
     - _Requirements: 2.2, 2.3, 4.5, 5.5_
 
+  - [x] 5.1.2 Fix CDK IAM permissions for Knowledge Base write operations
+    - Add document operations permissions (CreateDataSource, UpdateDataSource, DeleteDataSource, BatchGetDataSource)
+    - Add S3 storage permissions for Knowledge Base buckets (GetObject, PutObject, DeleteObject, ListBucket)
+    - Include resource patterns for bedrock and knowledge base storage buckets
+    - Resolve Knowledge Base write operation failures while maintaining read functionality
+    - _Requirements: 2.2, 2.3, 5.5_
+
   - [ ] 5.2 Test Docker container environment configuration
     - Build Docker image with updated Dockerfile
     - Verify STRANDS_KNOWLEDGE_BASE_ID environment variable is set correctly
     - Test container startup and environment variable accessibility
-    - Verify IAM permissions allow Knowledge Base operations
+    - Verify IAM permissions allow Knowledge Base read operations (Round 1 fix)
+    - Verify IAM permissions allow Knowledge Base write operations (Round 2 fix)
+    - Test both knowledge storage and retrieval functionality end-to-end
     - _Requirements: 5.1, 5.2_
 
   - [ ]* 5.3 Write property test for environment variable configuration

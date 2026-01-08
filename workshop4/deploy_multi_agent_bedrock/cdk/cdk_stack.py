@@ -156,6 +156,12 @@ class CdkStack(Stack):
                                                 "bedrock:GetIngestionJob",
                                                 "bedrock:ListIngestionJobs",
                                                 
+                                                # Bedrock Knowledge Base - Document Operations (for direct ingestion)
+                                                "bedrock:CreateDataSource",
+                                                "bedrock:UpdateDataSource",
+                                                "bedrock:DeleteDataSource",
+                                                "bedrock:BatchGetDataSource",
+                                                
                                                 # Systems Manager Parameter Store
                                                 "ssm:GetParameter",
                                                 "ssm:GetParameters",
@@ -166,6 +172,21 @@ class CdkStack(Stack):
                                                 "bedrock:ListAgentKnowledgeBases"
                                             ],
                                             resources=["*"]
+                                        ),
+                                        # Additional statement for S3 operations (Knowledge Base storage)
+                                        iam.PolicyStatement(
+                                            actions=[
+                                                "s3:GetObject",
+                                                "s3:PutObject",
+                                                "s3:DeleteObject",
+                                                "s3:ListBucket"
+                                            ],
+                                            resources=[
+                                                "arn:aws:s3:::*bedrock*",
+                                                "arn:aws:s3:::*bedrock*/*",
+                                                "arn:aws:s3:::*knowledge*",
+                                                "arn:aws:s3:::*knowledge*/*"
+                                            ]
                                         )
                                     ]
                                     )

@@ -12,7 +12,8 @@ Analyzed and debugged the multi-agent Bedrock deployment authentication issue. D
 - ✅ **Built Helper Tools**: Automated merge_app.py script for validation and guidance
 - ✅ **Organized Documentation**: Moved analysis to proper location (workshop4/AUTHENTICATION_ANALYSIS.md)
 - ✅ **Completed Task 5.1**: Added STRANDS_KNOWLEDGE_BASE_ID environment variable to Dockerfile with builder documentation
-- ✅ **Fixed IAM Permissions**: Added comprehensive Bedrock Knowledge Base permissions to CDK stack
+- ✅ **Fixed IAM Permissions (Round 1)**: Added comprehensive Bedrock Knowledge Base permissions to CDK stack
+- ✅ **Fixed IAM Permissions (Round 2)**: Added Knowledge Base write permissions and S3 storage access for document ingestion
 
 ## Issues & Resolutions
 
@@ -22,12 +23,19 @@ Analyzed and debugged the multi-agent Bedrock deployment authentication issue. D
 - **Root Cause**: When copying multi_agent_bedrock/app.py to docker_app/app.py, the authentication code was accidentally overwritten
 - **Resolution**: Use app-level authentication (simpler, more educational) with clear merge template
 
-### IAM Permissions Discovery
-- **Issue**: Knowledge Base functionality failing despite correct environment variable
-- **Root Cause**: CDK stack missing comprehensive Bedrock Knowledge Base IAM permissions
-- **Original Policy**: Only had basic retrieval permissions (bedrock:RetrieveAndGenerate, bedrock:Retrieve)
-- **Missing Permissions**: Knowledge Base management, data source operations, ingestion jobs, agent associations
-- **Resolution**: Added comprehensive IAM policy with all required Knowledge Base permissions
+### IAM Permissions Discovery and Resolution
+- **Issue 1**: Knowledge Base functionality failing despite correct environment variable
+- **Root Cause 1**: CDK stack missing comprehensive Bedrock Knowledge Base IAM permissions
+- **Resolution 1**: Added comprehensive IAM policy with KB management, data source operations, ingestion jobs, agent associations
+
+- **Issue 2**: Knowledge Base read operations working, but write operations failing
+- **Root Cause 2**: Missing document ingestion permissions and S3 storage access for Knowledge Base write operations
+- **Resolution 2**: Added document operations permissions (CreateDataSource, UpdateDataSource, etc.) and S3 storage permissions for Knowledge Base buckets
+
+- **Testing Results**: 
+  - ✅ **Read Operations**: "list all k-pop groups that I like" - Successfully retrieved stored data
+  - ❌ **Write Operations**: "my birthday is January 4th" - Shows success message but data not persisted
+  - **Diagnosis**: Write permissions were insufficient for document ingestion
 
 ## Decisions Made
 
@@ -75,9 +83,14 @@ Analyzed and debugged the multi-agent Bedrock deployment authentication issue. D
 - 🧪 **Ready for Testing**: Knowledge base functionality should now work in deployed version
 - 🚀 **Deploy Command**: `cdk deploy` will rebuild container and update IAM permissions
 
-## IAM Permissions Added
+## IAM Permissions Added (Round 1)
 - **Knowledge Base Management**: GetKnowledgeBase, ListKnowledgeBases
 - **Data Source Operations**: GetDataSource, ListDataSources
 - **Ingestion Jobs**: StartIngestionJob, GetIngestionJob, ListIngestionJobs
 - **Agent Integration**: AssociateAgentKnowledgeBase, GetAgentKnowledgeBase, ListAgentKnowledgeBases
 - **Enhanced SSM**: GetParameters (in addition to GetParameter)
+
+## IAM Permissions Added (Round 2) - Write Operations Fix
+- **Document Operations**: CreateDataSource, UpdateDataSource, DeleteDataSource, BatchGetDataSource
+- **S3 Storage Access**: GetObject, PutObject, DeleteObject, ListBucket for Knowledge Base storage buckets
+- **Resource Patterns**: Covers `*bedrock*` and `*knowledge*` S3 buckets for comprehensive storage access
