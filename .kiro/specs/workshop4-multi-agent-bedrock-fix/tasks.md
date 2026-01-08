@@ -62,7 +62,7 @@ This implementation plan addresses two critical issues: (1) debugging and fixing
     - _Requirements: 2.2, 2.3_
 
 - [ ] 5. Add STRANDS_KNOWLEDGE_BASE_ID environment variable to Dockerfile
-  - [ ] 5.1 Update existing Dockerfile
+  - [x] 5.1 Update existing Dockerfile
     - Add STRANDS_KNOWLEDGE_BASE_ID environment variable with current value "IMW46CITZE"
     - Include clear documentation comments for builders to replace with their own KB ID
     - Maintain existing Dockerfile structure and commands

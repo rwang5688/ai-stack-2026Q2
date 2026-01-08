@@ -11,6 +11,7 @@ Analyzed and debugged the multi-agent Bedrock deployment authentication issue. D
 - ✅ **Created Merge Guide**: Detailed instructions for students to merge local app with authentication (APP_MERGE_GUIDE.md)
 - ✅ **Built Helper Tools**: Automated merge_app.py script for validation and guidance
 - ✅ **Organized Documentation**: Moved analysis to proper location (workshop4/AUTHENTICATION_ANALYSIS.md)
+- ✅ **Completed Task 5.1**: Added STRANDS_KNOWLEDGE_BASE_ID environment variable to Dockerfile with builder documentation
 
 ## Issues & Resolutions
 
@@ -41,9 +42,11 @@ Analyzed and debugged the multi-agent Bedrock deployment authentication issue. D
 ## Next Steps for Tomorrow Morning
 - [ ] **Task 2**: Implement the simplified authentication fix (merge authentication into current app.py)
 - [ ] **Task 4**: Synchronize source code between local and deployed versions
-- [ ] **Task 5**: Add STRANDS_KNOWLEDGE_BASE_ID environment variable to Dockerfile
+- [x] **Task 5.1**: Add STRANDS_KNOWLEDGE_BASE_ID environment variable to Dockerfile ✅ COMPLETED
+- [ ] **Task 5.2**: Test Docker container environment configuration
 - [ ] **Task 8**: Update MULTI_AGENT_BEDROCK.md documentation with merge process
 - [ ] **Testing**: Verify authentication and application features work together
+- [ ] **Deploy and Test**: Test knowledge base functionality with new environment variable
 
 ## Resources Created
 - **[Authentication Analysis](workshop4/AUTHENTICATION_ANALYSIS.md)**: Root cause analysis and corrected solution approach
@@ -60,6 +63,11 @@ Analyzed and debugged the multi-agent Bedrock deployment authentication issue. D
 ## Success Criteria for Tomorrow
 - ✅ Authentication works in deployed application
 - ✅ Multi-agent functionality preserved and working
-- ✅ Knowledge base integration functional with environment variable
+- ✅ Knowledge base integration functional with environment variable ✅ **ENV VAR ADDED**
 - ✅ Documentation updated with clear merge instructions
 - ✅ Students can easily follow the process to deploy authenticated applications
+
+## Tonight's Deployment Test
+- ✅ **STRANDS_KNOWLEDGE_BASE_ID** environment variable added to Dockerfile
+- 🧪 **Ready for Testing**: Knowledge base functionality should now work in deployed version
+- 🚀 **Deploy Command**: `cdk deploy` will rebuild container with new environment variable
