@@ -77,11 +77,16 @@ Analyzed and debugged the multi-agent Bedrock deployment authentication issue. D
 - ✅ Documentation updated with clear merge instructions
 - ✅ Students can easily follow the process to deploy authenticated applications
 
-## Tonight's Deployment Test
-- ✅ **STRANDS_KNOWLEDGE_BASE_ID** environment variable added to Dockerfile
-- ✅ **IAM Permissions Fixed**: Added comprehensive Bedrock Knowledge Base permissions to CDK stack
-- 🧪 **Ready for Testing**: Knowledge base functionality should now work in deployed version
-- 🚀 **Deploy Command**: `cdk deploy` will rebuild container and update IAM permissions
+## Tonight's Final Testing Results
+- ✅ **Store Operation Fixed**: "my birthday is January 4th" now succeeds (no error message)
+- ✅ **Old Data Retrieval**: "list all k-pop groups" works (previously stored data)
+- ❌ **New Data Retrieval**: "what is my birthday?" fails (newly stored data not found)
+- 🤔 **Hypothesis**: Asynchronous indexing delay - data stored but not yet searchable
+
+## Key Discovery
+- **bedrock:IngestKnowledgeBaseDocuments** permission was the missing piece for store operations
+- **Store vs Retrieve Timing**: Possible delay between ingestion and searchability
+- **Next Investigation**: Check if this is a timing issue or missing indexing permissions
 
 ## IAM Permissions Added (Round 1)
 - **Knowledge Base Management**: GetKnowledgeBase, ListKnowledgeBases
