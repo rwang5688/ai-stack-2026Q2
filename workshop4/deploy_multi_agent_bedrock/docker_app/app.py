@@ -360,7 +360,12 @@ def run_kb_agent(query):
                 action="store",
                 content=query
             )
-            return "✅ I've stored this information in your knowledge base."
+            # Check if the result indicates success
+            result_str = str(result)
+            if result and "error" not in result_str.lower():
+                return "✅ I've stored this information in your knowledge base."
+            else:
+                return f"❌ Error storing information: {result_str}"
         except Exception as e:
             return f"❌ Error storing information: {str(e)}"
     else:

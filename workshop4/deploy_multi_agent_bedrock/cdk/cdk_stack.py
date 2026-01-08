@@ -162,6 +162,13 @@ class CdkStack(Stack):
                                                 "bedrock:DeleteDataSource",
                                                 "bedrock:BatchGetDataSource",
                                                 
+                                                # Bedrock Knowledge Base - Advanced Operations
+                                                "bedrock:PrepareAgent",
+                                                "bedrock:GetAgent",
+                                                "bedrock:ListAgents",
+                                                "bedrock:CreateAgent",
+                                                "bedrock:UpdateAgent",
+                                                
                                                 # Systems Manager Parameter Store
                                                 "ssm:GetParameter",
                                                 "ssm:GetParameters",
@@ -179,14 +186,25 @@ class CdkStack(Stack):
                                                 "s3:GetObject",
                                                 "s3:PutObject",
                                                 "s3:DeleteObject",
-                                                "s3:ListBucket"
+                                                "s3:ListBucket",
+                                                "s3:GetBucketLocation",
+                                                "s3:ListAllMyBuckets"
                                             ],
                                             resources=[
                                                 "arn:aws:s3:::*bedrock*",
                                                 "arn:aws:s3:::*bedrock*/*",
                                                 "arn:aws:s3:::*knowledge*",
-                                                "arn:aws:s3:::*knowledge*/*"
+                                                "arn:aws:s3:::*knowledge*/*",
+                                                "arn:aws:s3:::amazon-bedrock-*",
+                                                "arn:aws:s3:::amazon-bedrock-*/*"
                                             ]
+                                        ),
+                                        # OpenSearch Serverless permissions (if using vector storage)
+                                        iam.PolicyStatement(
+                                            actions=[
+                                                "aoss:APIAccessAll"
+                                            ],
+                                            resources=["*"]
                                         )
                                     ]
                                     )
