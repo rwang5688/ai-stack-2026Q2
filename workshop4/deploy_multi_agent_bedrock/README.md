@@ -1,16 +1,32 @@
-# deploy-streamlit-app
+# Multi-Agent Bedrock System - Production Deployment
 
-This app can be used as a starting point to easily create and deploy a GenAI demo, with web interface and user authentication. It is written in python only, with cdk template to deploy on AWS.
+This directory contains the production deployment infrastructure for the multi-agent system using Strands Agents SDK with Amazon Bedrock model hosting. It deploys a Streamlit web application with authentication, containerized using Docker and deployed on AWS ECS Fargate.
 
-It deploys a basic Streamlit app, and contains the following components:
+## Architecture
 
-* The Streamlit app in ECS/Fargate, behind an ALB and CloudFront
-* A Cognito user pool in which you can manage users
+The deployment creates a production-ready multi-agent system with the following components:
 
-By default, the Streamlit app has the following features:
+* **Streamlit Multi-Agent App** in ECS/Fargate with Teacher's Assistant pattern and Bedrock Knowledge Base integration
+* **Application Load Balancer (ALB)** for traffic distribution and health checks
+* **CloudFront Distribution** for global content delivery and caching
+* **Amazon Cognito User Pool** for user authentication and session management
+* **Amazon Bedrock Integration** with comprehensive IAM permissions for Nova Pro model and Knowledge Base access
+* **VPC and Security Groups** with proper network isolation and security controls
 
-* Authentication through Cognito
-* Connection to Bedrock 
+![Architecture diagram](img/archi_streamlit_cdk.png)
+
+## Features
+
+The deployed application includes all multi-agent capabilities:
+
+* **Authentication** through Amazon Cognito with streamlit-cognito-auth integration
+* **Multi-Agent System** with Teacher's Assistant orchestrator and 5 specialized agents
+* **Amazon Bedrock Integration** using Nova Pro model (`us.amazon.nova-pro-v1:0`)
+* **Knowledge Base Functionality** for personal information storage and retrieval
+* **Agent Type Selection** (Auto-Route, Teacher Agent, Knowledge Base)
+* **Cross-Platform Tool Support** with automatic capability detection
+* **Conversation History** and session management
+* **Enhanced UI Features** with model information display and agent selection 
 
 ## Architecture diagram
 
@@ -24,105 +40,304 @@ Note: for the docker version to run, you will need to give appropriate permissio
 
 In the main folder, you will find a cdk template to deploy the app on ECS / ALB.
 
-Prerequisites:
+## Prerequisites
 
-* python >= 3.8
-* docker
-* use a Chrome browser for development
-* `anthropic.claude-v2` model activated in Amazon Bedrock in your AWS account
-* the environment used to create this demo was an AWS Cloud9 m5.large instance with Amazon Linux 2023, but it should also work with other configurations. It has also been tested on a mac laptop with colima as container runtime.
-* You also need to install the AWS Command Line Interface (CLI), the AWS Cloud Development KIT (CDK), and to configure the AWS CLI on your development environment (not required if you use Cloud9, as it is already configured by default). One way to configure the AWS CLI is to get your access key through the AWS console, and use the `aws configure` command in your terminal to setup your credentials.
+* **Python** >= 3.12 (required for Strands Agents SDK)
+* **Docker** for containerization
+* **Chrome browser** for development and testing
+* **Amazon Bedrock Access** with Nova Pro model (`us.amazon.nova-pro-v1:0`) activated in your AWS account
+* **AWS CLI** and **AWS CDK** installed and configured
+* **Strands Knowledge Base** (optional - will use demo KB if not configured)
+* **Development Environment**: Tested on AWS Cloud9 m5.large with Amazon Linux 2023, macOS with Docker Desktop, and Windows with Docker Desktop
 
-To deploy:
+### AWS Permissions Required
 
-1. Edit `docker_app/config_file.py`, choose a `STACK_NAME` and a `CUSTOM_HEADER_VALUE`.
+The deployment requires comprehensive AWS permissions for:
+- **Amazon Bedrock**: Model invocation, Knowledge Base operations, document ingestion
+- **Amazon S3**: Knowledge Base storage bucket access
+- **Amazon OpenSearch Serverless**: Knowledge Base indexing (if using custom KB)
+- **ECS/Fargate**: Container deployment and management
+- **CloudFront**: Content delivery network
+- **Cognito**: User authentication
+- **VPC/Networking**: Security groups and load balancers
 
-2. Install dependencies
- 
+**Note**: The CDK stack includes comprehensive IAM permissions (lines 136-194 in `cdk/cdk_stack.py`) that are intentionally broad for workshop reliability.
+
+## Deployment Steps
+
+### 1. Configure Application Settings
+
+Edit `docker_app/config_file.py` and configure:
+- `STACK_NAME`: Choose a unique stack name for your deployment
+- `CUSTOM_HEADER_VALUE`: Set a custom header value for security
+- `STRANDS_KNOWLEDGE_BASE_ID`: Set your Knowledge Base ID (optional - defaults to demo KB)
+
+### 2. Prepare Local Application
+
+Before deployment, ensure your local multi-agent application is working:
+
+```bash
+# Navigate to the local implementation
+cd ../multi_agent_bedrock
+
+# Test the application locally
+streamlit run app.py
 ```
+
+### 3. Merge Application Code
+
+The deployment uses a template-based approach where you merge your local application with the authentication framework:
+
+```bash
+# Use the merge helper script
+python merge_app.py
+
+# Or manually follow the APP_MERGE_GUIDE.md instructions
+```
+
+**Key Integration Points:**
+- Keep the **AUTHENTICATION SECTION** at the top of `docker_app/app.py`
+- Replace the **APPLICATION LOGIC SECTION** with your multi-agent code
+- Ensure authentication UI remains in the sidebar
+- Test that both authentication and multi-agent features work together
+
+### 4. Install Dependencies and Deploy
+
+```bash
+# Create and activate virtual environment
 python -m venv .venv
-source .venv/bin/activate
+source .venv/bin/activate  # Linux/macOS
+# OR
+.venv\Scripts\activate  # Windows
+
+# Install dependencies
 pip install -r requirements.txt
-```
 
-3. Deploy the cdk template
-
-```
+# Bootstrap CDK (first time only)
 cdk bootstrap
+
+# Deploy the infrastructure
 cdk deploy
 ```
 
-The deployment takes 5 to 10 minutes.
+**Deployment time**: 5-10 minutes
 
-Make a note of the output, in which you will find the CloudFront distribution URL
-and the Cognito user pool id.
+### 5. Configure Users and Access
 
-4. Create a user in the Cognito UserPool that has been created. You can perform this action from your AWS Console. 
-5. From your browser, connect to the CloudFront distribution url.
-6. Log in to the Streamlit app with the user you have created in Cognito.
+1. **Note the deployment outputs**:
+   - CloudFront distribution URL
+   - Cognito User Pool ID
 
-## Testing and developing in Cloud9
+2. **Create users** in the Cognito User Pool via AWS Console
 
-After deployment of the cdk template containing the Cognito user pool required for authentication, you can test the Streamlit app directly from Cloud9.
-You can either use docker, but this would require setting up a role with appropriate permissions, or run the Streamlit app directly in your terminal after having installed the required python dependencies.
+3. **Access the application**:
+   - Navigate to the CloudFront distribution URL
+   - Log in with your Cognito user credentials
+   - Test all multi-agent features (Teacher Agent, Knowledge Base, Auto-Route)
 
-To run the Streamlit app directly:
+## Local Development and Testing
 
-1. If you have activated a virtual env for deploying the cdk template, deactivate it:
+### Testing in AWS Cloud9
 
-```
+After deploying the CDK template with Cognito authentication, you can test the multi-agent application directly in Cloud9:
+
+1. **Deactivate deployment virtual environment** (if active):
+```bash
 deactivate
 ```
 
-2. cd into the streamlit-docker directory, create a new virtual env, and install dependencies:
-
-```
+2. **Set up local development environment**:
+```bash
 cd docker_app
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-3. Launch the streamlit server
-
+3. **Configure environment variables**:
+```bash
+export AWS_REGION="us-east-1"
+export BYPASS_TOOL_CONSENT="true"
+export STRANDS_KNOWLEDGE_BASE_ID="your-kb-id"  # Optional
 ```
+
+4. **Launch the Streamlit application**:
+```bash
 streamlit run app.py --server.port 8080
 ```
 
-4. Click on the Preview/Preview running application button in Cloud9, and click on the button to Pop out the browser in a new window, as the Cloud9 embedded browser does not keep session cookies, which prevents the authentication mechanism to work properly.
-If the new window does not display the app, you may need to configure your browser to accept cross-site tracking cookies.
+5. **Access the application**:
+   - Click **Preview > Preview Running Application** in Cloud9
+   - Click **Pop Out** to open in a new browser window
+   - Configure browser to accept cross-site tracking cookies if needed
 
-5. You can now modify the streamlit app to build your own demo!
+### Local Docker Testing
 
-## Some limitations
+To test the containerized version locally:
 
-* The connection between CloudFront and the ALB is in HTTP, not SSL encrypted.
-This means traffic between CloudFront and the ALB is unencrypted.
-It is **strongly recommended** to configure HTTPS by bringing your own domain name and SSL/TLS certificate to the ALB.
-* The provided code is intended as a demo and starting point, not production ready.
-The Python app relies on third party libraries like Streamlit and streamlit-cognito-auth.
-As the developer, it is your responsibility to properly vet, maintain, and test all third party dependencies.
-The authentication and authorization mechanisms in particular should be thoroughly evaluated.
-More generally, you should perform security reviews and testing before incorporating this demo code in a production application or with sensitive data.
-* In this demo, Amazon Cognito is in a simple configuration.
-Note that Amazon Cognito user pools can be configured to enforce strong password policies,
-enable multi-factor authentication,
-and set the AdvancedSecurityMode to ENFORCED to enable the system to detect and act upon malicious sign-in attempts.
-* AWS provides various services, not implemented in this demo, that can improve the security of this application.
-Network security services like network ACLs and AWS WAF can control access to resources.
-You could also use AWS Shield for DDoS protection and Amazon GuardDuty for threats detection.
-Amazon Inspector performs security assessments.
-There are many more AWS services and best practices that can enhance security -
-refer to the AWS Shared Responsibility Model and security best practices guidance for additional recommendations.
-The developer is responsible for properly implementing and configuring these services to meet their specific security requirements.
-* Regular rotation of secrets is recommended, not implemented in this demo.
+```bash
+# Build the Docker image
+docker build -t multi-agent-bedrock .
+
+# Run with environment variables
+docker run -p 8501:8501 \
+  -e AWS_REGION=us-east-1 \
+  -e AWS_ACCESS_KEY_ID=your-key \
+  -e AWS_SECRET_ACCESS_KEY=your-secret \
+  -e STRANDS_KNOWLEDGE_BASE_ID=your-kb-id \
+  multi-agent-bedrock
+```
+
+**Note**: Ensure the container has appropriate AWS permissions for Bedrock access.
+
+## Application Features
+
+The deployed multi-agent system includes:
+
+### Core Multi-Agent Functionality
+- **Teacher's Assistant Pattern**: Central orchestrator routing queries to 5 specialized agents
+- **Specialized Agents**: Math, English, Language, Computer Science, and General assistants
+- **Tool Integration**: Calculator, Python REPL, shell, HTTP requests, file operations
+- **Cross-Platform Support**: Automatic tool detection and fallbacks
+
+### Knowledge Base Integration
+- **Personal Information Storage**: Store and retrieve personal facts and preferences
+- **Bedrock Knowledge Base**: AWS-managed document storage with vector search
+- **Intelligent Routing**: Auto-detection between educational and knowledge queries
+- **Normal Indexing Behavior**: 2-3 minute delay for new data to become searchable
+
+### Enhanced UI Features
+- **Agent Type Selection**: Choose between Auto-Route, Teacher Agent, or Knowledge Base
+- **Conversation History**: Persistent chat history during session
+- **Service Information**: Display of Bedrock model and configuration details
+- **Error Handling**: Comprehensive error management and user feedback
+
+### Authentication and Security
+- **Cognito Integration**: Secure user authentication and session management
+- **User Management**: Admin control over user access and permissions
+- **Session Security**: Proper session handling and logout functionality
+
+## Monitoring and Maintenance
+
+### CloudWatch Integration
+- **Application Logs**: ECS task logs available in CloudWatch
+- **Performance Metrics**: Container CPU, memory, and network usage
+- **Custom Metrics**: Multi-agent interaction patterns and response times
+
+### Cost Optimization
+- **Bedrock Usage**: Monitor token consumption and model invocation costs
+- **ECS Scaling**: Configure auto-scaling based on demand
+- **CloudFront Caching**: Optimize static asset delivery
+
+### Maintenance Tasks
+- **User Management**: Regular review of Cognito user pool
+- **Security Updates**: Keep container images and dependencies updated
+- **Knowledge Base**: Monitor document storage and indexing performance
+
+## Security Considerations and Limitations
+
+### Network Security
+* **HTTP between CloudFront and ALB**: Traffic between CloudFront and the ALB is unencrypted
+* **Recommendation**: Configure HTTPS by bringing your own domain name and SSL/TLS certificate
+* **Production Requirement**: Implement proper SSL/TLS termination for production workloads
+
+### Application Security
+* **Demo Code**: This implementation is intended as a workshop demo and starting point, not production-ready
+* **Third-Party Dependencies**: Thoroughly vet Streamlit, streamlit-cognito-auth, and Strands Agents SDK
+* **Authentication Review**: Evaluate authentication and authorization mechanisms for production use
+* **Security Testing**: Perform comprehensive security reviews before production deployment
+
+### Cognito Configuration
+* **Basic Setup**: Current Cognito configuration is simplified for workshop purposes
+* **Production Enhancements**: 
+  - Enforce strong password policies
+  - Enable multi-factor authentication (MFA)
+  - Set AdvancedSecurityMode to ENFORCED for malicious sign-in detection
+  - Configure proper user pool policies and attributes
+
+### AWS Security Services (Not Implemented)
+* **Network Security**: Consider AWS WAF, network ACLs, and VPC security groups
+* **DDoS Protection**: Implement AWS Shield for DDoS protection
+* **Threat Detection**: Use Amazon GuardDuty for threat detection
+* **Security Assessment**: Leverage Amazon Inspector for security assessments
+* **Monitoring**: Implement comprehensive logging and monitoring with CloudTrail
+
+### IAM Permissions
+* **Broad Permissions**: CDK stack includes comprehensive IAM permissions for workshop reliability
+* **Production Refinement**: Review and minimize permissions following least privilege principle
+* **Regular Rotation**: Implement regular rotation of secrets and access keys (not included in demo)
+
+### Data Protection
+* **Sensitive Data**: Avoid entering sensitive or PII data in workshop demonstrations
+* **Knowledge Base**: Personal information stored in Bedrock Knowledge Base should be non-sensitive
+* **Encryption**: Ensure data encryption at rest and in transit for production workloads
+
+## Troubleshooting
+
+### Common Deployment Issues
+
+1. **CDK Bootstrap Required**:
+   ```
+   Error: Need to perform AWS CDK bootstrap
+   ```
+   **Solution**: Run `cdk bootstrap` before deployment
+
+2. **Bedrock Model Access**:
+   ```
+   Error: Access denied to model us.amazon.nova-pro-v1:0
+   ```
+   **Solution**: Request access to Nova Pro model in Bedrock console
+
+3. **Knowledge Base Configuration**:
+   ```
+   Error: Knowledge Base not found
+   ```
+   **Solution**: Set `STRANDS_KNOWLEDGE_BASE_ID` or use default demo KB
+
+4. **Docker Build Issues**:
+   ```
+   Error: Docker build failed
+   ```
+   **Solution**: Ensure Docker is running and has sufficient resources
+
+### Runtime Issues
+
+1. **Authentication Failures**:
+   - Verify Cognito user pool configuration
+   - Check user credentials and status
+   - Ensure browser accepts cookies
+
+2. **Multi-Agent Errors**:
+   - Check AWS credentials and permissions
+   - Verify Bedrock model availability
+   - Review CloudWatch logs for detailed errors
+
+3. **Knowledge Base Delays**:
+   - Normal behavior: 2-3 minutes for indexing
+   - Check environment variables are set correctly
+   - Verify IAM permissions for Knowledge Base operations
+
+### Performance Optimization
+
+1. **ECS Task Resources**: Adjust CPU and memory allocation based on usage
+2. **Auto-Scaling**: Configure ECS service auto-scaling for demand spikes
+3. **CloudFront Caching**: Optimize cache policies for static assets
+4. **Bedrock Costs**: Monitor token usage and consider model alternatives
+
+## Related Documentation
+
+- [Multi-Agent Implementation](../multi_agent_bedrock/README.md) - Local development guide
+- [App Merge Guide](../APP_MERGE_GUIDE.md) - Authentication integration instructions
+- [Authentication Analysis](../AUTHENTICATION_ANALYSIS.md) - Technical authentication details
+- [Main Workshop Guide](../MULTI_AGENT_BEDROCK.md) - Complete workshop documentation
 
 ## Acknowledgments
 
-This code is inspired from:
+This deployment infrastructure is based on:
+* [Streamlit CDK Fargate](https://github.com/tzaffi/streamlit-cdk-fargate.git)
+* [AWS Bedrock Workshop Samples](https://github.com/aws-samples/build-scale-generative-ai-applications-with-amazon-bedrock-workshop/)
 
-* https://github.com/tzaffi/streamlit-cdk-fargate.git
-* https://github.com/aws-samples/build-scale-generative-ai-applications-with-amazon-bedrock-workshop/
+Enhanced with multi-agent capabilities using Strands Agents SDK and comprehensive Bedrock integration.
 
 ## Security
 

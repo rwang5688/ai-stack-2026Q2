@@ -363,6 +363,20 @@ I'll solve the quadratic equation x² + 5x + 6 = 0 step by step...
    - Ensure you have permissions for the knowledge base service
    - Check that the knowledge base ID exists and is accessible
 
+5. **Knowledge base indexing delay (Normal Behavior):**
+   ```
+   User: "my favorite subjects are: history, literature, math"
+   System: "✅ I've stored this information in your knowledge base."
+   User: "what are my favorite subjects?"
+   System: "I don't have any information about your favorite subjects stored."
+   ```
+   **Explanation:** This is **normal AWS Bedrock Knowledge Base behavior**
+   - **Store operations**: Complete immediately with success confirmation
+   - **Indexing delay**: 2-3 minutes for new data to become searchable
+   - **Retrieve operations**: Only work on fully indexed data
+   - **Solution**: Wait 2-3 minutes after storing, then retry retrieval queries
+   - **Workshop benefit**: Demonstrates real-world cloud service behavior
+
 ## Sample Interactions
 
 ### Example 1: Mathematics Question
@@ -666,6 +680,7 @@ bedrock_model = BedrockModel(
 - **Region Support**: Ensure your region supports Amazon Bedrock
 - **Model Access**: Request access to Nova Pro model if needed
 - **IAM Permissions**: Bedrock invoke permissions for your role/user
+- **Production Deployment**: CDK stack includes comprehensive IAM permissions for Bedrock, S3, and OpenSearch Serverless (lines 136-194 in `cdk_stack.py` - intentionally broad for workshop reliability)
 
 ## Extending the Example
 
