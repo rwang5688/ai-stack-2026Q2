@@ -83,3 +83,65 @@ Moving quickly through documentation improvements for the multi-agent Bedrock wo
 - **Tool Integration**: Lambda-based tools for Strands agents
 - **Serverless Benefits**: Cost-effective, scalable tool execution
 - **Workshop Integration**: Potential addition to foundational modules
+
+## Architecture Refactoring Decisions
+
+### New Spec Created: workshop4-architecture-refactoring
+- **Status**: ✅ COMPLETE - All three spec files created and ready
+- **Location**: `.kiro/specs/workshop4-architecture-refactoring/`
+- **Purpose**: Simplify architecture to better illustrate deployment patterns and model choice capabilities
+
+### Key Refactoring Goals
+1. **Directory Renaming**: 
+   - `deploy_multi_agent_bedrock` → `deploy_multi_agent` (generic naming)
+   - `multi_agent_bedrock` → `multi_agent` (generic naming)
+2. **Model Choice**: Add selection between Bedrock Nova Pro and SageMaker AI GPT OSS
+3. **AgentCore Preparation**: Structure code for future Bedrock AgentCore migration
+4. **MCP Integration**: Add MCPified Lambda functions with classification models
+
+### Documentation Cleanup Strategy
+**✅ NEW User Journey-Based Files (Keep):**
+- `PART-1-FOUNDATIONS.md`
+- `PART-2-BEDROCK.md` 
+- `PART-3-SAGEMAKER.md`
+- `GETTING-STARTED.md`
+- `REFERENCE.md`
+- `README.md` (Workshop Overview and User Journey Map)
+
+**🗑️ OLD Files to Delete (After Content Verification):**
+- `MULTI_AGENT_BEDROCK.md`
+- `MULTI_AGENT_SAGEMAKER_AI.md`
+- `APP_MERGE_GUIDE.md`
+- `AUTHENTICATION_ANALYSIS.md`
+- `CROSS_PLATFORM.md`
+- `FOUNDATIONAL_MODULES.md`
+
+### Implementation Approach
+- **Offline Review**: User will review new spec and prepare SageMaker AI models
+- **SageMaker AI Preparation**: Set up endpoints and classification models before implementation
+- **Phased Implementation**: Execute tasks from spec when ready
+- **Content Migration**: Verify all important content from old files is captured before deletion
+
+### Next Session Preparation
+- [ ] Review workshop4-architecture-refactoring spec offline
+- [ ] Prepare SageMaker AI models and endpoints
+- [ ] Set up classification model for MCP Lambda integration
+- [ ] Verify old documentation content is captured in new structure
+- [ ] Ready to begin implementation tasks when returning
+
+### Updated Documentation Cleanup Strategy
+**Decision**: Move old files to `workshop4/archive/` directory instead of deletion
+- **Benefits**: Preserves content for reference, clear status indication, safe migration
+- **Archive Location**: `workshop4/archive/`
+
+**Files to Archive:**
+- `MULTI_AGENT_BEDROCK.md` → `workshop4/archive/MULTI_AGENT_BEDROCK.md`
+- `MULTI_AGENT_SAGEMAKER_AI.md` → `workshop4/archive/MULTI_AGENT_SAGEMAKER_AI.md`
+- `APP_MERGE_GUIDE.md` → `workshop4/archive/APP_MERGE_GUIDE.md`
+- `AUTHENTICATION_ANALYSIS.md` → `workshop4/archive/AUTHENTICATION_ANALYSIS.md`
+- `CROSS_PLATFORM.md` → `workshop4/archive/CROSS_PLATFORM.md`
+- `FOUNDATIONAL_MODULES.md` → `workshop4/archive/FOUNDATIONAL_MODULES.md`
+
+**Active Files Remain:**
+- `PART-1-FOUNDATIONS.md`, `PART-2-BEDROCK.md`, `PART-3-SAGEMAKER.md`
+- `GETTING-STARTED.md`, `REFERENCE.md`, `README.md`
