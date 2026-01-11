@@ -2,7 +2,7 @@
 
 ## Overview
 
-This implementation plan refactors the Workshop 4 multi-agent architecture to simplify naming conventions, add model choice capabilities, prepare for AgentCore integration, and add MCP-enabled Lambda functions. The refactoring will demonstrate the contrast between local development and production deployment while showcasing different model hosting options.
+This implementation plan refactors the Workshop 4 multi-agent architecture to simplify naming conventions, add model choice capabilities, and maintain a monolithic Streamlit application approach. The refactoring removes Bedrock AgentCore complexity and focuses on practical AI application development patterns suitable for DATASCI 210 course objectives.
 
 ## Tasks
 
@@ -46,151 +46,120 @@ This implementation plan refactors the Workshop 4 multi-agent architecture to si
   - Verify agent configurations update properly when switching models
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
 
-- [ ] 4. Prepare Architecture for AgentCore Integration
-  - [ ] 4.1 Refactor agent code for modular design
-    - Extract agent logic into separate modules with clear interfaces
-    - Implement modular design patterns supporting future AgentCore deployment
-    - Create agent communication protocols and message formats
-    - _Requirements: 3.2, 3.4_
+- [ ] 4. Maintain Monolithic Application Architecture
+  - [ ] 4.1 Ensure agents remain embedded within Streamlit application
+    - Keep all Strands Agents running within the application process
+    - Maintain in-process communication between agents for optimal performance
+    - Ensure simplified deployment model with single container/process
+    - _Requirements: 3.1, 3.2_
 
-  - [ ] 4.2 Document AgentCore migration path
-    - Create detailed migration planning documentation
-    - Document current embedded architecture vs future AgentCore architecture
-    - Provide step-by-step migration guide and timeline
-    - _Requirements: 3.3_
+  - [ ] 4.2 Remove Bedrock AgentCore references from documentation and code
+    - Remove all references to Bedrock AgentCore from documentation
+    - Focus documentation on ECS Fargate deployment patterns
+    - Update code comments and configuration to reflect monolithic approach
+    - _Requirements: 4.1, 4.2_
 
-  - [ ] 4.3 Maintain current functionality while preparing for migration
+  - [ ] 4.3 Maintain current functionality within monolithic architecture
     - Ensure all existing multi-agent capabilities continue to work
-    - Keep Strands Agents embedded in Streamlit app for current version
-    - Validate backward compatibility during refactoring
-    - _Requirements: 3.1, 3.5_
+    - Preserve agent coordination patterns within single application
+    - Validate no external service dependencies for agent coordination
+    - _Requirements: 3.5, 4.3_
 
-  - [ ]* 4.4 Write property test for AgentCore preparation architecture
-    - **Property 3: AgentCore Preparation Architecture**
-    - **Validates: Requirements 3.2, 3.4, 3.5**
+  - [ ]* 4.4 Write property test for monolithic architecture consistency
+    - **Property 3: Monolithic Architecture Consistency**
+    - **Validates: Requirements 3.1, 3.2, 3.5**
 
-- [ ] 5. Checkpoint - AgentCore preparation complete
-  - Ensure agent code is properly modularized
-  - Validate migration documentation is comprehensive
-  - Verify all existing functionality is preserved
-  - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5_
-
-- [ ] 6. Implement MCP Integration with Classification Model
-  - [ ] 6.1 Create MCPified Lambda function
-    - Implement AWS Lambda function with Model Context Protocol interface
-    - Create wrapper around SageMaker AI trained classification model
-    - Implement standardized tool interface for agent integration
-    - _Requirements: 4.1_
-
-  - [ ] 6.2 Set up SageMaker AI classification model
-    - Deploy or reference a trained SageMaker AI classification model
-    - Configure real-time inference endpoint for classification tasks
-    - Implement model versioning and deployment management
-    - _Requirements: 4.5_
-
-  - [ ] 6.3 Integrate MCP Lambda with AgentCore Gateway
-    - Configure Bedrock AgentCore Gateway for MCP Lambda access
-    - Implement authentication and authorization for tool access
-    - Set up request routing and response handling
-    - _Requirements: 4.2_
-
-  - [ ] 6.4 Enable agent access to classification capabilities
-    - Integrate MCP tools with Strands Agents tool system
-    - Demonstrate end-to-end agent access to classification via MCP
-    - Add error handling and response formatting for agent consumption
-    - _Requirements: 4.4_
-
-  - [ ]* 6.5 Write property test for MCP integration functionality
-    - **Property 4: MCP Integration Functionality**
+  - [ ]* 4.5 Write property test for simplified deployment architecture
+    - **Property 4: Simplified Deployment Architecture**
     - **Validates: Requirements 4.1, 4.2, 4.3, 4.4**
 
-- [ ] 7. Checkpoint - MCP integration complete
-  - Ensure MCP Lambda function works correctly with classification model
-  - Validate AgentCore Gateway integration
-  - Verify agents can access classification capabilities
-  - _Requirements: 4.1, 4.2, 4.3, 4.4, 4.5_
+- [ ] 5. Checkpoint - Monolithic architecture maintained
+  - Ensure agents remain embedded within Streamlit application
+  - Validate Bedrock AgentCore references are removed from documentation
+  - Verify all existing functionality is preserved within monolithic architecture
+  - _Requirements: 3.1, 3.2, 3.5, 4.1, 4.2, 4.3_
 
-- [ ] 8. Update Authentication and Environment Configuration
-  - [ ] 8.1 Ensure local environment operates without authentication
+- [ ] 6. Update Authentication and Environment Configuration
+  - [ ] 6.1 Ensure local environment operates without authentication
     - Verify multi_agent app runs without Cognito requirements
     - Maintain development ease and quick testing capabilities
     - Document local development setup and configuration
     - _Requirements: 5.1, 5.4_
 
-  - [ ] 8.2 Validate production authentication integration
+  - [ ] 6.2 Validate production authentication integration
     - Ensure deploy_multi_agent maintains AWS Cognito authentication
     - Verify proper user management and session handling
     - Test authentication flows and error handling
     - _Requirements: 5.2, 5.5_
 
-  - [ ] 8.3 Document environment differences and setup
+  - [ ] 6.3 Document environment differences and setup
     - Create clear documentation comparing local vs deployed configurations
     - Provide setup instructions for both environments
     - Document authentication requirements and configuration
     - _Requirements: 5.3, 5.4_
 
-  - [ ]* 8.4 Write property test for authentication integration
+  - [ ]* 6.4 Write property test for authentication integration
     - **Property 5: Authentication Integration**
     - **Validates: Requirements 5.2, 5.5**
 
-- [ ] 9. Checkpoint - Authentication and environment configuration complete
+- [ ] 7. Checkpoint - Authentication and environment configuration complete
   - Ensure local app works without authentication
   - Validate production app enforces Cognito authentication
   - Verify documentation is clear and comprehensive
   - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5_
 
-- [ ] 10. Implement System Modularity and Configuration
-  - [ ] 10.1 Create modular agent selection and configuration
+- [ ] 8. Implement System Modularity and Configuration
+  - [ ] 8.1 Create modular agent selection and configuration
     - Implement configurable agent combinations and selection
-    - Support independent deployment of different system components
+    - Support single-container deployment with all components included
     - Create pluggable model interfaces for easy switching
     - _Requirements: 6.1, 6.2, 6.3_
 
-  - [ ] 10.2 Standardize MCP tool integration interfaces
-    - Create standardized interfaces for MCP tool integration
-    - Support configuration-driven customization without code changes
-    - Implement consistent tool discovery and invocation protocols
+  - [ ] 8.2 Standardize tool integration interfaces
+    - Create standardized interfaces for in-process tool integration
+    - Support configuration-driven customization within the application
+    - Implement consistent tool discovery and invocation protocols within the app
     - _Requirements: 6.4, 6.5_
 
-  - [ ]* 10.3 Write property test for system modularity and configuration
+  - [ ]* 8.3 Write property test for system modularity and configuration
     - **Property 6: System Modularity and Configuration**
     - **Validates: Requirements 6.1, 6.2, 6.3, 6.4, 6.5**
 
-- [ ] 11. Create Comprehensive Documentation
-  - [ ] 11.1 Create architecture diagrams and documentation
-    - Design clear architecture diagrams showing simplified design
+- [ ] 9. Create Comprehensive Documentation
+  - [ ] 9.1 Create architecture diagrams and documentation
+    - Design clear architecture diagrams showing monolithic design
     - Document the differences between Bedrock and SageMaker AI integration
     - Create visual representations of local vs production environments
     - _Requirements: 7.1, 7.2_
 
-  - [ ] 11.2 Document AgentCore migration and MCP setup
-    - Provide detailed AgentCore migration path documentation
-    - Create complete MCP Lambda setup and integration guides
-    - Document troubleshooting procedures for all components
+  - [ ] 9.2 Document ECS Fargate deployment and application setup
+    - Provide detailed ECS Fargate deployment documentation
+    - Create complete monolithic application setup and integration guides
+    - Document troubleshooting procedures for single-application deployment
     - _Requirements: 7.3, 7.4, 7.5_
 
-- [ ] 12. Final Integration and Validation
-  - [ ] 12.1 Conduct end-to-end testing
+- [ ] 10. Final Integration and Validation
+  - [ ] 10.1 Conduct end-to-end testing
     - Test complete workflow from local development to production deployment
     - Validate model switching works correctly in both environments
-    - Test MCP integration and classification capabilities
+    - Test embedded agent coordination and functionality
     - Verify authentication works properly in production environment
     - _Requirements: All requirements_
 
-  - [ ] 12.2 Create final refactored package
+  - [ ] 10.2 Create final refactored package
     - Organize all deliverables with new naming conventions
     - Ensure all documentation is updated and consistent
     - Create setup verification and validation checklist
     - Validate all functionality works with new architecture
     - _Requirements: All requirements_
 
-- [ ] 13. Final checkpoint - Architecture refactoring complete
+- [ ] 11. Final checkpoint - Architecture refactoring complete
   - Ensure all directory renaming is complete and functional
   - Validate model choice capabilities work in local environment
-  - Verify AgentCore preparation is documented and implemented
-  - Confirm MCP integration provides classification capabilities
+  - Verify monolithic architecture is maintained and documented
+  - Confirm embedded agents provide all required functionality
   - Test authentication differences between local and production
-  - Validate system modularity and configuration capabilities
+  - Validate system modularity and configuration capabilities within monolithic app
   - _Requirements: All requirements_
 
 ## Notes
@@ -200,4 +169,5 @@ This implementation plan refactors the Workshop 4 multi-agent architecture to si
 - Checkpoints ensure incremental validation and progress tracking
 - Property tests validate universal correctness properties
 - Unit tests validate specific examples and edge cases
-- Focus on maintaining existing functionality while adding new capabilities
+- Focus on maintaining existing functionality while simplifying architecture
+- Emphasis on monolithic application approach suitable for DATASCI 210 course objectives

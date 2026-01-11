@@ -2,20 +2,18 @@
 
 ## Introduction
 
-This specification defines the requirements for simplifying and refactoring the Workshop 4 multi-agent architecture to better illustrate deployment patterns and model choice capabilities. The refactoring involves renaming directories for generic naming, adding model choice between Bedrock and SageMaker AI, preparing for future Bedrock AgentCore integration, and adding MCP-enabled Lambda functions with classification models.
+This specification defines the requirements for simplifying and refactoring the Workshop 4 multi-agent architecture to focus on monolithic Streamlit applications that orchestrate multiple Strands Agents within a single deployment. The refactoring avoids Bedrock AgentCore complexity to better align with DATASCI 210 course objectives of model training, deployment, and agentic application development. The simplified architecture maintains model choice capabilities between Bedrock and SageMaker AI while focusing on practical application development patterns.
 
 ## Glossary
 
 - **Deploy_Multi_Agent**: Renamed from "deploy_multi_agent_bedrock" - the deployable Streamlit app with Cognito authentication
 - **Multi_Agent**: Renamed from "multi_agent_bedrock" - the local Streamlit app for development
-- **Strands_Agents**: Multi-agent framework that will run on Bedrock AgentCore in future iterations
+- **Strands_Agents**: Multi-agent framework running embedded within the Streamlit application
 - **Model_Choice**: Capability to select between Bedrock models (Nova Pro) and SageMaker AI models (GPT OSS)
-- **Bedrock_AgentCore**: AWS service for running Strands Agents with scalability, resilience, and observability
-- **MCP_Lambda**: MCPified Lambda function that wraps around a SageMaker AI trained classification model
-- **AgentCore_Gateway**: Bedrock AgentCore Gateway for integrating MCP-enabled Lambda functions
-- **Classification_Model**: SageMaker AI trained model for classification tasks integrated via MCP Lambda
-- **Cognito_Authentication**: AWS Cognito integration for user authentication in deployed applications
+- **Monolithic_Application**: Single Streamlit app that orchestrates multiple agents within one deployment
+- **ECS_Fargate**: AWS container hosting service for deploying the monolithic application
 - **Local_Development**: Local Streamlit app environment for development and testing
+- **Cognito_Authentication**: AWS Cognito integration for user authentication in deployed applications
 
 ## Requirements
 
@@ -45,27 +43,27 @@ This specification defines the requirements for simplifying and refactoring the 
 
 ### Requirement 3
 
-**User Story:** As a system architect, I want to prepare the architecture for Bedrock AgentCore integration, so that Strands Agents can run with enterprise-grade scalability and observability.
+**User Story:** As a course instructor, I want to maintain a monolithic application architecture, so that students can focus on model training, deployment, and application development without microservice complexity.
 
 #### Acceptance Criteria
 
-1. WHEN preparing for AgentCore THEN the Deploy_Multi_Agent SHALL maintain Strands Agents as part of the Streamlit app initially
-2. WHEN designing for future migration THEN the Deploy_Multi_Agent SHALL structure agent code for easy extraction to AgentCore
-3. WHEN implementing current version THEN the Deploy_Multi_Agent SHALL document the planned AgentCore migration path
-4. WHERE agent separation is needed THEN the Deploy_Multi_Agent SHALL use modular design patterns that support future AgentCore deployment
-5. WHILE maintaining current functionality THEN the Deploy_Multi_Agent SHALL preserve all existing multi-agent capabilities
+1. WHEN building the application THEN the Deploy_Multi_Agent SHALL maintain Strands Agents embedded within the Streamlit application
+2. WHEN deploying to production THEN the Deploy_Multi_Agent SHALL run as a single ECS Fargate task with all agents included
+3. WHEN developing locally THEN the Multi_Agent SHALL provide the same agent orchestration patterns as production
+4. WHERE agent coordination is needed THEN the application SHALL use in-process communication rather than distributed service calls
+5. WHILE maintaining functionality THEN the application SHALL preserve all existing multi-agent capabilities within the monolithic architecture
 
 ### Requirement 4
 
-**User Story:** As a developer, I want to integrate MCP-enabled Lambda functions with classification models, so that I can demonstrate advanced agent tooling with machine learning capabilities.
+**User Story:** As a developer, I want to focus on core AI/ML capabilities, so that I can concentrate on model training, deployment, and practical application development without distributed system complexity.
 
 #### Acceptance Criteria
 
-1. WHEN creating MCP Lambda THEN the System SHALL implement MCPified Lambda function that wraps a SageMaker AI trained classification model
-2. WHEN integrating with AgentCore Gateway THEN the MCP_Lambda SHALL connect through Bedrock AgentCore Gateway for agent access
-3. WHEN performing classification THEN the Classification_Model SHALL provide accurate classification results through the MCP interface
-4. WHEN agents use classification THEN the Multi_Agent SHALL demonstrate agent access to classification capabilities via MCP tools
-5. WHERE model training is needed THEN the System SHALL provide or reference a trained SageMaker AI classification model
+1. WHEN building applications THEN the System SHALL remove references to Bedrock AgentCore from documentation and code
+2. WHEN learning about deployment THEN the System SHALL focus on ECS Fargate deployment patterns for monolithic applications
+3. WHEN working with agents THEN the System SHALL demonstrate Strands Agents coordination within a single application process
+4. WHEN integrating models THEN the System SHALL show direct integration with Bedrock and SageMaker AI services
+5. WHERE complexity exists THEN the System SHALL focus complexity on AI/ML model usage rather than microservice orchestration
 
 ### Requirement 5
 
@@ -81,24 +79,24 @@ This specification defines the requirements for simplifying and refactoring the 
 
 ### Requirement 6
 
-**User Story:** As a system administrator, I want modular architecture components, so that I can easily configure and deploy different combinations of agents, models, and services.
+**User Story:** As a system administrator, I want simplified deployment architecture, so that I can easily configure and deploy applications without managing distributed service dependencies.
 
 #### Acceptance Criteria
 
-1. WHEN configuring agents THEN the System SHALL support modular agent selection and configuration
+1. WHEN configuring applications THEN the System SHALL support modular agent selection within the monolithic application
 2. WHEN selecting models THEN the System SHALL provide pluggable model interfaces for easy switching between Bedrock and SageMaker AI
-3. WHEN deploying services THEN the System SHALL support independent deployment of different system components
-4. WHEN integrating tools THEN the System SHALL provide standardized interfaces for MCP tool integration
-5. WHERE customization is needed THEN the System SHALL support configuration-driven customization without code changes
+3. WHEN deploying services THEN the System SHALL support single-container deployment with all components included
+4. WHEN integrating tools THEN the System SHALL provide in-process tool integration without external service dependencies
+5. WHERE customization is needed THEN the System SHALL support configuration-driven customization within the application
 
 ### Requirement 7
 
-**User Story:** As a developer, I want comprehensive documentation of the simplified architecture, so that I can understand the design decisions and implementation patterns.
+**User Story:** As a developer, I want comprehensive documentation of the simplified monolithic architecture, so that I can understand the design decisions and implementation patterns for practical AI application development.
 
 #### Acceptance Criteria
 
-1. WHEN accessing documentation THEN the System SHALL provide clear architecture diagrams showing the simplified design
+1. WHEN accessing documentation THEN the System SHALL provide clear architecture diagrams showing the monolithic design
 2. WHEN understanding model choice THEN the System SHALL document the differences between Bedrock and SageMaker AI integration patterns
-3. WHEN planning AgentCore migration THEN the System SHALL provide detailed migration path documentation
-4. WHEN implementing MCP Lambda THEN the System SHALL provide complete setup and integration guides
-5. WHERE troubleshooting is needed THEN the System SHALL provide comprehensive troubleshooting guides for all components
+3. WHEN learning deployment THEN the System SHALL provide detailed ECS Fargate deployment documentation
+4. WHEN building applications THEN the System SHALL provide complete setup and integration guides for monolithic applications
+5. WHERE troubleshooting is needed THEN the System SHALL provide comprehensive troubleshooting guides focused on single-application deployment

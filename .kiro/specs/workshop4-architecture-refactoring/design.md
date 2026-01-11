@@ -2,7 +2,7 @@
 
 ## Overview
 
-This design focuses on simplifying and refactoring the Workshop 4 multi-agent architecture to better illustrate deployment patterns and model choice capabilities. The refactoring involves renaming directories for generic naming, adding model choice between Bedrock and SageMaker AI, preparing for future Bedrock AgentCore integration, and adding MCP-enabled Lambda functions with classification models. The simplified architecture will demonstrate the contrast between local development (multi_agent) and production deployment (deploy_multi_agent) while showcasing different model hosting options and advanced agent tooling.
+This design focuses on simplifying the Workshop 4 multi-agent architecture to support DATASCI 210 course objectives by maintaining a monolithic Streamlit application approach. The refactoring removes Bedrock AgentCore complexity and focuses on practical AI application development patterns. The simplified architecture demonstrates the contrast between local development (multi_agent) and production deployment (deploy_multi_agent) while showcasing different model hosting options within a single, manageable application deployment.
 
 ## Architecture
 
@@ -15,24 +15,14 @@ graph TB
         MODEL_CHOICE[Model Selection Interface]
         BEDROCK_LOCAL[Bedrock Nova Pro]
         SAGEMAKER_LOCAL[SageMaker AI GPT OSS]
+        AGENTS_LOCAL[Embedded Strands Agents]
     end
     
     subgraph "Production Deployment Environment"
         DEPLOY[deploy_multi_agent - Production Streamlit App]
         COGNITO[AWS Cognito Authentication]
-        STRANDS_EMBEDDED[Strands Agents - Embedded in App]
-    end
-    
-    subgraph "Future AgentCore Architecture"
-        AGENTCORE[Bedrock AgentCore Runtime]
-        STRANDS_EXTRACTED[Strands Agents - Extracted to AgentCore]
-        GATEWAY[AgentCore Gateway]
-    end
-    
-    subgraph "MCP Integration Layer"
-        MCP_LAMBDA[MCPified Lambda Function]
-        CLASSIFICATION[SageMaker AI Classification Model]
-        MCP_TOOLS[MCP Tools Interface]
+        AGENTS_PROD[Embedded Strands Agents]
+        ECS[ECS Fargate Container]
     end
     
     subgraph "Model Hosting Services"
@@ -45,34 +35,28 @@ graph TB
     LOCAL --> MODEL_CHOICE
     MODEL_CHOICE --> BEDROCK_LOCAL
     MODEL_CHOICE --> SAGEMAKER_LOCAL
+    LOCAL --> AGENTS_LOCAL
     
     DEPLOY --> COGNITO
-    DEPLOY --> STRANDS_EMBEDDED
-    
-    STRANDS_EMBEDDED -.-> STRANDS_EXTRACTED
-    STRANDS_EXTRACTED --> AGENTCORE
-    AGENTCORE --> GATEWAY
-    
-    GATEWAY --> MCP_LAMBDA
-    MCP_LAMBDA --> CLASSIFICATION
-    MCP_LAMBDA --> MCP_TOOLS
+    DEPLOY --> AGENTS_PROD
+    DEPLOY --> ECS
     
     BEDROCK_LOCAL --> BEDROCK_SERVICE
     SAGEMAKER_LOCAL --> SAGEMAKER_SERVICE
+    AGENTS_PROD --> BEDROCK_SERVICE
+    AGENTS_PROD --> SAGEMAKER_SERVICE
     BEDROCK_SERVICE --> NOVA
     SAGEMAKER_SERVICE --> GPT_OSS
-    
-    CLASSIFICATION --> SAGEMAKER_SERVICE
 ```
 
 ### Component Architecture
 
-The simplified architecture follows a clear separation between development and production environments:
+The simplified architecture follows a clear separation between development and production environments with embedded agent orchestration:
 
-1. **Local Development (multi_agent)**: Streamlit app with model choice capabilities for development and testing
-2. **Production Deployment (deploy_multi_agent)**: Streamlit app with Cognito authentication for secure production access
-3. **Future AgentCore Integration**: Planned migration path for running Strands Agents on Bedrock AgentCore
-4. **MCP Integration**: Advanced agent tooling with machine learning classification capabilities
+1. **Local Development (multi_agent)**: Streamlit app with model choice capabilities and embedded agents for development and testing
+2. **Production Deployment (deploy_multi_agent)**: Streamlit app with Cognito authentication and embedded agents for secure production access
+3. **Monolithic Design**: All agents run within the same application process for simplified deployment and management
+4. **Model Integration**: Direct integration with Bedrock and SageMaker AI services without additional service layers
 
 ## Components and Interfaces
 
@@ -114,53 +98,20 @@ The simplified architecture follows a clear separation between development and p
 - User pool configuration for secure authentication
 - Session management and token handling
 - Integration with existing IAM roles and permissions
-- Consistent access controls across web interface and future MCP integration
+- Consistent access controls across web interface
 
-**Strands Agents (Embedded)**
-- Current implementation maintains Strands Agents as part of the Streamlit application
-- Modular design patterns to support future extraction to AgentCore
-- Clear separation of agent logic from application infrastructure
-- Documentation of planned AgentCore migration path
+**ECS Fargate Deployment**
+- Single container deployment with all agents embedded
+- Auto-scaling based on application demand
+- Simplified operational model with single service to monitor
+- Cost-effective deployment without microservice overhead
 
-### Future AgentCore Integration
-
-**Bedrock AgentCore Runtime**
-- Planned migration target for Strands Agents extraction
-- Enterprise-grade scalability, resilience, and observability
-- Container-based deployment using Docker and ECR
-- HTTP server endpoints for agent invocation and health checks
-
-**AgentCore Gateway**
-- Managed service for routing requests to AgentCore runtimes
-- Integration point for MCP-enabled Lambda functions
-- Authentication and authorization for agent access
-- Multi-tenant support with built-in security protections
-
-**Migration Architecture**
-- Phased approach for extracting agents from Streamlit app to AgentCore
-- Backward compatibility during migration process
-- Clear interfaces for agent communication and coordination
-- Monitoring and logging for migration validation
-
-### MCP Integration Layer
-
-**MCPified Lambda Function**
-- AWS Lambda function implementing Model Context Protocol (MCP) interface
-- Wrapper around SageMaker AI trained classification model
-- Standardized tool interface for agent integration
-- Serverless execution model for cost optimization
-
-**SageMaker AI Classification Model**
-- Pre-trained or custom-trained classification model hosted on SageMaker AI
-- Real-time inference endpoint for classification tasks
-- Integration with MCP Lambda for agent tool access
-- Model versioning and deployment management
-
-**MCP Tools Interface**
-- Standardized tool discovery and invocation protocols
-- Integration with Strands Agents tool system
-- Error handling and response formatting for agent consumption
-- Authentication and authorization for tool access
+**Embedded Strands Agents**
+- All Strands Agents run within the Streamlit application process
+- In-process communication between agents for optimal performance
+- Simplified deployment model with single container/process
+- Maintains all existing multi-agent functionality within monolithic architecture
+- No external service dependencies for agent coordination
 
 ## Data Models
 
@@ -205,14 +156,10 @@ interface AgentConfig {
 interface DeploymentConfig {
   environment: 'local' | 'production';
   authentication: AuthConfig;
-  agentRuntime: 'embedded' | 'agentcore';
-  mcpIntegration: MCPConfig;
+  agentRuntime: 'embedded';
+  containerConfig: ContainerConfig;
 }
 ```
-
-### MCP Integration Models
-
-```typescript
 interface MCPToolConfig {
   toolName: string;
   lambdaFunction: string;
@@ -261,12 +208,12 @@ After analyzing all acceptance criteria, several properties can be consolidated 
 *For any* model selection (Bedrock Nova Pro or SageMaker AI GPT OSS), the system should integrate correctly, maintain existing functionality for Bedrock, and properly configure all agents to use the selected model
 **Validates: Requirements 2.2, 2.3, 2.4**
 
-**Property 3: AgentCore Preparation Architecture**
-*For any* agent component in the system, the code should be structured with modular design patterns that support future AgentCore extraction while maintaining all current multi-agent capabilities
-**Validates: Requirements 3.2, 3.4, 3.5**
+**Property 3: Monolithic Architecture Consistency**
+*For any* agent component in the system, the code should maintain embedded architecture within the Streamlit application while preserving all current multi-agent capabilities and in-process communication
+**Validates: Requirements 3.1, 3.2, 3.5**
 
-**Property 4: MCP Integration Functionality**
-*For any* MCP tool request, the MCPified Lambda function should correctly wrap the SageMaker AI classification model, integrate through AgentCore Gateway, provide accurate classification results, and enable agent access to classification capabilities
+**Property 4: Simplified Deployment Architecture**
+*For any* deployment operation, the system should remove Bedrock AgentCore references, focus on ECS Fargate deployment patterns, and demonstrate direct integration with Bedrock and SageMaker AI services
 **Validates: Requirements 4.1, 4.2, 4.3, 4.4**
 
 **Property 5: Authentication Integration**
@@ -274,7 +221,7 @@ After analyzing all acceptance criteria, several properties can be consolidated 
 **Validates: Requirements 5.2, 5.5**
 
 **Property 6: System Modularity and Configuration**
-*For any* system component (agents, models, tools, services), the system should support modular configuration, pluggable interfaces, independent deployment, standardized tool integration, and configuration-driven customization
+*For any* system component (agents, models, tools), the system should support modular configuration within the monolithic application, pluggable model interfaces, single-container deployment, and configuration-driven customization
 **Validates: Requirements 6.1, 6.2, 6.3, 6.4, 6.5**
 
 ## Error Handling
@@ -327,19 +274,19 @@ After analyzing all acceptance criteria, several properties can be consolidated 
 - Provide audit logging for security events
 - Support multi-tenant access patterns
 
-### MCP Integration Errors
+### Container Deployment Errors
 
-**Lambda Function Errors**
-- Handle classification model inference failures
-- Implement proper error response formatting for MCP protocol
+**ECS Fargate Deployment Issues**
+- Handle container startup and health check failures
+- Implement proper resource allocation and scaling
+- Provide clear deployment error messages
+- Monitor container performance and costs
+
+**Application Runtime Errors**
+- Handle agent coordination failures within the application
+- Implement proper error propagation between embedded agents
 - Provide retry mechanisms for transient failures
-- Monitor Lambda function performance and costs
-
-**AgentCore Gateway Errors**
-- Handle gateway routing and authentication failures
-- Implement circuit breaker patterns for failing services
-- Provide proper error propagation to agents
-- Support load balancing and failover mechanisms
+- Monitor application performance and resource usage
 
 ## Testing Strategy
 
@@ -369,13 +316,13 @@ The testing strategy combines unit testing and property-based testing to ensure 
 - Test end-to-end workflows with real AWS services
 - Validate cross-environment compatibility (local vs production)
 - Test model switching with actual Bedrock and SageMaker AI endpoints
-- Verify MCP integration with real classification models
+- Verify embedded agent coordination within the application
 
-**Migration Testing**
+**Deployment Testing**
 - Test directory renaming with various project structures
 - Validate reference updates across different file types
-- Test backward compatibility during transition periods
-- Verify rollback procedures for failed migrations
+- Test ECS Fargate deployment with single container
+- Verify authentication integration in production environment
 
 ## Common Issues and Solutions
 
@@ -391,14 +338,15 @@ The testing strategy combines unit testing and property-based testing to ensure 
 - Cost optimization and resource management
 - Performance differences between Bedrock and SageMaker AI
 
-**AgentCore Preparation Issues**
-- Agent code coupling with Streamlit application
+**Monolithic Application Issues**
+- Agent coordination within single application process
 - State management and persistence patterns
-- Communication protocols and message formats
-- Monitoring and observability integration
+- In-process communication protocols and message formats
+- Monitoring and observability for embedded agents
 
-**MCP Integration Issues**
-- Protocol compliance and message formatting
-- Authentication and authorization across services
-- Error handling and retry mechanisms
+**Container Deployment Issues**
+- Single container resource allocation and optimization
+- Application startup and health check configuration
+- ECS Fargate scaling and cost optimization
+- Simplified operational model monitoring
 - Performance optimization for real-time inference
