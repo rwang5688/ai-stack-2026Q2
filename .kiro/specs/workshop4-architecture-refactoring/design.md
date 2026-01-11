@@ -160,27 +160,6 @@ interface DeploymentConfig {
   containerConfig: ContainerConfig;
 }
 ```
-interface MCPToolConfig {
-  toolName: string;
-  lambdaFunction: string;
-  description: string;
-  inputSchema: JSONSchema;
-  outputSchema: JSONSchema;
-  authentication: MCPAuthConfig;
-}
-
-interface ClassificationRequest {
-  input: string;
-  modelEndpoint: string;
-  parameters: ClassificationParameters;
-}
-
-interface ClassificationResponse {
-  predictions: ClassificationResult[];
-  confidence: number;
-  metadata: ResponseMetadata;
-}
-```
 
 ## Correctness Properties
 
