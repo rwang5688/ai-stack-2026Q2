@@ -2,117 +2,137 @@
 
 ## Introduction
 
-This specification defines the requirements for creating Module 7: Building Multi-Agent with Strands using Amazon SageMaker AI model hosting. This implementation serves as a side-by-side analog to the Bedrock version, following the same 6-step progressive approach: (1) CLI multi-agent system using Teacher's Assistant pattern, (2) Streamlit web interface integration, (3) knowledge base enhancement, (4) Memory integration and enhanced UI features, (5) production deployment using AWS CDK, Docker, and ECS Fargate, and (6) comprehensive documentation and workshop materials. The key difference is using SageMaker AI (JumpStart) models instead of Bedrock models.
+This feature expands the workshop4 multi-agent application to support multiple reasoning LLM choices (Amazon Bedrock and Amazon SageMaker) and adds a loan prediction assistant that integrates with a SageMaker XGBoost model. The goal is to demonstrate the flexibility of the Strands Agents framework with respect to reasoning LLMs and showcase integration of team-trained predictive models into multi-agent applications.
 
 ## Glossary
 
-- **Strands Agents SDK**: Software development kit providing the multi-agent framework and coordination capabilities
-- **Amazon SageMaker AI**: AWS managed machine learning service for building, training, and deploying ML models for agent model hosting
-- **SageMaker JumpStart**: Pre-built ML solutions and foundation models available in SageMaker for agent model hosting
-- **Teacher's Assistant Pattern**: Multi-agent architecture with one orchestrator agent routing queries to specialized agents
-- **Tool-Agent Pattern**: Design pattern where Strands agents are wrapped as tools using the @tool decorator
-- **Specialized Agents**: Domain-specific agents (Math, English, Language, Computer Science, General) with targeted capabilities
-- **Streamlit UI**: Web-based user interface for interacting with the multi-agent system
-- **Knowledge Base**: Document storage and retrieval system integrated with agents (SageMaker equivalent to Bedrock Knowledge Base)
-- **ECS Fargate**: AWS container service for deploying the production multi-agent application
-- **Workshop System**: The complete educational platform including materials, code examples, and infrastructure
+- **Reasoning_LLM**: A large language model used by agents to process natural language, make decisions, and generate responses
+- **Bedrock_Model**: An Amazon Bedrock foundation model accessed via cross-region inference profiles
+- **SageMaker_Model**: A model deployed on Amazon SageMaker and accessed via inference endpoints
+- **XGBoost_Model**: A gradient boosted tree model trained for binary classification (loan acceptance prediction)
+- **Serverless_Endpoint**: A SageMaker inference endpoint that automatically scales based on demand
+- **Loan_Assistant**: A specialized agent that predicts loan acceptance using the XGBoost model
+- **Multi_Agent_App**: The Streamlit application that orchestrates multiple specialized agents
+- **Config_Module**: A Python module that centralizes environment variable management
+- **Cross_Region_Profile**: A Bedrock inference profile that enables multi-region model access
 
 ## Requirements
 
-### Requirement 1
+### Requirement 1: Configuration Management
 
-**User Story:** As a workshop instructor, I want a 6-step progressive multi-agent workshop using Strands Agents SDK with Amazon SageMaker AI, so that I can teach students how to build from basic CLI agents to production-deployed web applications using SageMaker models.
-
-#### Acceptance Criteria
-
-1. WHEN the workshop materials are accessed THEN the Workshop System SHALL provide complete documentation for the 6-step progression (CLI → UI → Knowledge → Memory/UI → Deployment → Documentation) using SageMaker AI models
-2. WHEN students complete Step 1 THEN the Workshop System SHALL enable successful implementation of the Teacher's Assistant pattern with 5 specialized agents using SageMaker JumpStart models
-3. WHEN students complete Step 2 THEN the Workshop System SHALL enable successful integration of Streamlit web UI with the SageMaker-based multi-agent system
-4. WHEN students complete Step 3 THEN the Workshop System SHALL enable successful integration of knowledge base capabilities with SageMaker AI model hosting
-5. WHEN students complete Step 4 THEN the Workshop System SHALL enable successful integration of memory capabilities with SageMaker model selection and agent customization
-6. WHEN students complete Step 5 THEN the Workshop System SHALL enable successful deployment using AWS CDK, Docker, and ECS Fargate with SageMaker model integration
-7. WHEN students complete Step 6 THEN the Workshop System SHALL provide comprehensive documentation and workshop materials for instructor delivery
-
-### Requirement 2
-
-**User Story:** As a student, I want to implement the Teacher's Assistant multi-agent pattern using Strands Agents SDK with SageMaker AI models, so that I can understand the Tool-Agent Pattern and natural language routing with custom model hosting.
+**User Story:** As a developer, I want centralized configuration management, so that environment variables are consistently accessed and validated across the application.
 
 #### Acceptance Criteria
 
-1. WHEN implementing the orchestrator THEN the Workshop System SHALL demonstrate creating a Teacher's Assistant agent that routes queries using natural language with SageMaker JumpStart models
-2. WHEN implementing specialized agents THEN the Workshop System SHALL show how to create 5 domain-specific agents (Math, English, Language, Computer Science, General) using SageMaker AI models with the @tool decorator
-3. WHEN agents use tools THEN the Workshop System SHALL demonstrate proper tool integration (calculator, python_repl, shell, http_request, editor, file operations) with SageMaker model hosting
-4. WHEN testing interactions THEN the Workshop System SHALL enable command-line testing with sample queries for each specialized domain using SageMaker models
-5. WHILE agents collaborate THEN the Workshop System SHALL maintain clean output by suppressing intermediate agent outputs using callback_handler=None
+1. THE Config_Module SHALL provide getter functions for all environment variables
+2. WHEN an environment variable is missing, THE Config_Module SHALL return a sensible default value or raise a descriptive error
+3. THE Config_Module SHALL validate environment variable values before returning them
+4. THE Multi_Agent_App SHALL use Config_Module functions instead of direct `os.getenv()` calls
 
-### Requirement 3
+### Requirement 2: Bedrock Model Support
 
-**User Story:** As a student, I want to add a Streamlit web interface to my SageMaker-based multi-agent system, so that I can understand how to create user-friendly interfaces for agent interactions with custom model hosting.
-
-#### Acceptance Criteria
-
-1. WHEN creating the web interface THEN the Workshop System SHALL demonstrate building a Streamlit app that integrates with the SageMaker-based Teacher's Assistant system
-2. WHEN users interact with the UI THEN the Workshop System SHALL provide a clean web interface for submitting queries and viewing SageMaker model-powered agent responses
-3. WHEN displaying results THEN the Workshop System SHALL show proper formatting of SageMaker agent responses in the web interface
-4. WHEN handling errors THEN the Workshop System SHALL provide appropriate error handling and user feedback for SageMaker model integration issues
-5. WHERE UI enhancements are needed THEN the Workshop System SHALL support customization of the Streamlit interface for SageMaker workflows
-
-### Requirement 4
-
-**User Story:** As a student, I want to integrate knowledge base capabilities with my SageMaker-based multi-agent system, so that I can understand how to enhance agents with document retrieval using SageMaker AI infrastructure.
+**User Story:** As a developer, I want to support multiple Bedrock cross-region inference profiles, so that I can demonstrate flexibility in choosing reasoning LLMs.
 
 #### Acceptance Criteria
 
-1. WHEN setting up knowledge capabilities THEN the Workshop System SHALL demonstrate creating knowledge base functionality compatible with SageMaker AI model hosting
-2. WHEN integrating with agents THEN the Workshop System SHALL show how to enhance SageMaker-based specialized agents with knowledge retrieval capabilities
-3. WHEN querying documents THEN the Workshop System SHALL enable SageMaker-powered agents to retrieve and use relevant document information in their responses
-4. WHEN managing documents THEN the Workshop System SHALL provide guidance on document storage and retrieval integration with SageMaker AI workflows
-5. WHERE knowledge enhancement is needed THEN the Workshop System SHALL support extending other specialized agents with knowledge base integration using SageMaker models
+1. THE Bedrock_Model module SHALL support creating models from cross-region inference profiles
+2. WHEN a Bedrock model ID is provided, THE Bedrock_Model module SHALL create a BedrockModel instance with that ID
+3. THE Bedrock_Model module SHALL support the following cross-region profiles:
+   - `us.amazon.nova-pro-v1:0`
+   - `us.amazon.nova-2-lite-v1:0`
+   - `us.anthropic.claude-haiku-4-5-20251001-v1:0`
+   - `us.anthropic.claude-sonnet-4-5-20250929-v1:0`
+4. WHEN no model ID is specified, THE Bedrock_Model module SHALL use `us.amazon.nova-pro-v1:0` as the default
+5. THE Bedrock_Model module SHALL configure appropriate temperature settings for each model
 
-### Requirement 5
+### Requirement 3: SageMaker Reasoning Model Support
 
-**User Story:** As a student, I want to add memory capabilities and enhanced UI features to my SageMaker-based multi-agent system, so that I can understand memory integration, model selection, and agent customization patterns with SageMaker AI.
-
-#### Acceptance Criteria
-
-1. WHEN implementing memory THEN the Workshop System SHALL demonstrate integrating memory agent capabilities from module5 with OpenSearch backend support for SageMaker-based agents
-2. WHEN selecting models THEN the Workshop System SHALL provide dropdown selection for multiple SageMaker JumpStart model IDs and endpoint configurations
-3. WHEN customizing agents THEN the Workshop System SHALL enable toggling individual teacher agents (math, language, computer science, english) on and off with SageMaker models
-4. WHEN OpenSearch is unavailable THEN the Workshop System SHALL gracefully disable OpenSearch backend option if OPENSEARCH_HOST environment variable is not defined
-5. WHILE using memory features THEN the Workshop System SHALL maintain compatibility with existing knowledge base and teacher agent functionality using SageMaker AI
-
-### Requirement 6
-
-**User Story:** As a technical lead, I want reusable multi-agent patterns and flexible configuration options for SageMaker AI, so that I can adapt the system for different business contexts and deployment scenarios.
+**User Story:** As a developer, I want to support SageMaker endpoint-based reasoning models, so that I can use custom deployed models as reasoning LLMs.
 
 #### Acceptance Criteria
 
-1. WHEN customizing agents THEN the Workshop System SHALL support modular specialized agent creation and configuration with toggle controls for SageMaker models
-2. WHEN adapting for use cases THEN the Workshop System SHALL provide configurable agent roles, tools, system prompts, and SageMaker model selection
-3. WHEN integrating memory systems THEN the Workshop System SHALL provide clear patterns for memory integration with fallback options for SageMaker-based agents
-4. WHEN integrating with existing systems THEN the Workshop System SHALL provide clear APIs and interfaces for extending the SageMaker-based multi-agent system
-5. WHERE performance optimization is required THEN the Workshop System SHALL provide guidance on SageMaker AI model selection, endpoint configuration, memory backends, and system tuning
+1. THE SageMaker_Model module SHALL create SageMakerAIModel instances from endpoint names
+2. WHEN a SageMaker endpoint name is provided via environment variable, THE SageMaker_Model module SHALL use that endpoint
+3. THE SageMaker_Model module SHALL configure endpoint settings including region, max_tokens, temperature, and streaming
+4. WHEN the SageMaker endpoint is unavailable, THE SageMaker_Model module SHALL raise a descriptive error
 
-### Requirement 7
+### Requirement 4: Loan Prediction Assistant
 
-**User Story:** As a student, I want to deploy my enhanced SageMaker-based multi-agent system to production, so that I can understand containerization and AWS deployment patterns with full SageMaker AI integration.
-
-#### Acceptance Criteria
-
-1. WHEN containerizing the application THEN the Workshop System SHALL show how to create a Docker container for the Streamlit multi-agent application with SageMaker AI and memory integration
-2. WHEN deploying infrastructure THEN the Workshop System SHALL provide AWS CDK code for provisioning ECS Fargate cluster with SageMaker AI access and memory backend support
-3. WHEN deploying to production THEN the Workshop System SHALL enable successful deployment of the containerized SageMaker-based application to AWS ECS Fargate
-4. WHEN monitoring the deployment THEN the Workshop System SHALL include monitoring, logging, and alerting for the SageMaker AI production environment
-5. WHILE maintaining the deployment THEN the Workshop System SHALL include cleanup and maintenance procedures for the SageMaker AI production environment
-
-### Requirement 8
-
-**User Story:** As a workshop instructor, I want comprehensive documentation and materials for the SageMaker AI workshop, so that I can deliver the workshop effectively and students can reference complete guides.
+**User Story:** As a user, I want a loan assistant that predicts loan acceptance, so that I can evaluate whether a customer will accept a loan offer based on their attributes.
 
 #### Acceptance Criteria
 
-1. WHEN accessing workshop materials THEN the Workshop System SHALL provide complete 6-step workshop documentation with SageMaker AI setup guides
-2. WHEN following tutorials THEN the Workshop System SHALL provide detailed step-by-step instructions with clear progression for SageMaker AI integration
-3. WHEN troubleshooting issues THEN the Workshop System SHALL provide comprehensive FAQ and troubleshooting documentation for SageMaker AI and memory integration
-4. WHEN preparing for instruction THEN the Workshop System SHALL provide instructor guides and presentation materials for SageMaker AI workshop delivery
-5. WHERE customization is needed THEN the Workshop System SHALL provide modular component documentation and adaptation guides for SageMaker AI implementations
+1. THE Loan_Assistant SHALL accept customer attributes as input parameters
+2. WHEN customer attributes are provided, THE Loan_Assistant SHALL invoke the XGBoost_Model via Serverless_Endpoint
+3. THE Loan_Assistant SHALL format customer attributes as CSV payload for the XGBoost_Model
+4. WHEN the XGBoost_Model returns a prediction, THE Loan_Assistant SHALL interpret the result as accept or reject
+5. THE Loan_Assistant SHALL return a human-readable prediction with confidence score
+6. WHEN the Serverless_Endpoint is unavailable, THE Loan_Assistant SHALL return an error message
+
+### Requirement 5: XGBoost Model Integration
+
+**User Story:** As a developer, I want to integrate the XGBoost loan prediction model, so that the application can demonstrate predictive analytics capabilities.
+
+#### Acceptance Criteria
+
+1. THE XGBoost_Model integration SHALL use SageMaker Serverless Inference Endpoint
+2. WHEN invoking the endpoint, THE integration SHALL send CSV-formatted customer data
+3. THE integration SHALL handle the following customer attributes:
+   - age, job type, marital status, education level
+   - credit default status, housing loan status, personal loan status
+   - contact type, campaign information
+   - previous contact history
+4. WHEN the endpoint returns a prediction, THE integration SHALL parse the CSV response
+5. THE integration SHALL convert numeric predictions (0-1) to binary outcomes (accept/reject)
+
+### Requirement 6: SageMaker Endpoint Validation Scripts
+
+**User Story:** As a developer, I want standalone validation scripts for SageMaker endpoints, so that I can validate endpoints work before running the full application.
+
+#### Acceptance Criteria
+
+1. THE validation script for XGBoost SHALL extract invocation logic from the Jupyter notebook
+2. WHEN the XGBoost validation script runs, THE script SHALL invoke the serverless endpoint with sample data
+3. THE validation script for reasoning models SHALL extract invocation logic from the Jupyter notebook
+4. WHEN the reasoning model validation script runs, THE script SHALL invoke the provisioned endpoint with sample prompts
+5. THE validation scripts SHALL print clear success or failure messages
+6. THE validation scripts SHALL use the Config_Module for endpoint configuration
+
+### Requirement 7: Multi-Agent Application Integration
+
+**User Story:** As a user, I want the loan assistant integrated into the multi-agent application, so that I can access loan predictions through the same interface as other assistants.
+
+#### Acceptance Criteria
+
+1. THE Multi_Agent_App SHALL include Loan_Assistant in the list of available specialists
+2. WHEN a user query relates to loan prediction, THE teacher agent SHALL route to Loan_Assistant
+3. THE Multi_Agent_App SHALL display loan predictions in the chat interface
+4. THE Multi_Agent_App SHALL handle errors from Loan_Assistant gracefully
+5. THE sidebar SHALL list Loan_Assistant with an appropriate icon and description
+
+### Requirement 8: Model Selection Configuration
+
+**User Story:** As a developer, I want to configure which reasoning LLM to use via environment variables, so that I can easily switch between Bedrock and SageMaker models.
+
+#### Acceptance Criteria
+
+1. THE Config_Module SHALL provide a function to determine the active reasoning LLM provider
+2. WHEN `REASONING_LLM_PROVIDER` environment variable is set to "bedrock", THE application SHALL use Bedrock_Model
+3. WHEN `REASONING_LLM_PROVIDER` environment variable is set to "sagemaker", THE application SHALL use SageMaker_Model
+4. WHEN no provider is specified, THE application SHALL default to Bedrock with `us.amazon.nova-pro-v1:0`
+5. THE Multi_Agent_App SHALL display the active reasoning LLM in the sidebar
+
+### Requirement 9: Code Refactoring and Deployment Strategy
+
+**User Story:** As a developer, I want the codebase refactored to follow the consolidated architecture with a local-first development approach, so that the code is maintainable, testable, and ready for cloud deployment.
+
+#### Acceptance Criteria
+
+1. THE multi_agent directory SHALL contain config.py, bedrock_model.py, sagemaker_model.py, and loan_assistant.py modules
+2. THE multi_agent/app.py SHALL import and use the new modules
+3. WHEN implementing new features, THE developer SHALL build and test locally in multi_agent first
+4. WHEN local implementation is complete and tested, THE developer SHALL merge new application logic into deploy_multi_agent/docker_app
+5. WHEN merging to deploy_multi_agent/docker_app, THE developer SHALL preserve the Cognito authentication and authorization logic
+6. THE deploy_multi_agent/docker_app directory SHALL contain the same modules as multi_agent
+7. THE deploy_multi_agent/docker_app/app.py SHALL maintain the authentication section at the top of the file
+8. WHEN refactoring is complete, THE application SHALL maintain all existing functionality in both local and deployed versions

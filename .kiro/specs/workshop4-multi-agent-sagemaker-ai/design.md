@@ -1,445 +1,504 @@
-# Multi-Agent System using Strands Agents and Amazon SageMaker AI Design Document
+# Design Document
 
 ## Overview
 
-This design focuses on Module 7: Building Multi-Agent with Strands using Amazon SageMaker AI model hosting as a side-by-side analog to the Bedrock version. The design follows a 6-step progressive approach: (1) CLI multi-agent system using Teacher's Assistant pattern, (2) Streamlit web interface integration, (3) knowledge base enhancement, (4) Memory integration and enhanced UI features, (5) production deployment using AWS CDK, Docker, and ECS Fargate, and (6) comprehensive documentation and workshop materials. The key difference is using SageMaker AI (JumpStart) models instead of Bedrock models for agent model hosting and inference.
+This design document outlines the architecture and implementation approach for expanding the workshop4 multi-agent application to support multiple reasoning LLM choices (Amazon Bedrock and Amazon SageMaker) and integrating a loan prediction assistant powered by a SageMaker XGBoost model.
+
+The design follows the consolidated architecture pattern where:
+- `multi_agent/` contains the local implementation
+- `deploy_multi_agent/docker_app/` contains the cloud deployment implementation
+
+Both implementations share the same core logic through modular Python files for configuration, model creation, and specialized assistants.
 
 ## Architecture
 
-### High-Level 6-Step Architecture
+### Development and Deployment Strategy
 
-```mermaid
-graph TB
-    subgraph "Step 1: CLI Multi-Agent System"
-        TEACHER[Teacher's Assistant Orchestrator]
-        MATH[Math Assistant]
-        ENG[English Assistant]
-        LANG[Language Assistant]
-        CS[Computer Science Assistant]
-        GEN[General Assistant]
-    end
-    
-    subgraph "Step 2: Web Interface"
-        STREAMLIT[Streamlit Web UI]
-        WEB_TEACHER[Web-Integrated Teacher's Assistant]
-    end
-    
-    subgraph "Step 3: Knowledge Enhancement"
-        KB[Knowledge Base System]
-        STORAGE[Document Storage]
-        ENHANCED_AGENTS[Knowledge-Enhanced Agents]
-    end
-    
-    subgraph "Step 4: Memory Integration & Enhanced UI"
-        MEMORY[Memory Agent with OpenSearch]
-        MODEL_SELECT[SageMaker Model Selection]
-        AGENT_TOGGLES[Teacher Agent Toggles]
-        AGENT_TYPES[Agent Type Selection]
-    end
-    
-    subgraph "Step 5: Production Deployment"
-        DOCKER[Docker Container]
-        CDK[AWS CDK Infrastructure]
-        ECS[ECS Fargate Cluster]
-        PROD_APP[Production Streamlit App]
-    end
-    
-    subgraph "Step 6: Documentation & Materials"
-        DOCS[Workshop Documentation]
-        GUIDES[Setup & Tutorial Guides]
-        MATERIALS[Instructor Materials]
-    end
-    
-    subgraph "Amazon SageMaker AI Model Hosting"
-        SAGEMAKER[Amazon SageMaker AI]
-        JUMPSTART[SageMaker JumpStart Models]
-        ENDPOINTS[Model Endpoints]
-        CUSTOM[Custom Fine-tuned Models]
-    end
-    
-    subgraph "Strands Framework Integration"
-        STRANDS[Strands Agents SDK]
-        TOOLS[Agent Tools]
-        PATTERNS[Tool-Agent Pattern]
-    end
-    
-    TEACHER --> MATH
-    TEACHER --> ENG
-    TEACHER --> LANG
-    TEACHER --> CS
-    TEACHER --> GEN
-    
-    STREAMLIT --> WEB_TEACHER
-    WEB_TEACHER --> ENHANCED_AGENTS
-    
-    KB --> STORAGE
-    ENHANCED_AGENTS --> KB
-    
-    MEMORY --> ENHANCED_AGENTS
-    MODEL_SELECT --> SAGEMAKER
-    AGENT_TOGGLES --> TEACHER
-    AGENT_TYPES --> MEMORY
-    
-    DOCKER --> PROD_APP
-    CDK --> ECS
-    ECS --> DOCKER
-    
-    DOCS --> GUIDES
-    GUIDES --> MATERIALS
-    
-    MATH --> SAGEMAKER
-    ENG --> SAGEMAKER
-    LANG --> SAGEMAKER
-    CS --> SAGEMAKER
-    GEN --> SAGEMAKER
-    
-    SAGEMAKER --> JUMPSTART
-    SAGEMAKER --> ENDPOINTS
-    SAGEMAKER --> CUSTOM
-    
-    STRANDS --> TEACHER
-    STRANDS --> TOOLS
-    STRANDS --> PATTERNS
+**Local-First Development Approach**:
+1. All new features are built and tested in `multi_agent/` directory first
+2. Local implementation uses `multi_agent/app.py` without authentication
+3. Once local implementation is complete and tested, merge to `deploy_multi_agent/docker_app/`
+4. Deployment implementation preserves Cognito authentication logic in `deploy_multi_agent/docker_app/app.py`
+
+**Merge Strategy**:
+- New modules (config.py, bedrock_model.py, sagemaker_model.py, loan_assistant.py) are copied to both directories
+- Application logic from `multi_agent/app.py` is merged into `deploy_multi_agent/docker_app/app.py`
+- Authentication section in deployed app remains at the top (lines 1-25)
+- Application logic section is updated with new features
+- Sidebar authentication UI is preserved in deployed app
+
+**Rationale**: This approach ensures:
+- Faster iteration during development (no authentication overhead)
+- Easier testing and debugging locally
+- Clean separation between application logic and deployment concerns
+- Smooth transition to workshop4-architecture-refactoring completion
+
+### High-Level Architecture
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Streamlit Application                     │
+│                         (app.py)                             │
+└────────────────┬────────────────────────────────────────────┘
+                 │
+                 ├─────────────────────────────────────────────┐
+                 │                                             │
+        ┌────────▼────────┐                          ┌────────▼────────┐
+        │  Teacher Agent  │                          │  Config Module  │
+        │  (Orchestrator) │                          │   (config.py)   │
+        └────────┬────────┘                          └─────────────────┘
+                 │
+                 │ Routes to specialized agents
+                 │
+    ┌────────────┼────────────┬──────────────┬──────────────┐
+    │            │            │              │              │
+┌───▼───┐  ┌────▼────┐  ┌────▼────┐  ┌─────▼─────┐  ┌─────▼─────┐
+│ Math  │  │ English │  │Language │  │ Computer  │  │   Loan    │
+│ Agent │  │  Agent  │  │  Agent  │  │  Science  │  │ Assistant │
+└───────┘  └─────────┘  └─────────┘  └───────────┘  └─────┬─────┘
+                                                            │
+                                                            │
+                                                   ┌────────▼────────┐
+                                                   │  XGBoost Model  │
+                                                   │   (SageMaker    │
+                                                   │   Serverless)   │
+                                                   └─────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│              Reasoning LLM Layer                             │
+│  ┌──────────────────┐         ┌──────────────────┐         │
+│  │  Bedrock Models  │         │ SageMaker Models │         │
+│  │  ┌────────────┐  │         │  ┌────────────┐  │         │
+│  │  │ Nova Pro   │  │         │  │ Custom LLM │  │         │
+│  │  │ Nova Lite  │  │         │  │ Endpoint   │  │         │
+│  │  │ Claude 4.5 │  │         │  └────────────┘  │         │
+│  │  └────────────┘  │         │                  │         │
+│  └──────────────────┘         └──────────────────┘         │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-### Component Architecture
+### Module Structure
 
-The system follows the same progressive 6-step architecture as the Bedrock version with SageMaker AI model hosting:
+```
+multi_agent/
+├── app.py                      # Main Streamlit application
+├── config.py                   # Configuration management (NEW)
+├── bedrock_model.py            # Bedrock model creation (NEW)
+├── sagemaker_model.py          # SageMaker model creation (NEW)
+├── loan_assistant.py           # Loan prediction assistant (NEW)
+├── math_assistant.py           # Existing math assistant
+├── english_assistant.py        # Existing English assistant
+├── language_assistant.py       # Existing language assistant
+├── computer_science_assistant.py  # Existing CS assistant
+├── no_expertise.py             # Existing general assistant
+├── teachers_assistant.py       # Existing teacher orchestrator
+└── cross_platform_tools.py     # Existing cross-platform tools
 
-1. **Step 1 - CLI Foundation**: Teacher's Assistant pattern with 5 specialized agents using Tool-Agent Pattern with SageMaker JumpStart models
-2. **Step 2 - Web Interface**: Streamlit integration for user-friendly web-based interactions with SageMaker-powered agents
-3. **Step 3 - Knowledge Enhancement**: Knowledge base integration compatible with SageMaker AI model hosting
-4. **Step 4 - Memory Integration & Enhanced UI**: Memory agent integration, SageMaker model selection, and agent customization
-5. **Step 5 - Production Deployment**: AWS CDK infrastructure with Docker containerization and ECS Fargate hosting with SageMaker AI access
-6. **Step 6 - Documentation & Materials**: Comprehensive workshop documentation and instructor resources for SageMaker AI
+deploy_multi_agent/docker_app/
+├── app.py                      # Main Streamlit application (with auth)
+├── config_file.py              # Deployment configuration (existing)
+├── config.py                   # Configuration management (NEW)
+├── bedrock_model.py            # Bedrock model creation (NEW)
+├── sagemaker_model.py          # SageMaker model creation (NEW)
+├── loan_assistant.py           # Loan prediction assistant (NEW)
+├── [other assistants...]       # Existing assistants
+└── utils/
+    ├── auth.py                 # Authentication utilities
+    └── llm.py                  # LLM utilities (existing)
+
+workshop4/sagemaker/
+├── config.py                   # Existing SageMaker config
+├── sagemaker_model.py          # Existing SageMaker model
+├── validate_xgboost_endpoint.py      # XGBoost validation script (NEW)
+└── validate_reasoning_endpoint.py    # Reasoning model validation script (NEW)
+```
 
 ## Components and Interfaces
 
-### Step 1: CLI Multi-Agent System with SageMaker AI
+### 1. Configuration Module (config.py)
 
-**Teacher's Assistant (Orchestrator)**
-- Central coordinator that analyzes natural language queries
-- Routes queries to appropriate specialized agents using system prompts
-- Implements Tool-Agent Pattern with agents as tools using SageMaker JumpStart models
-- Suppresses intermediate output using callback_handler=None
+**Purpose**: Centralize environment variable management and provide validated configuration values.
 
-**Specialized Agents (Tool-Agent Pattern with SageMaker Models)**
-- Math Assistant: Handles mathematical calculations using calculator tool with SageMaker model hosting
-- English Assistant: Processes grammar and language comprehension using SageMaker models
-- Language Assistant: Manages translations using http_request tool with SageMaker model integration
-- Computer Science Assistant: Handles programming using python_repl, shell, editor, file operations with SageMaker models
-- General Assistant: Processes queries outside specialized domains using SageMaker JumpStart models (no specific tools)
+**Interface**:
+```python
+def get_aws_region() -> str:
+    """Get AWS region from environment variable."""
+    
+def get_bedrock_model_id() -> str:
+    """Get Bedrock model ID from environment variable."""
+    
+def get_sagemaker_endpoint_name() -> str:
+    """Get SageMaker reasoning endpoint name from environment variable."""
+    
+def get_xgboost_endpoint_name() -> str:
+    """Get XGBoost model endpoint name from environment variable."""
+    
+def get_reasoning_llm_provider() -> str:
+    """Get reasoning LLM provider (bedrock or sagemaker)."""
+    
+def get_knowledge_base_id() -> str:
+    """Get Strands knowledge base ID from environment variable."""
+```
 
-### Step 2: Streamlit Web Interface with SageMaker Integration
+**Environment Variables**:
+- `AWS_REGION`: AWS region for all services (default: us-west-2)
+- `BEDROCK_MODEL_ID`: Bedrock model ID (default: us.amazon.nova-pro-v1:0)
+- `SAGEMAKER_REASONING_ENDPOINT`: SageMaker reasoning model endpoint name
+- `XGBOOST_ENDPOINT_NAME`: XGBoost loan prediction endpoint name
+- `REASONING_LLM_PROVIDER`: Provider choice (bedrock or sagemaker, default: bedrock)
+- `STRANDS_KNOWLEDGE_BASE_ID`: Knowledge base ID (existing)
 
-**Web UI Integration**
-- Streamlit application that wraps the SageMaker-based Teacher's Assistant system
-- Clean web interface for query submission and response display with SageMaker model responses
-- Proper formatting of SageMaker agent responses in web format
-- Error handling and user feedback mechanisms for SageMaker model integration issues
+### 2. Bedrock Model Module (bedrock_model.py)
 
-**Web-Integrated Multi-Agent System**
-- Same Teacher's Assistant pattern adapted for web interface with SageMaker AI models
-- Maintains all specialized agent capabilities with SageMaker model hosting
-- Provides better user experience than command-line interface for SageMaker workflows
+**Purpose**: Create and configure Bedrock models with support for multiple cross-region inference profiles.
 
-### Step 3: Knowledge Base Enhancement with SageMaker AI
+**Interface**:
+```python
+def create_bedrock_model(
+    model_id: str = None,
+    temperature: float = 0.3
+) -> BedrockModel:
+    """
+    Create a Bedrock model instance.
+    
+    Args:
+        model_id: Bedrock model ID or cross-region profile
+        temperature: Model temperature setting
+        
+    Returns:
+        Configured BedrockModel instance
+    """
+```
 
-**Knowledge Base Integration**
-- Knowledge base system compatible with SageMaker AI model hosting
-- Document storage and retrieval integrated with SageMaker model workflows
-- Enhanced agent capabilities with document retrieval using SageMaker models
-- Knowledge-augmented responses from SageMaker-powered specialized agents
+**Supported Models**:
+- `us.amazon.nova-pro-v1:0` (default)
+- `us.amazon.nova-2-lite-v1:0`
+- `us.anthropic.claude-haiku-4-5-20251001-v1:0`
+- `us.anthropic.claude-sonnet-4-5-20250929-v1:0`
 
-**Document Management**
-- Document upload and indexing workflows compatible with SageMaker AI
-- Document storage management and organization for SageMaker model access
-- Knowledge base querying and retrieval patterns optimized for SageMaker workflows
-- Integration with existing SageMaker-based specialized agents
+### 3. SageMaker Model Module (sagemaker_model.py)
 
-### Step 4: Memory Integration and Enhanced UI Features with SageMaker AI
+**Purpose**: Create and configure SageMaker AI models for reasoning tasks.
 
-**Memory Agent Integration**
-- Integration of memory capabilities from workshop4/modules/module5/memory_agent.py with SageMaker AI models
-- OpenSearch backend support with graceful fallback when OPENSEARCH_HOST is undefined
-- Memory operations: store, retrieve, and list functionality using SageMaker-powered agents
-- User-specific memory management with USER_ID support for SageMaker model interactions
+**Interface**:
+```python
+def create_sagemaker_reasoning_model(
+    endpoint_name: str = None,
+    region: str = None,
+    max_tokens: int = 1000,
+    temperature: float = 0.7
+) -> SageMakerAIModel:
+    """
+    Create a SageMaker AI model for reasoning tasks.
+    
+    Args:
+        endpoint_name: SageMaker endpoint name
+        region: AWS region
+        max_tokens: Maximum tokens to generate
+        temperature: Model temperature setting
+        
+    Returns:
+        Configured SageMakerAIModel instance
+    """
+```
 
-**Enhanced UI Features for SageMaker Models**
-- Model selection dropdown with multiple SageMaker JumpStart model options and custom endpoints:
-  - Foundation models from SageMaker JumpStart catalog
-  - Custom fine-tuned models deployed as SageMaker endpoints
-  - Classification models deployed as Lambda functions
-  - Hybrid model configurations for different agent types
+### 4. Loan Assistant Module (loan_assistant.py)
 
-**Teacher Agent Customization with SageMaker Models**
-- Individual toggle controls for each specialized teacher agent using SageMaker models
-- Dynamic agent selection: Math, Language, Computer Science, English assistants with SageMaker integration
-- Configurable agent combinations based on user preferences and model availability
-- Maintains existing Tool-Agent Pattern with selective activation using SageMaker AI
+**Purpose**: Provide loan acceptance prediction using XGBoost model on SageMaker.
 
-### Step 5: Production Deployment with SageMaker AI
+**Interface**:
+```python
+@tool
+def loan_assistant(
+    age: int,
+    job: str,
+    marital: str,
+    education: str,
+    default: str,
+    housing: str,
+    loan: str,
+    contact: str,
+    month: str,
+    day_of_week: str,
+    campaign: int,
+    pdays: int,
+    previous: int,
+    poutcome: str
+) -> str:
+    """
+    Predict whether a customer will accept a loan offer.
+    
+    Args:
+        age: Customer age
+        job: Job type (admin, services, technician, etc.)
+        marital: Marital status (married, single, divorced)
+        education: Education level (basic.4y, high.school, university.degree, etc.)
+        default: Has credit in default? (yes, no, unknown)
+        housing: Has housing loan? (yes, no, unknown)
+        loan: Has personal loan? (yes, no, unknown)
+        contact: Contact communication type (cellular, telephone)
+        month: Last contact month (jan, feb, mar, etc.)
+        day_of_week: Last contact day (mon, tue, wed, etc.)
+        campaign: Number of contacts during this campaign
+        pdays: Days since last contact from previous campaign (999 = not contacted)
+        previous: Number of contacts before this campaign
+        poutcome: Outcome of previous campaign (nonexistent, failure, success)
+        
+    Returns:
+        Prediction result with confidence score
+    """
+```
 
-**Containerization**
-- Docker container packaging of the Streamlit multi-agent application with SageMaker AI and memory integration
-- Container optimization for production deployment with all enhanced features and SageMaker model access
-- Environment configuration and dependency management for SageMaker AI workflows and memory backends
-- Testing container locally with full feature set validation including SageMaker model integration
+**Implementation Details**:
+- Converts input parameters to one-hot encoded CSV format
+- Invokes SageMaker serverless inference endpoint
+- Parses numeric prediction (0-1 range)
+- Returns human-readable result with confidence
 
-**AWS CDK Infrastructure**
-- Infrastructure as Code for ECS Fargate cluster deployment with SageMaker AI access and permissions
-- Supporting AWS services (VPC, Load Balancer, etc.) configured for SageMaker integration and memory backend support
-- Monitoring and logging infrastructure for SageMaker model performance and multi-agent system
-- Cost optimization and resource management for SageMaker AI usage and production workloads
+### 5. XGBoost Endpoint Validation Script
 
-**ECS Fargate Deployment**
-- Serverless container hosting for the enhanced SageMaker-based multi-agent application
-- Auto-scaling and high availability configuration with SageMaker model integration
-- Production monitoring and maintenance procedures for SageMaker AI workflows
-- Integration with OpenSearch backend for memory functionality and SageMaker model coordination
+**Purpose**: Standalone script to validate XGBoost serverless endpoint.
 
-### Step 6: Documentation and Workshop Materials for SageMaker AI
+**Interface**:
+```python
+def validate_xgboost_endpoint(endpoint_name: str) -> bool:
+    """
+    Validate XGBoost endpoint with sample data.
+    
+    Args:
+        endpoint_name: SageMaker endpoint name
+        
+    Returns:
+        True if validation succeeds, False otherwise
+    """
+```
 
-**Comprehensive Documentation**
-- Complete 6-step workshop documentation with SageMaker AI setup guides and model configuration
-- Detailed tutorials for each step with clear progression for SageMaker AI integration
-- Troubleshooting and FAQ documentation for SageMaker AI, memory integration, and model deployment
-- Instructor guide and presentation materials for SageMaker AI workshop delivery
+**Sample Data**: Uses a representative customer profile from the training dataset.
 
-**Modular Component Documentation**
-- Reusable multi-agent patterns and components for SageMaker AI implementations
-- Customization and adaptation guides for SageMaker model selection and agent toggles
-- Integration APIs and interface documentation for SageMaker AI workflows
-- Performance tuning guides for different SageMaker models, endpoints, and memory backends
+### 6. Reasoning Model Endpoint Validation Script
 
-**Containerization**
-- Docker container packaging of the Streamlit multi-agent application with SageMaker AI integration
-- Container optimization for production deployment with SageMaker model access
-- Environment configuration and dependency management for SageMaker AI workflows
+**Purpose**: Standalone script to validate SageMaker reasoning model endpoint.
 
-**AWS CDK Infrastructure**
-- Infrastructure as Code for ECS Fargate cluster with SageMaker AI access and permissions
-- Supporting AWS services (VPC, Load Balancer, etc.) configured for SageMaker integration
-- Monitoring and logging infrastructure for SageMaker model performance
-- Cost optimization and resource management for SageMaker AI usage
+**Interface**:
+```python
+def validate_reasoning_endpoint(endpoint_name: str) -> bool:
+    """
+    Validate reasoning model endpoint with sample prompt.
+    
+    Args:
+        endpoint_name: SageMaker endpoint name
+        
+    Returns:
+        True if validation succeeds, False otherwise
+    """
+```
 
-**ECS Fargate Deployment**
-- Serverless container hosting for the SageMaker-based multi-agent application
-- Auto-scaling and high availability configuration with SageMaker model integration
-- Production monitoring and maintenance procedures for SageMaker AI workflows
+**Sample Prompt**: Uses a simple reasoning task to verify model functionality.
 
 ## Data Models
 
-### Model Configuration and Metadata
+### Customer Attributes (for Loan Prediction)
 
-```typescript
-interface ModelConfig {
-  modelId: string;
-  modelType: ModelType; // 'fine-tuned-llm' | 'classification' | 'foundation'
-  sagemakerEndpoint?: string;
-  lambdaFunction?: string;
-  performanceMetrics: ModelMetrics;
-  costMetrics: CostMetrics;
-  capabilities: ModelCapability[];
-}
-
-interface ModelMetrics {
-  latency: number;
-  throughput: number;
-  accuracy?: number;
-  confidence?: number;
-  lastUpdated: Date;
-}
-
-interface AgentModelBinding {
-  agentId: string;
-  primaryModel: ModelConfig;
-  fallbackModels: ModelConfig[];
-  routingRules: ModelRoutingRule[];
-  performanceThresholds: PerformanceThreshold[];
-}
+```python
+@dataclass
+class CustomerAttributes:
+    """Customer attributes for loan prediction."""
+    age: int
+    job: str  # Categorical: admin, services, technician, etc.
+    marital: str  # Categorical: married, single, divorced
+    education: str  # Categorical: basic.4y, high.school, university.degree, etc.
+    default: str  # Categorical: yes, no, unknown
+    housing: str  # Categorical: yes, no, unknown
+    loan: str  # Categorical: yes, no, unknown
+    contact: str  # Categorical: cellular, telephone
+    month: str  # Categorical: jan, feb, mar, etc.
+    day_of_week: str  # Categorical: mon, tue, wed, etc.
+    campaign: int  # Numeric: number of contacts
+    pdays: int  # Numeric: days since last contact (999 = not contacted)
+    previous: int  # Numeric: number of previous contacts
+    poutcome: str  # Categorical: nonexistent, failure, success
 ```
 
-### Fine-Tuning and Training Configuration
+### One-Hot Encoding Mapping
 
-```typescript
-interface FineTuningConfig {
-  baseModel: string;
-  trainingData: TrainingDataConfig;
-  hyperparameters: HyperparameterConfig;
-  evaluationMetrics: string[];
-  deploymentConfig: DeploymentConfig;
-}
+The XGBoost model expects one-hot encoded features. The loan assistant must transform categorical variables into binary indicators following the training data schema:
 
-interface ClassificationModelConfig {
-  modelType: string;
-  features: FeatureConfig[];
-  labels: string[];
-  trainingConfig: TrainingConfig;
-  lambdaConfig: LambdaDeploymentConfig;
-}
+- Job types: admin, blue-collar, entrepreneur, housemaid, management, retired, self-employed, services, student, technician, unemployed, unknown
+- Marital status: divorced, married, single, unknown
+- Education: basic.4y, basic.6y, basic.9y, high.school, illiterate, professional.course, university.degree, unknown
+- Default: no, yes, unknown
+- Housing: no, yes, unknown
+- Loan: no, yes, unknown
+- Contact: cellular, telephone
+- Month: jan, feb, mar, apr, may, jun, jul, aug, sep, oct, nov, dec
+- Day of week: mon, tue, wed, thu, fri
+- Poutcome: failure, nonexistent, success
+
+### Prediction Response
+
+```python
+@dataclass
+class LoanPrediction:
+    """Loan prediction result."""
+    prediction: str  # "accept" or "reject"
+    confidence: float  # 0.0 to 1.0
+    raw_score: float  # Raw model output
 ```
 
 ## Correctness Properties
 
-*A property is a characteristic or behavior that should hold true across all valid executions of a system-essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
+*A property is a characteristic or behavior that should hold true across all valid executions of a system—essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
 
-### Property Reflection
+### Property 1: Configuration Consistency
+*For any* environment variable getter function, calling it multiple times in the same execution should return the same value.
+**Validates: Requirements 1.1, 1.2**
 
-After analyzing all acceptance criteria, several properties can be consolidated to eliminate redundancy:
+### Property 2: Model Creation Idempotence
+*For any* model ID and configuration parameters, creating a model instance twice with the same parameters should produce functionally equivalent models.
+**Validates: Requirements 2.2, 3.2**
 
-- Properties 1.1 and related documentation requirements can be combined into "Material Completeness"
-- Properties 1.2-1.7 all relate to step completion and can be grouped under "6-Step Progression Correctness"
-- Properties 2.1-2.5 all relate to CLI multi-agent functionality and can be consolidated into "CLI Multi-Agent System Functionality"
-- Properties 3.1-3.5 all relate to web interface and can be consolidated into "Web Interface Integration"
-- Properties 4.1-4.5 all relate to knowledge base integration and can be consolidated into "Knowledge Base Integration"
-- Properties 5.1-5.5 all relate to memory integration and enhanced UI and can be consolidated into "Memory Integration and Enhanced UI"
-- Properties 6.1-6.5 all relate to modularity and reusability and can be consolidated into "System Modularity and Configuration"
-- Properties 7.1-7.5 all relate to production deployment and can be consolidated into "Production Deployment Correctness"
-- Properties 8.1-8.5 all relate to documentation and materials and can be consolidated into "Material Completeness"
+### Property 3: Bedrock Model ID Validation
+*For any* Bedrock model ID provided, if it matches one of the supported cross-region profiles, the model creation should succeed; otherwise, it should raise a descriptive error.
+**Validates: Requirements 2.3**
 
-### Core Properties
+### Property 4: CSV Payload Format Correctness
+*For any* valid CustomerAttributes instance, the generated CSV payload should have exactly 59 comma-separated values (matching the XGBoost model's expected input format).
+**Validates: Requirements 5.2, 5.3**
 
-**Property 1: Material Completeness**
-*For any* workshop step (1-6), all required documentation, setup instructions, and tutorial materials should be present and accessible for SageMaker AI integration
-**Validates: Requirements 1.1, 8.1, 8.2, 8.3, 8.4, 8.5**
+### Property 5: One-Hot Encoding Completeness
+*For any* categorical feature value in CustomerAttributes, exactly one corresponding one-hot encoded feature should be set to 1.0, and all others for that category should be 0.0.
+**Validates: Requirements 5.3**
 
-**Property 2: 6-Step Progression Correctness**
-*For any* completed workshop step, the SageMaker AI implementation should work correctly and enable progression to the next step (CLI → UI → Knowledge → Memory/UI → Deployment → Documentation)
-**Validates: Requirements 1.2, 1.3, 1.4, 1.5, 1.6, 1.7**
+### Property 6: Prediction Output Range
+*For any* XGBoost model response, the parsed prediction value should be in the range [0.0, 1.0].
+**Validates: Requirements 5.5**
 
-**Property 3: CLI Multi-Agent System Functionality**
-*For any* query submitted to the Teacher's Assistant system, it should route correctly to the appropriate specialized agent and return a proper response using SageMaker AI models
-**Validates: Requirements 2.1, 2.2, 2.3, 2.4, 2.5**
+### Property 7: Binary Classification Mapping
+*For any* prediction score from the XGBoost model, scores >= 0.5 should map to "accept" and scores < 0.5 should map to "reject".
+**Validates: Requirements 4.4**
 
-**Property 4: Web Interface Integration**
-*For any* query submitted through the Streamlit web interface, it should integrate correctly with the SageMaker-based multi-agent system and display properly formatted responses
-**Validates: Requirements 3.1, 3.2, 3.3, 3.4, 3.5**
+### Property 8: Error Handling Graceful Degradation
+*For any* endpoint invocation failure, the assistant should return a descriptive error message rather than raising an unhandled exception.
+**Validates: Requirements 4.6, 6.5**
 
-**Property 5: Knowledge Base Integration**
-*For any* document stored in the knowledge base system, SageMaker-powered agents should be able to retrieve and use relevant information correctly in their responses
-**Validates: Requirements 4.1, 4.2, 4.3, 4.4, 4.5**
+### Property 9: Provider Selection Consistency
+*For any* value of REASONING_LLM_PROVIDER environment variable, the application should use exactly one reasoning LLM provider (Bedrock or SageMaker), never both simultaneously.
+**Validates: Requirements 8.2, 8.3, 8.4**
 
-**Property 6: Memory Integration and Enhanced UI**
-*For any* memory operation (store/retrieve) and UI enhancement (SageMaker model selection/agent toggles), the system should integrate correctly with existing multi-agent functionality while providing graceful fallbacks
-**Validates: Requirements 5.1, 5.2, 5.3, 5.4, 5.5**
-
-**Property 7: Production Deployment Correctness**
-*For any* production deployment using CDK, Docker, and ECS Fargate, the containerized SageMaker-based multi-agent application should run correctly with proper monitoring and maintenance capabilities
-**Validates: Requirements 7.1, 7.2, 7.3, 7.4, 7.5**
-
-**Property 8: System Modularity and Configuration**
-*For any* customization or extension of the SageMaker-based multi-agent system, modular components should be configurable, reusable, and maintain clear separation between application logic and SageMaker AI infrastructure
-**Validates: Requirements 6.1, 6.2, 6.3, 6.4, 6.5**
+### Property 10: Validation Script Independence
+*For any* validation script execution, the script should complete successfully without requiring the full application to be running.
+**Validates: Requirements 6.1, 6.3**
 
 ## Error Handling
 
-### Model Training and Deployment Errors
+### Configuration Errors
+- **Missing Required Environment Variable**: Raise `ValueError` with descriptive message indicating which variable is missing
+- **Invalid Environment Variable Value**: Raise `ValueError` with descriptive message and list of valid values
+- **Default Value Fallback**: Log warning when using default value instead of configured value
 
-**Fine-Tuning Pipeline Failures**
-- Handle SageMaker training job failures with proper error reporting
-- Implement automatic retry mechanisms for transient failures
-- Provide rollback capabilities for failed model deployments
-- Support manual intervention and debugging for complex failures
+### Model Creation Errors
+- **Invalid Bedrock Model ID**: Raise `ValueError` with list of supported model IDs
+- **SageMaker Endpoint Not Found**: Raise `RuntimeError` with endpoint name and region
+- **Authentication Failure**: Raise `RuntimeError` with AWS credential guidance
 
-**Model Endpoint Issues**
-- Detect and handle model endpoint failures and unavailability
-- Implement automatic failover to backup models or endpoints
-- Provide graceful degradation when models are unavailable
-- Monitor endpoint performance and implement auto-scaling
+### Endpoint Invocation Errors
+- **Endpoint Unavailable**: Return user-friendly error message, log technical details
+- **Timeout**: Return timeout message with suggestion to retry
+- **Invalid Payload Format**: Raise `ValueError` with payload format requirements
+- **Malformed Response**: Log raw response, return generic error message to user
 
-**Lambda Function Deployment Errors**
-- Handle Lambda deployment failures for classification models
-- Implement proper error handling for MCP tool wrapper failures
-- Provide debugging capabilities for serverless model integration
-- Support version rollback and deployment validation
-
-### Multi-Agent Coordination with Custom Models
-
-**Model Performance Degradation**
-- Monitor model performance metrics and detect degradation
-- Implement automatic model switching based on performance thresholds
-- Provide alerts and notifications for model performance issues
-- Support A/B testing and gradual model rollouts
-
-**Agent-Model Integration Failures**
-- Handle failures in agent-model communication and integration
-- Implement retry mechanisms and circuit breaker patterns
-- Provide comprehensive logging for debugging integration issues
-- Support dynamic model binding and agent reconfiguration
-
-**Hybrid System Coordination Errors**
-- Handle coordination failures between different model types
-- Implement consensus mechanisms for conflicting model outputs
-- Provide conflict resolution protocols for hybrid agent decisions
-- Maintain audit trails for model selection and routing decisions
-
-### Infrastructure and Cost Management Errors
-
-**Resource Provisioning Failures**
-- Handle CDK deployment failures for SageMaker resources
-- Implement proper cleanup for partially deployed infrastructure
-- Provide validation and testing for infrastructure deployments
-- Support incremental updates and rollback capabilities
-
-**Cost Management and Optimization**
-- Monitor and alert on unexpected cost increases from model usage
-- Implement cost caps and automatic resource scaling limits
-- Provide cost optimization recommendations and analysis
-- Support budget-based resource allocation and management
+### Data Validation Errors
+- **Invalid Customer Attributes**: Raise `ValueError` with specific validation failure
+- **Unknown Categorical Value**: Raise `ValueError` with list of valid values for that category
+- **Out of Range Numeric Value**: Raise `ValueError` with valid range
 
 ## Testing Strategy
 
-### Dual Testing Approach
+### Unit Tests
+Unit tests will verify specific examples, edge cases, and error conditions:
 
-The testing strategy combines unit testing and property-based testing with special focus on model integration:
+1. **Configuration Tests**:
+   - Test default value returns when environment variable not set
+   - Test validation of invalid environment variable values
+   - Test each getter function with valid values
 
-**Unit Testing**
-- Test individual model training and deployment workflows
-- Validate specific agent-model integration scenarios and edge cases
-- Test SageMaker AI service integration points and error conditions
-- Verify infrastructure deployment and model endpoint configuration
+2. **Model Creation Tests**:
+   - Test Bedrock model creation with each supported model ID
+   - Test SageMaker model creation with valid endpoint name
+   - Test error handling for invalid model IDs and missing endpoints
 
-**Property-Based Testing**
-- Use Hypothesis (Python) for property-based testing framework
-- Configure each property-based test to run minimum 100 iterations
-- Test universal properties across all model types and agent configurations
-- Validate model performance and coordination patterns with random scenarios
+3. **Data Transformation Tests**:
+   - Test one-hot encoding for each categorical feature
+   - Test CSV payload generation for sample customer profiles
+   - Test edge cases (unknown values, boundary numeric values)
 
-**Model Integration Testing**
-- Test end-to-end model training, deployment, and agent integration workflows
-- Validate fine-tuning pipelines with different model types and configurations
-- Test classification model deployment as Lambda functions and MCP tools
-- Verify hybrid model coordination and performance optimization
+4. **Prediction Parsing Tests**:
+   - Test parsing of various prediction scores (0.0, 0.5, 1.0, intermediate values)
+   - Test binary classification mapping at threshold boundary
+   - Test error handling for malformed responses
 
-**Property-Based Test Requirements**
-- Each correctness property must be implemented by a single property-based test
-- Tests must be tagged with format: '**Feature: workshop4-multi-agent-sagemaker-ai, Property {number}: {property_text}**'
-- Tests should generate random model configurations and validate properties hold
-- Focus on model integration correctness, performance optimization, and system reliability
+5. **Integration Tests**:
+   - Test loan assistant with sample customer data
+   - Test teacher agent routing to loan assistant
+   - Test error propagation through agent hierarchy
 
-**Performance and Cost Testing**
-- Test model performance under various load conditions
-- Validate cost optimization and resource management
-- Test scaling behavior for different model types and agent configurations
-- Verify monitoring and alerting functionality
+### Property-Based Tests
+Property-based tests will verify universal properties across all inputs using a PBT library (e.g., Hypothesis for Python):
 
-## Common Issues and Solutions
+1. **Property Test 1: Configuration Consistency**
+   - Generate random sequences of configuration getter calls
+   - Verify same value returned for each call in same execution
+   - **Feature: workshop4-multi-agent-sagemaker-ai, Property 1: Configuration Consistency**
 
-**Model Training and Deployment Issues**
-- SageMaker training job failures and resource limitations
-- Model endpoint deployment and scaling challenges
-- Lambda function packaging and deployment for classification models
-- Model versioning and rollback complexities
+2. **Property Test 2: Model Creation Idempotence**
+   - Generate random model IDs and configuration parameters
+   - Create models twice with same parameters
+   - Verify functional equivalence
+   - **Feature: workshop4-multi-agent-sagemaker-ai, Property 2: Model Creation Idempotence**
 
-**Agent-Model Integration Issues**
-- Model performance variability and optimization challenges
-- Agent coordination with different model response patterns
-- Cost management and resource optimization for multiple models
-- Debugging and troubleshooting hybrid model systems
+3. **Property Test 4: CSV Payload Format Correctness**
+   - Generate random valid CustomerAttributes instances
+   - Verify CSV payload has exactly 59 values
+   - **Feature: workshop4-multi-agent-sagemaker-ai, Property 4: CSV Payload Format Correctness**
 
-**Infrastructure and Scaling Issues**
-- CDK deployment complexity for SageMaker resources
-- Cost management and optimization across multiple model types
-- Monitoring and observability for distributed model systems
-- Security and access control for model endpoints and data
+4. **Property Test 5: One-Hot Encoding Completeness**
+   - Generate random categorical feature values
+   - Verify exactly one indicator is 1.0 per category
+   - **Feature: workshop4-multi-agent-sagemaker-ai, Property 5: One-Hot Encoding Completeness**
+
+5. **Property Test 6: Prediction Output Range**
+   - Generate random XGBoost responses
+   - Verify parsed predictions in [0.0, 1.0]
+   - **Feature: workshop4-multi-agent-sagemaker-ai, Property 6: Prediction Output Range**
+
+6. **Property Test 7: Binary Classification Mapping**
+   - Generate random prediction scores
+   - Verify correct accept/reject mapping
+   - **Feature: workshop4-multi-agent-sagemaker-ai, Property 7: Binary Classification Mapping**
+
+### Validation Scripts
+The validation scripts serve as integration tests for SageMaker endpoints:
+
+1. **XGBoost Endpoint Validation**:
+   - Verify endpoint is accessible
+   - Verify endpoint accepts CSV payload
+   - Verify endpoint returns valid prediction
+   - Print clear success/failure message
+
+2. **Reasoning Model Endpoint Validation**:
+   - Verify endpoint is accessible
+   - Verify endpoint accepts prompt
+   - Verify endpoint returns coherent response
+   - Print clear success/failure message
+
+### Test Configuration
+- Property tests: Minimum 100 iterations per test
+- Unit tests: Cover all public functions and error paths
+- Integration tests: Test end-to-end flows with mocked endpoints
+- Validation scripts: Run before deploying application
+
+### Testing Tools
+- **Unit Testing**: pytest
+- **Property-Based Testing**: Hypothesis
+- **Mocking**: unittest.mock for AWS service calls
+- **Coverage**: pytest-cov (target: >80% coverage)
