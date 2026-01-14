@@ -60,99 +60,121 @@ This implementation plan follows a local-first development approach: build and t
   - Ensure all tests pass for config, bedrock_model, and sagemaker_model modules
   - Ask the user if questions arise
 
-- [ ] 5. Implement loan assistant data transformation logic
+- [ ] 5. Update multi_agent/app.py to use new model modules with dropdown selection
+  - Import config module and replace remaining `os.getenv()` calls if any
+  - Import bedrock_model and sagemaker_model modules
+  - Add model selection dropdown in sidebar with options:
+    - Amazon Nova Pro (us.amazon.nova-pro-v1:0)
+    - Amazon Nova 2 Lite (us.amazon.nova-2-lite-v1:0)
+    - Anthropic Claude Haiku 4.5 (us.anthropic.claude-haiku-4-5-20251001-v1:0)
+    - Anthropic Claude Sonnet 4.5 (us.anthropic.claude-sonnet-4-5-20250929-v1:0)
+    - Custom gpt-oss-20b (SageMaker endpoint)
+  - Add logic to select model provider based on dropdown selection
+  - Update teacher agent creation to use selected model (bedrock or sagemaker)
+  - Update sidebar to display active model provider and model
+  - Store selected model in session state
+  - _Requirements: 1.4, 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7_
+
+- [ ]* 5.1 Write integration test for app with model selection
+  - Test teacher agent with Bedrock models
+  - Test teacher agent with SageMaker model (if endpoint available)
+  - Test model switching between providers
+  - _Requirements: 5.3, 5.4, 5.5_
+
+- [ ] 6. Test model selection end-to-end
+  - Run multi_agent/app.py locally
+  - Test each Bedrock model selection from dropdown
+  - Test SageMaker model selection (if endpoint available)
+  - Verify sidebar displays correct model information
+  - Test error handling for missing SageMaker endpoint
+  - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7_
+
+- [ ] 7. Checkpoint - Model selection complete
+  - Ensure model dropdown works correctly
+  - Ensure all model providers work
+  - Ask the user if questions arise
+
+- [ ] 8. Implement loan assistant data transformation logic
   - Create `multi_agent/loan_assistant.py` with CustomerAttributes handling
   - Implement one-hot encoding for all categorical features
   - Implement CSV payload generation function
   - Add validation for customer attribute values
   - Create mapping dictionaries for all categorical features
-  - _Requirements: 4.2, 5.2, 5.3_
+  - _Requirements: 7.2, 7.3, 7.8, 7.9_
 
-- [ ]* 5.1 Write property test for CSV payload format
+- [ ]* 8.1 Write property test for CSV payload format
   - **Property 4: CSV Payload Format Correctness**
-  - **Validates: Requirements 5.2, 5.3**
+  - **Validates: Requirements 7.8, 7.9**
 
-- [ ]* 5.2 Write property test for one-hot encoding
+- [ ]* 8.2 Write property test for one-hot encoding
   - **Property 5: One-Hot Encoding Completeness**
-  - **Validates: Requirements 5.3**
+  - **Validates: Requirements 7.9**
 
-- [ ]* 5.3 Write unit tests for data transformation
+- [ ]* 8.3 Write unit tests for data transformation
   - Test one-hot encoding for each categorical feature
   - Test CSV payload generation with sample customer profiles
   - Test edge cases (unknown values, boundary numeric values)
-  - _Requirements: 5.2, 5.3_
+  - _Requirements: 7.8, 7.9_
 
-- [ ] 6. Implement loan assistant XGBoost invocation logic
+- [ ] 9. Implement loan assistant XGBoost invocation logic
   - Add SageMaker runtime client creation in loan_assistant.py
   - Implement endpoint invocation with CSV payload
   - Implement response parsing and prediction extraction
   - Implement binary classification mapping (threshold at 0.5)
   - Add error handling for endpoint failures
-  - _Requirements: 4.2, 4.3, 4.4, 4.5, 4.6, 5.4, 5.5_
+  - _Requirements: 7.2, 7.3, 7.4, 7.5, 7.6, 7.10, 7.11_
 
-- [ ]* 6.1 Write property test for prediction output range
+- [ ]* 9.1 Write property test for prediction output range
   - **Property 6: Prediction Output Range**
-  - **Validates: Requirements 5.5**
+  - **Validates: Requirements 7.11**
 
-- [ ]* 6.2 Write property test for binary classification mapping
+- [ ]* 9.2 Write property test for binary classification mapping
   - **Property 7: Binary Classification Mapping**
-  - **Validates: Requirements 4.4**
+  - **Validates: Requirements 7.4**
 
-- [ ]* 6.3 Write unit tests for XGBoost invocation
+- [ ]* 9.3 Write unit tests for XGBoost invocation
   - Test endpoint invocation with mocked SageMaker client
   - Test response parsing for various prediction scores
   - Test error handling for endpoint failures
-  - _Requirements: 4.6, 5.4, 5.5_
+  - _Requirements: 7.6, 7.10, 7.11_
 
-- [ ] 7. Complete loan assistant as Strands tool
+- [ ] 10. Complete loan assistant as Strands tool
   - Wrap loan prediction logic in @tool decorator
   - Define function signature with all customer attribute parameters
   - Add comprehensive docstring with parameter descriptions
   - Implement human-readable response formatting
   - Add confidence score to response
-  - _Requirements: 4.1, 4.2, 4.5_
+  - _Requirements: 7.1, 7.2, 7.5_
 
-- [ ]* 7.1 Write integration test for loan assistant tool
+- [ ]* 10.1 Write integration test for loan assistant tool
   - Test loan assistant with sample customer data
   - Test error propagation through tool interface
-  - _Requirements: 4.1, 4.2, 4.5, 4.6_
+  - _Requirements: 7.1, 7.2, 7.5, 7.6_
 
-- [ ] 8. Checkpoint - Verify loan assistant works locally
-  - Ensure all tests pass for loan assistant
-  - Test with actual XGBoost endpoint if available (or mocked)
-  - Ask the user if questions arise
-
-- [ ] 9. Update multi_agent/app.py to use new modules
-  - Import config module and replace all `os.getenv()` calls
-  - Import bedrock_model and sagemaker_model modules
-  - Add logic to select model provider based on config
-  - Update teacher agent creation to use selected model
+- [ ] 11. Integrate loan assistant into multi_agent/app.py
   - Import loan_assistant tool
   - Add loan_assistant to teacher agent's tools list
-  - Update sidebar to display active model provider and model
   - Update sidebar to list loan assistant with icon and description
-  - _Requirements: 1.4, 7.2, 7.3, 7.4, 7.5, 8.1, 8.2, 8.3, 8.4, 8.5, 9.2_
+  - _Requirements: 7.1, 8.1, 8.2_
 
-- [ ]* 9.1 Write integration test for app with loan assistant
+- [ ]* 11.1 Write integration test for app with loan assistant
   - Test teacher agent routing to loan assistant
   - Test loan prediction through full agent hierarchy
-  - _Requirements: 7.2, 7.3_
+  - _Requirements: 8.1, 8.2_
 
-- [ ] 10. Test local implementation end-to-end
+- [ ] 12. Test loan assistant end-to-end
   - Run multi_agent/app.py locally
-  - Test Bedrock model selection with different model IDs
-  - Test SageMaker model selection (if endpoint available)
   - Test loan assistant with various customer profiles
-  - Test error handling for missing endpoints
-  - Verify sidebar displays correct information
-  - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 8.5, 9.8_
+  - Test error handling for missing XGBoost endpoint
+  - Verify sidebar displays loan assistant
+  - _Requirements: 7.1, 7.2, 7.5, 7.6, 8.3, 8.4, 8.5_
 
-- [ ] 11. Checkpoint - Local implementation complete
-  - Ensure all functionality works in multi_agent/app.py
+- [ ] 13. Checkpoint - Loan assistant complete
+  - Ensure loan assistant works correctly
   - Ensure all tests pass
   - Ask the user if questions arise
 
-- [ ] 12. Create XGBoost endpoint validation script
+- [ ] 14. Create XGBoost endpoint validation script
   - Create `workshop4/sagemaker/validate_xgboost_endpoint.py`
   - Extract endpoint invocation logic from numpy_xgboost notebook
   - Use config module for endpoint name
@@ -161,20 +183,29 @@ This implementation plan follows a local-first development approach: build and t
   - Print clear success or failure messages
   - _Requirements: 6.1, 6.2, 6.5, 6.6_
 
-- [ ] 13. Create reasoning model endpoint validation script
+- [ ] 14. Create XGBoost endpoint validation script
+  - Create `workshop4/sagemaker/validate_xgboost_endpoint.py`
+  - Extract endpoint invocation logic from numpy_xgboost notebook
+  - Use config module for endpoint name
+  - Create sample customer data for validation
+  - Implement endpoint invocation with error handling
+  - Print clear success or failure messages
+  - _Requirements: 6.1, 6.2, 6.3, 6.4_
+
+- [ ] 15. Create reasoning model endpoint validation script
   - Create `workshop4/sagemaker/validate_reasoning_endpoint.py`
   - Extract endpoint invocation logic from openai-reasoning notebook
   - Use config module for endpoint name
   - Create sample prompt for validation
   - Implement endpoint invocation with error handling
   - Print clear success or failure messages
-  - _Requirements: 6.3, 6.4, 6.5, 6.6_
+  - _Requirements: 4.1, 4.2, 4.3, 4.4_
 
-- [ ] 14. Checkpoint - Validation scripts complete
+- [ ] 16. Checkpoint - Validation scripts complete
   - Ensure validation scripts work independently
   - Ask the user if questions arise
 
-- [ ] 15. Merge new modules to deploy_multi_agent/docker_app
+- [ ] 17. Merge new modules to deploy_multi_agent/docker_app
   - Copy `config.py` to `deploy_multi_agent/docker_app/config.py`
   - Copy `bedrock_model.py` to `deploy_multi_agent/docker_app/bedrock_model.py`
   - Copy `sagemaker_model.py` to `deploy_multi_agent/docker_app/sagemaker_model.py`
@@ -182,7 +213,7 @@ This implementation plan follows a local-first development approach: build and t
   - Verify no conflicts with existing files
   - _Requirements: 9.1, 9.3, 9.6_
 
-- [ ] 16. Merge application logic to deploy_multi_agent/docker_app/app.py
+- [ ] 18. Merge application logic to deploy_multi_agent/docker_app/app.py
   - Preserve authentication section (lines 1-25) at the top
   - Preserve authentication UI in sidebar
   - Import new modules (config, bedrock_model, sagemaker_model, loan_assistant)
@@ -193,16 +224,16 @@ This implementation plan follows a local-first development approach: build and t
   - Update sidebar to display active model provider and model
   - Update sidebar to list loan assistant
   - Preserve logout button and user info display
-  - _Requirements: 9.3, 9.4, 9.5, 9.7, 9.8_
+  - _Requirements: 9.2, 9.3, 9.4, 9.5, 9.7, 9.8_
 
-- [ ] 17. Test deployed application logic
+- [ ] 19. Test deployed application logic
   - Review merged code for correctness
   - Verify authentication section is preserved
   - Verify all new features are included
   - Verify no duplicate code or conflicts
   - _Requirements: 9.5, 9.7, 9.8_
 
-- [ ] 18. Final checkpoint - Implementation complete
+- [ ] 20. Final checkpoint - Implementation complete
   - Verify both local and deployed versions have all features
   - Verify all tests pass
   - Verify validation scripts work

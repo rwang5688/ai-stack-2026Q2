@@ -112,8 +112,14 @@ Note: `BYPASS_TOOL_CONSENT` is set programmatically in app.py, not via config mo
 3. ✅ Design architecture with correctness properties
 4. ✅ Create implementation task list
 5. ✅ Complete Task 1: Configuration Module
-6. [ ] Checkpoint commit after Task 1
-7. [ ] Begin Task 2: Create bedrock_model.py module
+6. ✅ Checkpoint commit after Task 1
+7. ✅ Reorganize tasks: Move model selection UI (Task 9 → Task 5) to validate models immediately after creation
+8. [ ] Begin Task 2: Create bedrock_model.py module
+9. [ ] Complete Tasks 2-4: Model modules and validation
+10. [ ] Complete Task 5: Integrate model selection dropdown in app.py
+11. [ ] Complete Tasks 6-7: Test model selection end-to-end
+12. [ ] Complete Tasks 8-13: Loan assistant implementation
+13. [ ] Complete Tasks 14-16: Validation scripts and deployment merge
 
 ## Decisions Made
 
@@ -177,13 +183,41 @@ Note: `BYPASS_TOOL_CONSENT` is set programmatically in app.py, not via config mo
 - `STRANDS_KNOWLEDGE_BASE_ID` default: `my-kb-id`
 - `XGBOOST_ENDPOINT_NAME` default: `my-xgboost-endpoint`
 
-### Decision 8: Model Selection Dropdown - Future Task
-**Rationale**: User clarified that model selection dropdown (Amazon Nova Pro, Amazon Nova 2 Lite, Claude Haiku 4.5, Claude Sonnet 4.5, Custom gpt-oss-20b) comes later in Task 9, not in Task 1.
+### Decision 8: Model Selection Dropdown - Moved to Task 5
+**Rationale**: User requested reorganization to validate model invocation immediately after creating model modules. This provides faster feedback and ensures models work before building loan assistant.
 
 **Implementation**:
-- Task 1 scope: config module only, no UI changes
-- Keep tasks small and focused
-- Model selection UI will be implemented in Task 9
+- Tasks 2-4: Create bedrock_model.py, sagemaker_model.py, and checkpoint
+- Task 5 (was Task 9): Integrate model selection dropdown with 5 options:
+  - Amazon Nova Pro
+  - Amazon Nova 2 Lite
+  - Anthropic Claude Haiku 4.5
+  - Anthropic Claude Sonnet 4.5
+  - Custom gpt-oss-20b (SageMaker)
+- Tasks 6-7: Test model selection end-to-end and checkpoint
+- Tasks 8-13: Loan assistant implementation (renumbered from 5-11)
+- Tasks 14-20: Validation scripts and deployment (renumbered from 12-18)
+
+### Decision 10: Requirements Reorganization for Logical Flow
+**Rationale**: User requested reorganizing requirements, design, and tasks to follow a logical implementation order: Configuration → Model Wrappers → Validation Scripts → Model Selection UI → Loan Assistant → Integration → Deployment.
+
+**Final Implementation Order**:
+- **Requirement 1**: Configuration Management (unchanged)
+- **Requirement 2**: Bedrock Model Support (unchanged)
+- **Requirement 3**: SageMaker Model Support (unchanged)
+- **Requirement 4**: SageMaker Endpoint Validation Scripts (reasoning model) - validate SageMaker models work
+- **Requirement 5**: Model Selection UI (was Requirement 8) - integrate model selection into app
+- **Requirement 6**: XGBoost Endpoint Validation Script - validate XGBoost endpoint before building loan assistant
+- **Requirement 7**: Loan Prediction Assistant (was Requirement 4, merged with XGBoost Integration from Requirement 5)
+- **Requirement 8**: Multi-Agent Application Integration (was Requirement 7) - integrate loan assistant into app
+- **Requirement 9**: Code Refactoring and Deployment Strategy (unchanged)
+
+**Benefits**:
+- Requirements, design, and tasks now follow the same logical order
+- Validation scripts come right after building the modules they validate
+- Natural progression: build infrastructure → validate → add UI → build features → integrate → deploy
+- All requirement references in tasks.md updated to match new numbering
+- Easier to trace requirements through design to implementation
 
 ## Spec Documents Created
 - `.kiro/specs/workshop4-multi-agent-sagemaker-ai/requirements.md` - 9 requirements with EARS patterns

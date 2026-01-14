@@ -67,7 +67,48 @@ This feature expands the workshop4 multi-agent application to support multiple r
 3. THE SageMaker_Model module SHALL configure endpoint settings including region, max_tokens, temperature, and streaming
 4. WHEN the SageMaker endpoint is unavailable, THE SageMaker_Model module SHALL raise a descriptive error
 
-### Requirement 4: Loan Prediction Assistant
+### Requirement 4: SageMaker Endpoint Validation Scripts
+
+**User Story:** As a developer, I want standalone validation scripts for SageMaker endpoints, so that I can validate endpoints work before running the full application.
+
+#### Acceptance Criteria
+
+1. THE validation script for reasoning models SHALL extract invocation logic from the Jupyter notebook
+2. WHEN the reasoning model validation script runs, THE script SHALL invoke the provisioned endpoint with sample prompts
+3. THE validation scripts SHALL print clear success or failure messages
+4. THE validation scripts SHALL use the Config_Module for endpoint configuration
+
+### Requirement 5: Model Selection UI
+
+**User Story:** As a user, I want to select which model to use for the Strands Agent via a dropdown, so that I can easily switch between different Bedrock and SageMaker models.
+
+#### Acceptance Criteria
+
+1. THE Multi_Agent_App SHALL display a model selection dropdown in the sidebar
+2. THE dropdown SHALL include the following options:
+   - Amazon Nova Pro (us.amazon.nova-pro-v1:0)
+   - Amazon Nova 2 Lite (us.amazon.nova-2-lite-v1:0)
+   - Anthropic Claude Haiku 4.5 (us.anthropic.claude-haiku-4-5-20251001-v1:0)
+   - Anthropic Claude Sonnet 4.5 (us.anthropic.claude-sonnet-4-5-20250929-v1:0)
+   - Custom gpt-oss-20b (SageMaker endpoint)
+3. WHEN a Bedrock model is selected, THE application SHALL use the Bedrock_Model module
+4. WHEN the SageMaker model is selected, THE application SHALL use the SageMaker_Model module
+5. THE sidebar SHALL display the currently active model provider and model ID
+6. THE selected model SHALL persist in session state during the user's session
+7. WHEN the model selection changes, THE teacher agent SHALL be recreated with the new model
+
+### Requirement 6: XGBoost Endpoint Validation Script
+
+**User Story:** As a developer, I want a standalone validation script for the XGBoost endpoint, so that I can validate the loan prediction endpoint works before building the loan assistant.
+
+#### Acceptance Criteria
+
+1. THE validation script for XGBoost SHALL extract invocation logic from the Jupyter notebook
+2. WHEN the XGBoost validation script runs, THE script SHALL invoke the serverless endpoint with sample data
+3. THE validation script SHALL print clear success or failure messages
+4. THE validation script SHALL use the Config_Module for endpoint configuration
+
+### Requirement 7: Loan Prediction Assistant
 
 **User Story:** As a user, I want a loan assistant that predicts loan acceptance, so that I can evaluate whether a customer will accept a loan offer based on their attributes.
 
@@ -79,37 +120,17 @@ This feature expands the workshop4 multi-agent application to support multiple r
 4. WHEN the XGBoost_Model returns a prediction, THE Loan_Assistant SHALL interpret the result as accept or reject
 5. THE Loan_Assistant SHALL return a human-readable prediction with confidence score
 6. WHEN the Serverless_Endpoint is unavailable, THE Loan_Assistant SHALL return an error message
-
-### Requirement 5: XGBoost Model Integration
-
-**User Story:** As a developer, I want to integrate the XGBoost loan prediction model, so that the application can demonstrate predictive analytics capabilities.
-
-#### Acceptance Criteria
-
-1. THE XGBoost_Model integration SHALL use SageMaker Serverless Inference Endpoint
-2. WHEN invoking the endpoint, THE integration SHALL send CSV-formatted customer data
-3. THE integration SHALL handle the following customer attributes:
+7. THE XGBoost_Model integration SHALL use SageMaker Serverless Inference Endpoint
+8. WHEN invoking the endpoint, THE integration SHALL send CSV-formatted customer data
+9. THE integration SHALL handle the following customer attributes:
    - age, job type, marital status, education level
    - credit default status, housing loan status, personal loan status
    - contact type, campaign information
    - previous contact history
-4. WHEN the endpoint returns a prediction, THE integration SHALL parse the CSV response
-5. THE integration SHALL convert numeric predictions (0-1) to binary outcomes (accept/reject)
+10. WHEN the endpoint returns a prediction, THE integration SHALL parse the CSV response
+11. THE integration SHALL convert numeric predictions (0-1) to binary outcomes (accept/reject)
 
-### Requirement 6: SageMaker Endpoint Validation Scripts
-
-**User Story:** As a developer, I want standalone validation scripts for SageMaker endpoints, so that I can validate endpoints work before running the full application.
-
-#### Acceptance Criteria
-
-1. THE validation script for XGBoost SHALL extract invocation logic from the Jupyter notebook
-2. WHEN the XGBoost validation script runs, THE script SHALL invoke the serverless endpoint with sample data
-3. THE validation script for reasoning models SHALL extract invocation logic from the Jupyter notebook
-4. WHEN the reasoning model validation script runs, THE script SHALL invoke the provisioned endpoint with sample prompts
-5. THE validation scripts SHALL print clear success or failure messages
-6. THE validation scripts SHALL use the Config_Module for endpoint configuration
-
-### Requirement 7: Multi-Agent Application Integration
+### Requirement 8: Multi-Agent Application Integration
 
 **User Story:** As a user, I want the loan assistant integrated into the multi-agent application, so that I can access loan predictions through the same interface as other assistants.
 
@@ -120,18 +141,6 @@ This feature expands the workshop4 multi-agent application to support multiple r
 3. THE Multi_Agent_App SHALL display loan predictions in the chat interface
 4. THE Multi_Agent_App SHALL handle errors from Loan_Assistant gracefully
 5. THE sidebar SHALL list Loan_Assistant with an appropriate icon and description
-
-### Requirement 8: Model Selection Configuration
-
-**User Story:** As a developer, I want to configure which model provider to use via environment variables, so that I can easily switch between Bedrock and SageMaker models for Strands Agents.
-
-#### Acceptance Criteria
-
-1. THE Config_Module SHALL provide a function to determine the active model provider
-2. WHEN `STRANDS_MODEL_PROVIDER` environment variable is set to "bedrock", THE application SHALL use Bedrock_Model
-3. WHEN `STRANDS_MODEL_PROVIDER` environment variable is set to "sagemaker", THE application SHALL use SageMaker_Model
-4. WHEN no provider is specified, THE application SHALL default to Bedrock with `us.amazon.nova-pro-v1:0`
-5. THE Multi_Agent_App SHALL display the active model provider and model in the sidebar
 
 ### Requirement 9: Code Refactoring and Deployment Strategy
 
