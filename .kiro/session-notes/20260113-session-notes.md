@@ -3,6 +3,8 @@
 ## Session Overview
 Today's session focuses on expanding the workshop4 multi-agent application to support multiple reasoning LLM choices (Bedrock and SageMaker) and adding a loan prediction assistant that demonstrates integration with a SageMaker XGBoost model for predictive analytics.
 
+**Update**: Completed comprehensive environment variable audit and successfully implemented Task 1 (Configuration Module). All environment variables are now centrally managed in `config.py` with debug panel displaying values in the sidebar.
+
 ## Key Objectives
 
 ### 1. Architecture Consolidation (workshop4-architecture-refactoring)
@@ -61,24 +63,146 @@ Create standalone Python test scripts under `workshop4/sagemaker/`:
   - Reference implementation patterns
   - Strands Agents integration examples
 
+## Key Accomplishments
+
+### Environment Variable Audit & Spec Updates
+- ✅ Reviewed complete spec (requirements.md, design.md, tasks.md)
+- ✅ Analyzed both app.py files to identify ALL environment variables in use
+- ✅ Identified 8 environment variables currently in use
+- ✅ Updated requirements.md with complete environment variable list (alphabetically sorted)
+- ✅ Updated design.md with alphabetically sorted environment variables
+- ✅ Updated tasks.md Task 1 to include all environment variables
+- ✅ Renamed variables to align with Strands conventions:
+  - `REASONING_LLM_PROVIDER` → `STRANDS_MODEL_PROVIDER`
+  - `SAGEMAKER_REASONING_ENDPOINT` → `SAGEMAKER_MODEL_ENDPOINT`
+
+### Task 1: Configuration Module Implementation
+- ✅ Created `workshop4/multi_agent/config.py` with 8 getter functions (alphabetically sorted):
+  1. `get_aws_region()` - Default: `us-east-1` (for Nova Forge access)
+  2. `get_bedrock_model_id()` - Default: `us.amazon.nova-pro-v1:0`
+  3. `get_max_results()` - Default: `9`
+  4. `get_min_score()` - Default: `0.000001`
+  5. `get_sagemaker_model_endpoint()` - Default: `my-llm-endpoint`
+  6. `get_strands_knowledge_base_id()` - Default: `my-kb-id`
+  7. `get_strands_model_provider()` - Default: `bedrock`
+  8. `get_xgboost_endpoint_name()` - Default: `my-xgboost-endpoint`
+- ✅ Updated `workshop4/multi_agent/app.py` to use config module instead of `os.getenv()`
+- ✅ Added debug panel in sidebar showing all 8 environment variables (expandable section)
+- ✅ Added utility function `get_all_config_values()` for debugging
+- ✅ Tested locally - all environment variables displaying correctly
+- ✅ Added environment variables to `workshop4/GETTING-STARTED.md` for students
+- ✅ No functionality changes - pure refactoring
+
+### Environment Variables (Final List - 8 total)
+The config.py module manages these 8 environment variables (alphabetically sorted):
+1. AWS_REGION
+2. BEDROCK_MODEL_ID
+3. MAX_RESULTS
+4. MIN_SCORE
+5. SAGEMAKER_MODEL_ENDPOINT
+6. STRANDS_KNOWLEDGE_BASE_ID
+7. STRANDS_MODEL_PROVIDER
+8. XGBOOST_ENDPOINT_NAME
+
+Note: `BYPASS_TOOL_CONSENT` is set programmatically in app.py, not via config module.
+
 ## Next Steps
 1. ✅ Create spec documents for workshop4-multi-agent-sagemaker-ai feature
 2. ✅ Define requirements with EARS patterns
 3. ✅ Design architecture with correctness properties
 4. ✅ Create implementation task list
-5. **Ready to execute tasks incrementally**
+5. ✅ Complete Task 1: Configuration Module
+6. [ ] Checkpoint commit after Task 1
+7. [ ] Begin Task 2: Create bedrock_model.py module
 
 ## Decisions Made
-- **Local-First Development**: Build and test in multi_agent/ first, then merge to deploy_multi_agent/docker_app/
+
+### Decision 1: Local-First Development
+**Rationale**: Build and test in multi_agent/ first, then merge to deploy_multi_agent/docker_app/
 - **Authentication Preservation**: Maintain Cognito auth logic when merging to deployed version
 - **Optional Tests**: Mark test tasks as optional for faster MVP, create tests as needed
 - **Validation Scripts as Features**: SageMaker endpoint validation scripts are features, not tests
 - **Naming**: "SageMaker Endpoint Validation Scripts" instead of "Test Scripts"
 
+### Decision 2: Alphabetical Sorting of Environment Variables
+**Rationale**: User requested alphabetical sorting to make environment variables easy to find in config.py. This improves maintainability and developer experience.
+
+**Implementation**: 
+- Getter functions organized alphabetically by environment variable name
+- Documentation lists variables alphabetically
+- Makes it easy to locate specific configuration values
+
+### Decision 3: Complete Environment Variable Audit
+**Rationale**: User wanted to ensure ALL environment variables are centrally managed, not just the ones mentioned in the original spec.
+
+**Implementation**:
+- Searched both app.py files for all os.getenv() calls
+- Reviewed existing sagemaker/config.py
+- Identified all environment variables in use
+- Consolidated to 8 managed variables in config.py
+
+### Decision 4: Align Naming with Strands Conventions
+**Rationale**: User identified that "REASONING_LLM_PROVIDER" was confusing and didn't align with Strands Agent terminology. The official Strands parameter is simply "model", and we already use "STRANDS_KNOWLEDGE_BASE_ID", so we should use "STRANDS_MODEL_PROVIDER" for consistency.
+
+**Implementation**:
+- Changed `REASONING_LLM_PROVIDER` → `STRANDS_MODEL_PROVIDER`
+- Changed `SAGEMAKER_REASONING_ENDPOINT` → `SAGEMAKER_MODEL_ENDPOINT`
+- Updated function names: `get_reasoning_llm_provider()` → `get_strands_model_provider()`
+- Updated function names: `get_sagemaker_reasoning_endpoint()` → `get_sagemaker_model_endpoint()`
+- Updated glossary: "Reasoning_LLM" → "Strands_Agent_Model" and "Model_Provider"
+- This aligns with Strands conventions and makes it clear we're configuring the Strands Agent's model
+
+### Decision 5: Keep Documentation in Standard Spec Files
+**Rationale**: Spec documentation follows a standard structure: requirements.md, design.md, and tasks.md. All information should be contained within these three files.
+
+**Implementation**:
+- All environment variable details documented in requirements.md (Requirement 1)
+- All configuration module interface details in design.md (Component 1)
+- All implementation details in tasks.md (Task 1)
+- No additional documentation files created
+
+### Decision 6: AWS Region Configuration
+**Rationale**: For the workshop, students should use us-east-1 to access Nova Forge service (only available in us-east-1). Avoid checking AWS_DEFAULT_REGION to prevent confusion.
+
+**Implementation**:
+- Only check `AWS_REGION` environment variable
+- Default to `us-east-1` for workshop purposes
+- Force students to explicitly set AWS_REGION
+
+### Decision 7: Consistent Placeholder Naming
+**Rationale**: Use consistent `my-*` pattern for placeholder defaults to make it clear these are values students need to replace with their actual AWS resource names.
+
+**Implementation**:
+- `SAGEMAKER_MODEL_ENDPOINT` default: `my-llm-endpoint`
+- `STRANDS_KNOWLEDGE_BASE_ID` default: `my-kb-id`
+- `XGBOOST_ENDPOINT_NAME` default: `my-xgboost-endpoint`
+
+### Decision 8: Model Selection Dropdown - Future Task
+**Rationale**: User clarified that model selection dropdown (Amazon Nova Pro, Amazon Nova 2 Lite, Claude Haiku 4.5, Claude Sonnet 4.5, Custom gpt-oss-20b) comes later in Task 9, not in Task 1.
+
+**Implementation**:
+- Task 1 scope: config module only, no UI changes
+- Keep tasks small and focused
+- Model selection UI will be implemented in Task 9
+
 ## Spec Documents Created
 - `.kiro/specs/workshop4-multi-agent-sagemaker-ai/requirements.md` - 9 requirements with EARS patterns
 - `.kiro/specs/workshop4-multi-agent-sagemaker-ai/design.md` - Architecture, components, data models, 10 correctness properties
 - `.kiro/specs/workshop4-multi-agent-sagemaker-ai/tasks.md` - 18 implementation tasks organized in 5 phases
+
+## Issues & Resolutions
+
+### Issue 1: Incomplete Environment Variable List in Original Spec
+**Resolution**: Conducted comprehensive audit of both app.py files and existing sagemaker/config.py to identify all environment variables. Updated requirements.md, design.md, and tasks.md accordingly.
+
+### Issue 2: Inconsistent Environment Variable Naming
+**Resolution**: Renamed variables to align with Strands conventions (STRANDS_MODEL_PROVIDER, SAGEMAKER_MODEL_ENDPOINT) and used consistent `my-*` pattern for placeholder defaults.
+
+### Issue 3: AWS Region Configuration Confusion
+**Resolution**: Simplified to only check AWS_REGION (not AWS_DEFAULT_REGION) and default to us-east-1 for Nova Forge access.
+
+### Issue 4: Getter Function Consistency
+**Resolution**: Made all getter functions simple one-liners for consistency and readability.
 
 ## Next Steps
 
@@ -86,3 +210,10 @@ Create standalone Python test scripts under `workshop4/sagemaker/`:
 - Strands Agents Documentation: Model providers and multi-agent patterns
 - SageMaker Documentation: Serverless Inference, XGBoost algorithm
 - AWS Bedrock Documentation: Cross-region inference profiles
+- `.kiro/specs/workshop4-multi-agent-sagemaker-ai/requirements.md` - Updated with complete environment variable list
+- `.kiro/specs/workshop4-multi-agent-sagemaker-ai/design.md` - Updated with alphabetically sorted variables
+- `.kiro/specs/workshop4-multi-agent-sagemaker-ai/tasks.md` - Updated Task 1
+- `workshop4/multi_agent/config.py` - New configuration module
+- `workshop4/multi_agent/app.py` - Updated to use config module
+- `workshop4/GETTING-STARTED.md` - Added environment variables section for students
+- `workshop4/sagemaker/config.py` - Existing SageMaker configuration reference

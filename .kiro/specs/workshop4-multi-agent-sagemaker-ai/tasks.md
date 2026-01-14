@@ -6,13 +6,20 @@ This implementation plan follows a local-first development approach: build and t
 
 ## Tasks
 
-- [ ] 1. Create configuration module for multi_agent
+- [x] 1. Create configuration module for multi_agent
   - Create `multi_agent/config.py` with environment variable getter functions
-  - Implement `get_aws_region()`, `get_bedrock_model_id()`, `get_sagemaker_endpoint_name()`
-  - Implement `get_xgboost_endpoint_name()`, `get_reasoning_llm_provider()`, `get_knowledge_base_id()`
+  - Implement getter functions in alphabetical order by environment variable name:
+    - `get_aws_region()` - AWS_REGION
+    - `get_bedrock_model_id()` - BEDROCK_MODEL_ID
+    - `get_max_results()` - MAX_RESULTS
+    - `get_min_score()` - MIN_SCORE
+    - `get_sagemaker_model_endpoint()` - SAGEMAKER_MODEL_ENDPOINT
+    - `get_strands_knowledge_base_id()` - STRANDS_KNOWLEDGE_BASE_ID
+    - `get_strands_model_provider()` - STRANDS_MODEL_PROVIDER
+    - `get_xgboost_endpoint_name()` - XGBOOST_ENDPOINT_NAME
   - Add validation logic and default values for each getter
-  - Add docstrings explaining each function and its environment variable
-  - _Requirements: 1.1, 1.2, 1.3, 1.4_
+  - Add comprehensive docstrings explaining each function and its environment variable
+  - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6_
 
 - [ ]* 1.1 Write unit tests for configuration module
   - Test each getter function with valid environment variables
@@ -36,7 +43,7 @@ This implementation plan follows a local-first development approach: build and t
   - _Requirements: 2.2, 2.3, 2.5_
 
 - [ ] 3. Create SageMaker model module for multi_agent
-  - Create `multi_agent/sagemaker_model.py` with `create_sagemaker_reasoning_model()` function
+  - Create `multi_agent/sagemaker_model.py` with `create_sagemaker_model()` function
   - Import SageMakerAIModel from strands.models.sagemaker
   - Use config module for endpoint name and region
   - Configure endpoint settings (max_tokens, temperature, streaming)
@@ -118,11 +125,11 @@ This implementation plan follows a local-first development approach: build and t
 - [ ] 9. Update multi_agent/app.py to use new modules
   - Import config module and replace all `os.getenv()` calls
   - Import bedrock_model and sagemaker_model modules
-  - Add logic to select reasoning LLM provider based on config
+  - Add logic to select model provider based on config
   - Update teacher agent creation to use selected model
   - Import loan_assistant tool
   - Add loan_assistant to teacher agent's tools list
-  - Update sidebar to display active reasoning LLM provider
+  - Update sidebar to display active model provider and model
   - Update sidebar to list loan assistant with icon and description
   - _Requirements: 1.4, 7.2, 7.3, 7.4, 7.5, 8.1, 8.2, 8.3, 8.4, 8.5, 9.2_
 
@@ -180,10 +187,10 @@ This implementation plan follows a local-first development approach: build and t
   - Preserve authentication UI in sidebar
   - Import new modules (config, bedrock_model, sagemaker_model, loan_assistant)
   - Replace `os.getenv()` calls with config module functions
-  - Add reasoning LLM provider selection logic
+  - Add model provider selection logic
   - Update teacher agent creation to use selected model
   - Add loan_assistant to teacher agent's tools list
-  - Update sidebar to display active reasoning LLM provider
+  - Update sidebar to display active model provider and model
   - Update sidebar to list loan assistant
   - Preserve logout button and user info display
   - _Requirements: 9.3, 9.4, 9.5, 9.7, 9.8_

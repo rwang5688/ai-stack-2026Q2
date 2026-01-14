@@ -4,6 +4,17 @@ from strands import Agent
 from strands.models import BedrockModel
 from strands_tools import memory, use_agent
 
+# Import configuration module
+from config import (
+    get_aws_region,
+    get_bedrock_model_id,
+    get_max_results,
+    get_min_score,
+    get_strands_knowledge_base_id,
+    get_strands_model_provider,
+    get_all_config_values,
+)
+
 # Bypass tool consent for knowledge base operations
 os.environ["BYPASS_TOOL_CONSENT"] = "true"
 
@@ -131,10 +142,9 @@ Example response for missing information:
 """
 
 # Knowledge base configuration
-DEFAULT_KB_ID = "demokb123"
-KB_ID = os.getenv("STRANDS_KNOWLEDGE_BASE_ID", DEFAULT_KB_ID)
-MIN_SCORE = os.getenv("MIN_SCORE", "0.000001")
-MAX_RESULTS = os.getenv("MAX_RESULTS", "9")
+KB_ID = get_strands_knowledge_base_id()
+MIN_SCORE = get_min_score()
+MAX_RESULTS = get_max_results()
 
 # Set up the page
 st.set_page_config(
@@ -149,15 +159,25 @@ st.write("Choose your agent type or let the system auto-route your queries to th
 # Add sidebar with information
 with st.sidebar:
     st.header("🤖 AI Service Details")
-    aws_region = os.getenv("AWS_REGION", "Not Set")
+    aws_region = get_aws_region()
+    bedrock_model_id = get_bedrock_model_id()
+    model_provider = get_strands_model_provider()
+    
     st.markdown(f"""
     **Service**: Amazon Bedrock  
-    **Model**: `us.amazon.nova-pro-v1:0`  
+    **Model**: `{bedrock_model_id}`  
     **Foundation Model**: Amazon Nova Pro  
     **Temperature**: 0.3  
     **Knowledge Base**: {KB_ID}  
     **AWS Region**: {aws_region}
     """)
+    
+    # Display all configuration values for debugging
+    st.header("⚙️ Configuration (Debug)")
+    with st.expander("View All Environment Variables", expanded=False):
+        config_values = get_all_config_values()
+        for key, value in config_values.items():
+            st.text(f"{key}: {value}")
     
     # Agent Type Selection
     st.header("🎯 Agent Type Selection")
@@ -218,7 +238,7 @@ if "messages" not in st.session_state:
 def determine_action(query):
     """Determine if the query should go to teacher agent or knowledge base agent."""
     bedrock_model = BedrockModel(
-        model_id="us.amazon.nova-pro-v1:0",
+        model_id=get_bedrock_model_id(),
         temperature=0.1,
     )
     
@@ -233,7 +253,7 @@ def determine_action(query):
             system_prompt=ACTION_DETERMINATION_PROMPT,
             model_provider="bedrock",
             model_settings={
-                'model_id': 'us.amazon.nova-pro-v1:0'
+                'model_id': get_bedrock_model_id()
             }
         )
         
@@ -257,7 +277,7 @@ def determine_action(query):
 def determine_kb_action(query):
     """Determine if the knowledge base query is a store or retrieve action."""
     bedrock_model = BedrockModel(
-        model_id="us.amazon.nova-pro-v1:0",
+        model_id=get_bedrock_model_id(),
         temperature=0.1,
     )
     
@@ -272,7 +292,7 @@ def determine_kb_action(query):
             system_prompt=KB_ACTION_SYSTEM_PROMPT,
             model_provider="bedrock",
             model_settings={
-                'model_id': 'us.amazon.nova-pro-v1:0'
+                'model_id': get_bedrock_model_id()
             }
         )
         
@@ -296,7 +316,7 @@ def determine_kb_action(query):
 def run_kb_agent(query):
     """Process a user query with the knowledge base agent."""
     bedrock_model = BedrockModel(
-        model_id='us.amazon.nova-pro-v1:0',
+        model_id=get_bedrock_model_id(),
         temperature=0.1,
     )
     agent = Agent(
@@ -323,8 +343,8 @@ def run_kb_agent(query):
             result = agent.tool.memory(
                 action="retrieve", 
                 query=query,
-                min_score=float(MIN_SCORE),
-                max_results=int(MAX_RESULTS)
+                min_score=MIN_SCORE,
+                max_results=MAX_RESULTS
             )
             # Convert the result to a string to extract just the content text
             result_str = str(result)
@@ -335,7 +355,7 @@ def run_kb_agent(query):
                 system_prompt=KB_ANSWER_SYSTEM_PROMPT,
                 model_provider="bedrock",
                 model_settings={
-                    'model_id': 'us.amazon.nova-pro-v1:0'
+                    'model_id': get_bedrock_model_id()
                 }
             )
             
@@ -370,10 +390,10 @@ for message in st.session_state.messages:
 def get_teacher_agent():
     # Amazon Bedrock Model Configuration
     # Service: Amazon Bedrock
-    # Model ID: us.amazon.nova-pro-v1:0 (Amazon Nova Pro foundation model)
+    # Model ID: Configured via BEDROCK_MODEL_ID environment variable
     # Note: This can be replaced with cross-region inference profile IDs for multi-region deployments
     bedrock_model = BedrockModel(
-        model_id="us.amazon.nova-pro-v1:0",  # Amazon Nova Pro via Amazon Bedrock
+        model_id=get_bedrock_model_id(),  # Uses config module
         temperature=0.3,
     )
     

@@ -6,7 +6,8 @@ This feature expands the workshop4 multi-agent application to support multiple r
 
 ## Glossary
 
-- **Reasoning_LLM**: A large language model used by agents to process natural language, make decisions, and generate responses
+- **Strands_Agent_Model**: The language model used by Strands Agents to process natural language, make decisions, and generate responses
+- **Model_Provider**: The service providing the Strands Agent model (Amazon Bedrock or Amazon SageMaker)
 - **Bedrock_Model**: An Amazon Bedrock foundation model accessed via cross-region inference profiles
 - **SageMaker_Model**: A model deployed on Amazon SageMaker and accessed via inference endpoints
 - **XGBoost_Model**: A gradient boosted tree model trained for binary classification (loan acceptance prediction)
@@ -24,14 +25,24 @@ This feature expands the workshop4 multi-agent application to support multiple r
 
 #### Acceptance Criteria
 
-1. THE Config_Module SHALL provide getter functions for all environment variables
-2. WHEN an environment variable is missing, THE Config_Module SHALL return a sensible default value or raise a descriptive error
-3. THE Config_Module SHALL validate environment variable values before returning them
-4. THE Multi_Agent_App SHALL use Config_Module functions instead of direct `os.getenv()` calls
+1. THE Config_Module SHALL provide getter functions for all environment variables used by the application
+2. THE Config_Module SHALL manage the following environment variables:
+   - AWS_REGION: AWS region for all services
+   - BEDROCK_MODEL_ID: Bedrock model ID or cross-region profile
+   - MAX_RESULTS: Maximum results for knowledge base queries
+   - MIN_SCORE: Minimum score threshold for knowledge base queries
+   - SAGEMAKER_MODEL_ENDPOINT: SageMaker model endpoint name
+   - STRANDS_KNOWLEDGE_BASE_ID: Strands knowledge base ID
+   - STRANDS_MODEL_PROVIDER: Model provider choice (bedrock or sagemaker)
+   - XGBOOST_ENDPOINT_NAME: XGBoost loan prediction endpoint name
+3. WHEN an environment variable is missing, THE Config_Module SHALL return a sensible default value or raise a descriptive error
+4. THE Config_Module SHALL validate environment variable values before returning them
+5. THE Config_Module SHALL organize getter functions in alphabetical order by environment variable name
+6. THE Multi_Agent_App SHALL use Config_Module functions instead of direct `os.getenv()` calls
 
 ### Requirement 2: Bedrock Model Support
 
-**User Story:** As a developer, I want to support multiple Bedrock cross-region inference profiles, so that I can demonstrate flexibility in choosing reasoning LLMs.
+**User Story:** As a developer, I want to support multiple Bedrock cross-region inference profiles, so that I can demonstrate flexibility in choosing Strands Agent models.
 
 #### Acceptance Criteria
 
@@ -45,9 +56,9 @@ This feature expands the workshop4 multi-agent application to support multiple r
 4. WHEN no model ID is specified, THE Bedrock_Model module SHALL use `us.amazon.nova-pro-v1:0` as the default
 5. THE Bedrock_Model module SHALL configure appropriate temperature settings for each model
 
-### Requirement 3: SageMaker Reasoning Model Support
+### Requirement 3: SageMaker Model Support
 
-**User Story:** As a developer, I want to support SageMaker endpoint-based reasoning models, so that I can use custom deployed models as reasoning LLMs.
+**User Story:** As a developer, I want to support SageMaker endpoint-based models, so that I can use custom deployed models as Strands Agent models.
 
 #### Acceptance Criteria
 
@@ -112,15 +123,15 @@ This feature expands the workshop4 multi-agent application to support multiple r
 
 ### Requirement 8: Model Selection Configuration
 
-**User Story:** As a developer, I want to configure which reasoning LLM to use via environment variables, so that I can easily switch between Bedrock and SageMaker models.
+**User Story:** As a developer, I want to configure which model provider to use via environment variables, so that I can easily switch between Bedrock and SageMaker models for Strands Agents.
 
 #### Acceptance Criteria
 
-1. THE Config_Module SHALL provide a function to determine the active reasoning LLM provider
-2. WHEN `REASONING_LLM_PROVIDER` environment variable is set to "bedrock", THE application SHALL use Bedrock_Model
-3. WHEN `REASONING_LLM_PROVIDER` environment variable is set to "sagemaker", THE application SHALL use SageMaker_Model
+1. THE Config_Module SHALL provide a function to determine the active model provider
+2. WHEN `STRANDS_MODEL_PROVIDER` environment variable is set to "bedrock", THE application SHALL use Bedrock_Model
+3. WHEN `STRANDS_MODEL_PROVIDER` environment variable is set to "sagemaker", THE application SHALL use SageMaker_Model
 4. WHEN no provider is specified, THE application SHALL default to Bedrock with `us.amazon.nova-pro-v1:0`
-5. THE Multi_Agent_App SHALL display the active reasoning LLM in the sidebar
+5. THE Multi_Agent_App SHALL display the active model provider and model in the sidebar
 
 ### Requirement 9: Code Refactoring and Deployment Strategy
 

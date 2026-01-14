@@ -127,26 +127,34 @@ def get_aws_region() -> str:
 def get_bedrock_model_id() -> str:
     """Get Bedrock model ID from environment variable."""
     
-def get_sagemaker_endpoint_name() -> str:
-    """Get SageMaker reasoning endpoint name from environment variable."""
+def get_max_results() -> int:
+    """Get maximum results for knowledge base queries."""
+    
+def get_min_score() -> float:
+    """Get minimum score threshold for knowledge base queries."""
+    
+def get_sagemaker_model_endpoint() -> str:
+    """Get SageMaker model endpoint name from environment variable."""
+    
+def get_strands_knowledge_base_id() -> str:
+    """Get Strands knowledge base ID from environment variable."""
+    
+def get_strands_model_provider() -> str:
+    """Get Strands Agent model provider (bedrock or sagemaker)."""
     
 def get_xgboost_endpoint_name() -> str:
     """Get XGBoost model endpoint name from environment variable."""
-    
-def get_reasoning_llm_provider() -> str:
-    """Get reasoning LLM provider (bedrock or sagemaker)."""
-    
-def get_knowledge_base_id() -> str:
-    """Get Strands knowledge base ID from environment variable."""
 ```
 
-**Environment Variables**:
+**Environment Variables** (alphabetically sorted):
 - `AWS_REGION`: AWS region for all services (default: us-west-2)
 - `BEDROCK_MODEL_ID`: Bedrock model ID (default: us.amazon.nova-pro-v1:0)
-- `SAGEMAKER_REASONING_ENDPOINT`: SageMaker reasoning model endpoint name
-- `XGBOOST_ENDPOINT_NAME`: XGBoost loan prediction endpoint name
-- `REASONING_LLM_PROVIDER`: Provider choice (bedrock or sagemaker, default: bedrock)
-- `STRANDS_KNOWLEDGE_BASE_ID`: Knowledge base ID (existing)
+- `MAX_RESULTS`: Maximum results for knowledge base queries (default: 9)
+- `MIN_SCORE`: Minimum score threshold for knowledge base queries (default: 0.000001)
+- `SAGEMAKER_MODEL_ENDPOINT`: SageMaker model endpoint name (optional, required when provider=sagemaker)
+- `STRANDS_KNOWLEDGE_BASE_ID`: Knowledge base ID (default: demokb123)
+- `STRANDS_MODEL_PROVIDER`: Model provider choice (bedrock or sagemaker, default: bedrock)
+- `XGBOOST_ENDPOINT_NAME`: XGBoost loan prediction endpoint name (required when using loan assistant)
 
 ### 2. Bedrock Model Module (bedrock_model.py)
 
@@ -178,18 +186,18 @@ def create_bedrock_model(
 
 ### 3. SageMaker Model Module (sagemaker_model.py)
 
-**Purpose**: Create and configure SageMaker AI models for reasoning tasks.
+**Purpose**: Create and configure SageMaker AI models for Strands Agents.
 
 **Interface**:
 ```python
-def create_sagemaker_reasoning_model(
+def create_sagemaker_model(
     endpoint_name: str = None,
     region: str = None,
     max_tokens: int = 1000,
     temperature: float = 0.7
 ) -> SageMakerAIModel:
     """
-    Create a SageMaker AI model for reasoning tasks.
+    Create a SageMaker AI model for Strands Agents.
     
     Args:
         endpoint_name: SageMaker endpoint name
@@ -382,7 +390,7 @@ class LoanPrediction:
 **Validates: Requirements 4.6, 6.5**
 
 ### Property 9: Provider Selection Consistency
-*For any* value of REASONING_LLM_PROVIDER environment variable, the application should use exactly one reasoning LLM provider (Bedrock or SageMaker), never both simultaneously.
+*For any* value of STRANDS_MODEL_PROVIDER environment variable, the application should use exactly one model provider (Bedrock or SageMaker), never both simultaneously.
 **Validates: Requirements 8.2, 8.3, 8.4**
 
 ### Property 10: Validation Script Independence

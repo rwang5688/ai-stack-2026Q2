@@ -102,6 +102,24 @@ echo 'export AWS_REGION="us-east-1"' >> ~/.bashrc
 source ~/.bashrc
 ```
 
+**Additional Environment Variables for Multi-Agent Application:**
+
+Add these to your `~/.bashrc` or `~/.bash_profile` for the multi-agent application:
+
+```bash
+# Workshop4 Multi-Agent SageMaker AI - Environment Variables
+export AWS_REGION="us-east-1"
+export BEDROCK_MODEL_ID="us.amazon.nova-pro-v1:0"
+export MAX_RESULTS="9"
+export MIN_SCORE="0.000001"
+export SAGEMAKER_MODEL_ENDPOINT="my-llm-endpoint"
+export STRANDS_KNOWLEDGE_BASE_ID="my-kb-id"
+export STRANDS_MODEL_PROVIDER="bedrock"
+export XGBOOST_ENDPOINT_NAME="my-xgboost-endpoint"
+```
+
+**Note:** Values with `my-*` prefixes are placeholders. Replace them with your actual AWS resource names when you create them in later modules.
+
 **Windows PowerShell:**
 ```powershell
 $Env:AWS_ACCESS_KEY_ID="your-access-key"
