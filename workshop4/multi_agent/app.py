@@ -158,6 +158,13 @@ st.write("Choose your agent type or let the system auto-route your queries to th
 
 # Add sidebar with information
 with st.sidebar:
+    # Display all configuration values for debugging
+    st.header("⚙️ Configuration (Debug)")
+    with st.expander("View All Environment Variables", expanded=False):
+        config_values = get_all_config_values()
+        for key, value in config_values.items():
+            st.text(f"{key}: {value}")
+    
     st.header("🤖 AI Service Details")
     aws_region = get_aws_region()
     bedrock_model_id = get_bedrock_model_id()
@@ -171,13 +178,6 @@ with st.sidebar:
     **Knowledge Base**: {KB_ID}  
     **AWS Region**: {aws_region}
     """)
-    
-    # Display all configuration values for debugging
-    st.header("⚙️ Configuration (Debug)")
-    with st.expander("View All Environment Variables", expanded=False):
-        config_values = get_all_config_values()
-        for key, value in config_values.items():
-            st.text(f"{key}: {value}")
     
     # Agent Type Selection
     st.header("🎯 Agent Type Selection")
