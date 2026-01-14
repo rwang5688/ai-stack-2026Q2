@@ -73,8 +73,8 @@ This feature expands the workshop4 multi-agent application to support multiple r
 
 #### Acceptance Criteria
 
-1. THE validation script for reasoning models SHALL extract invocation logic from the Jupyter notebook
-2. WHEN the reasoning model validation script runs, THE script SHALL invoke the provisioned endpoint with sample prompts
+1. THE validation script for agent models SHALL extract invocation logic from the Jupyter notebook
+2. WHEN the agent model validation script runs, THE script SHALL invoke the provisioned endpoint with sample prompts
 3. THE validation scripts SHALL print clear success or failure messages
 4. THE validation scripts SHALL use the Config_Module for endpoint configuration
 

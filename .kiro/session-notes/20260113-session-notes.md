@@ -198,7 +198,27 @@ Note: `BYPASS_TOOL_CONSENT` is set programmatically in app.py, not via config mo
 - Tasks 8-13: Loan assistant implementation (renumbered from 5-11)
 - Tasks 14-20: Validation scripts and deployment (renumbered from 12-18)
 
-### Decision 10: Requirements Reorganization for Logical Flow
+### Decision 11: Task Reorganization and Terminology Update
+**Rationale**: User requested moving validation scripts to immediately after building the modules they validate, and updating terminology from "reasoning model" to "agent model" for consistency.
+
+**Implementation**:
+- **Task 4**: Create agent model endpoint validation script (was Task 15) - validate SageMaker agent model right after building it
+- **Task 5**: Checkpoint - verify model modules AND validation scripts work (merged old Task 4 + Task 16)
+- **Task 6-8**: Model selection UI integration and testing (was Tasks 5-7)
+- **Task 9**: Create XGBoost endpoint validation script (was Task 14) - validate XGBoost before building loan assistant
+- **Tasks 10-13**: Loan assistant implementation (was Tasks 8-13, renumbered to 10-13)
+- **Tasks 14-17**: Deployment merge and final checkpoint (was Tasks 17-20, renumbered to 14-17)
+
+**Terminology Update**:
+- Changed "reasoning model" → "agent model" throughout requirements and tasks
+- File name: `validate_reasoning_endpoint.py` → `validate_agent_endpoint.py`
+- Aligns with Strands Agent terminology
+
+**Benefits**:
+- Validation scripts come immediately after building what they validate
+- Test-driven flow: build module → validate → integrate
+- Clearer terminology aligned with Strands Agents framework
+- Total tasks reduced from 20 to 17 (merged checkpoint tasks)
 **Rationale**: User requested reorganizing requirements, design, and tasks to follow a logical implementation order: Configuration → Model Wrappers → Validation Scripts → Model Selection UI → Loan Assistant → Integration → Deployment.
 
 **Final Implementation Order**:
