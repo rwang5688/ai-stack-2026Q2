@@ -109,13 +109,67 @@ deploy_multi_agent/docker_app/
 workshop4/sagemaker/
 ├── config.py                   # Existing SageMaker config
 ├── sagemaker_model.py          # Existing SageMaker model
-├── validate_xgboost_endpoint.py      # XGBoost validation script (NEW)
-└── validate_reasoning_endpoint.py    # Reasoning model validation script (NEW)
+├── validate_agent_endpoint.py        # Agent model validation script (NEW)
+└── validate_xgboost_endpoint.py      # XGBoost model validation script (NEW)
 ```
 
 ## Components and Interfaces
 
-### 1. Configuration Module (config.py)
+### 1. Agent Model Endpoint Validation Script
+
+**Purpose**: Standalone script to validate SageMaker reasoning model endpoint before running the full application.
+
+**Interface**:
+```python
+def validate_agent_endpoint(endpoint_name: str) -> bool:
+    """
+    Validate agent model endpoint with sample prompt.
+    
+    Args:
+        endpoint_name: SageMaker endpoint name
+        
+    Returns:
+        True if validation succeeds, False otherwise
+    """
+```
+
+**Sample Prompt**: Uses a simple reasoning task to verify model functionality.
+
+**Validation Steps**:
+- Extract invocation logic from Jupyter notebook
+- Use environment variables for endpoint configuration
+- Invoke endpoint with sample prompt
+- Print clear success or failure messages
+- Execute independently without full application
+
+### 2. XGBoost Model Endpoint Validation Script
+
+**Purpose**: Standalone script to validate XGBoost serverless endpoint before building the loan assistant.
+
+**Interface**:
+```python
+def validate_xgboost_endpoint(endpoint_name: str) -> bool:
+    """
+    Validate XGBoost model endpoint with sample data.
+    
+    Args:
+        endpoint_name: SageMaker endpoint name
+        
+    Returns:
+        True if validation succeeds, False otherwise
+    """
+```
+
+**Sample Data**: Uses a representative customer profile from the training dataset.
+
+**Validation Steps**:
+- Extract invocation logic from Jupyter notebook
+- Use environment variables for endpoint configuration
+- Invoke endpoint with sample customer data
+- Print clear success or failure messages
+- Execute independently without full application
+
+### 3. Configuration Module (config.py)
 
 **Purpose**: Centralize environment variable management and provide validated configuration values.
 
@@ -156,7 +210,7 @@ def get_xgboost_endpoint_name() -> str:
 - `STRANDS_MODEL_PROVIDER`: Model provider choice (bedrock or sagemaker, default: bedrock)
 - `XGBOOST_ENDPOINT_NAME`: XGBoost loan prediction endpoint name (required when using loan assistant)
 
-### 2. Bedrock Model Module (bedrock_model.py)
+### 4. Bedrock Model Module (bedrock_model.py)
 
 **Purpose**: Create and configure Bedrock models with support for multiple cross-region inference profiles.
 
@@ -184,7 +238,7 @@ def create_bedrock_model(
 - `us.anthropic.claude-haiku-4-5-20251001-v1:0`
 - `us.anthropic.claude-sonnet-4-5-20250929-v1:0`
 
-### 3. SageMaker Model Module (sagemaker_model.py)
+### 5. SageMaker Model Module (sagemaker_model.py)
 
 **Purpose**: Create and configure SageMaker AI models for Strands Agents.
 
@@ -210,7 +264,7 @@ def create_sagemaker_model(
     """
 ```
 
-### 4. Loan Assistant Module (loan_assistant.py)
+### 6. Loan Assistant Module (loan_assistant.py)
 
 **Purpose**: Provide loan acceptance prediction using XGBoost model on SageMaker.
 
@@ -262,46 +316,6 @@ def loan_assistant(
 - Invokes SageMaker serverless inference endpoint
 - Parses numeric prediction (0-1 range)
 - Returns human-readable result with confidence
-
-### 5. XGBoost Endpoint Validation Script
-
-**Purpose**: Standalone script to validate XGBoost serverless endpoint.
-
-**Interface**:
-```python
-def validate_xgboost_endpoint(endpoint_name: str) -> bool:
-    """
-    Validate XGBoost endpoint with sample data.
-    
-    Args:
-        endpoint_name: SageMaker endpoint name
-        
-    Returns:
-        True if validation succeeds, False otherwise
-    """
-```
-
-**Sample Data**: Uses a representative customer profile from the training dataset.
-
-### 6. Reasoning Model Endpoint Validation Script
-
-**Purpose**: Standalone script to validate SageMaker reasoning model endpoint.
-
-**Interface**:
-```python
-def validate_reasoning_endpoint(endpoint_name: str) -> bool:
-    """
-    Validate reasoning model endpoint with sample prompt.
-    
-    Args:
-        endpoint_name: SageMaker endpoint name
-        
-    Returns:
-        True if validation succeeds, False otherwise
-    """
-```
-
-**Sample Prompt**: Uses a simple reasoning task to verify model functionality.
 
 ## Data Models
 
@@ -359,43 +373,43 @@ class LoanPrediction:
 
 ### Property 1: Configuration Consistency
 *For any* environment variable getter function, calling it multiple times in the same execution should return the same value.
-**Validates: Requirements 1.1, 1.2**
+**Validates: Requirements 3.1, 3.2**
 
 ### Property 2: Model Creation Idempotence
 *For any* model ID and configuration parameters, creating a model instance twice with the same parameters should produce functionally equivalent models.
-**Validates: Requirements 2.2, 3.2**
+**Validates: Requirements 4.2, 5.2**
 
 ### Property 3: Bedrock Model ID Validation
 *For any* Bedrock model ID provided, if it matches one of the supported cross-region profiles, the model creation should succeed; otherwise, it should raise a descriptive error.
-**Validates: Requirements 2.3**
+**Validates: Requirements 4.3**
 
 ### Property 4: CSV Payload Format Correctness
 *For any* valid CustomerAttributes instance, the generated CSV payload should have exactly 59 comma-separated values (matching the XGBoost model's expected input format).
-**Validates: Requirements 5.2, 5.3**
+**Validates: Requirements 7.2, 7.3**
 
 ### Property 5: One-Hot Encoding Completeness
 *For any* categorical feature value in CustomerAttributes, exactly one corresponding one-hot encoded feature should be set to 1.0, and all others for that category should be 0.0.
-**Validates: Requirements 5.3**
+**Validates: Requirements 7.3**
 
 ### Property 6: Prediction Output Range
 *For any* XGBoost model response, the parsed prediction value should be in the range [0.0, 1.0].
-**Validates: Requirements 5.5**
+**Validates: Requirements 7.5**
 
 ### Property 7: Binary Classification Mapping
 *For any* prediction score from the XGBoost model, scores >= 0.5 should map to "accept" and scores < 0.5 should map to "reject".
-**Validates: Requirements 4.4**
+**Validates: Requirements 7.4**
 
 ### Property 8: Error Handling Graceful Degradation
 *For any* endpoint invocation failure, the assistant should return a descriptive error message rather than raising an unhandled exception.
-**Validates: Requirements 4.6, 6.5**
+**Validates: Requirements 7.6**
 
 ### Property 9: Provider Selection Consistency
 *For any* value of STRANDS_MODEL_PROVIDER environment variable, the application should use exactly one model provider (Bedrock or SageMaker), never both simultaneously.
-**Validates: Requirements 8.2, 8.3, 8.4**
+**Validates: Requirements 6.3, 6.4**
 
 ### Property 10: Validation Script Independence
 *For any* validation script execution, the script should complete successfully without requiring the full application to be running.
-**Validates: Requirements 6.1, 6.3**
+**Validates: Requirements 1.5, 2.5**
 
 ## Error Handling
 

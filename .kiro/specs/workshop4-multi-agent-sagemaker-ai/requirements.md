@@ -19,7 +19,31 @@ This feature expands the workshop4 multi-agent application to support multiple r
 
 ## Requirements
 
-### Requirement 1: Configuration Management
+### Requirement 1: Agent Model Endpoint Validation Script
+
+**User Story:** As a developer, I want a standalone validation script for the SageMaker agent model endpoint, so that I can validate the reasoning model endpoint works before running the full application.
+
+#### Acceptance Criteria
+
+1. THE validation script for agent models SHALL extract invocation logic from the Jupyter notebook
+2. WHEN the agent model validation script runs, THE script SHALL invoke the provisioned endpoint with sample prompts
+3. THE validation script SHALL print clear success or failure messages
+4. THE validation script SHALL use environment variables for endpoint configuration
+5. THE validation script SHALL be executable independently without requiring the full application to be running
+
+### Requirement 2: XGBoost Model Endpoint Validation Script
+
+**User Story:** As a developer, I want a standalone validation script for the XGBoost model endpoint, so that I can validate the loan prediction endpoint works before building the loan assistant.
+
+#### Acceptance Criteria
+
+1. THE validation script for XGBoost SHALL extract invocation logic from the Jupyter notebook
+2. WHEN the XGBoost validation script runs, THE script SHALL invoke the serverless endpoint with sample data
+3. THE validation script SHALL print clear success or failure messages
+4. THE validation script SHALL use environment variables for endpoint configuration
+5. THE validation script SHALL be executable independently without requiring the full application to be running
+
+### Requirement 3: Configuration Management
 
 **User Story:** As a developer, I want centralized configuration management, so that environment variables are consistently accessed and validated across the application.
 
@@ -40,7 +64,7 @@ This feature expands the workshop4 multi-agent application to support multiple r
 5. THE Config_Module SHALL organize getter functions in alphabetical order by environment variable name
 6. THE Multi_Agent_App SHALL use Config_Module functions instead of direct `os.getenv()` calls
 
-### Requirement 2: Bedrock Model Support
+### Requirement 4: Bedrock Model Support
 
 **User Story:** As a developer, I want to support multiple Bedrock cross-region inference profiles, so that I can demonstrate flexibility in choosing Strands Agent models.
 
@@ -56,7 +80,23 @@ This feature expands the workshop4 multi-agent application to support multiple r
 4. WHEN no model ID is specified, THE Bedrock_Model module SHALL use `us.amazon.nova-pro-v1:0` as the default
 5. THE Bedrock_Model module SHALL configure appropriate temperature settings for each model
 
-### Requirement 3: SageMaker Model Support
+### Requirement 4: Bedrock Model Support
+
+**User Story:** As a developer, I want to support multiple Bedrock cross-region inference profiles, so that I can demonstrate flexibility in choosing Strands Agent models.
+
+#### Acceptance Criteria
+
+1. THE Bedrock_Model module SHALL support creating models from cross-region inference profiles
+2. WHEN a Bedrock model ID is provided, THE Bedrock_Model module SHALL create a BedrockModel instance with that ID
+3. THE Bedrock_Model module SHALL support the following cross-region profiles:
+   - `us.amazon.nova-pro-v1:0`
+   - `us.amazon.nova-2-lite-v1:0`
+   - `us.anthropic.claude-haiku-4-5-20251001-v1:0`
+   - `us.anthropic.claude-sonnet-4-5-20250929-v1:0`
+4. WHEN no model ID is specified, THE Bedrock_Model module SHALL use `us.amazon.nova-pro-v1:0` as the default
+5. THE Bedrock_Model module SHALL configure appropriate temperature settings for each model
+
+### Requirement 5: SageMaker Model Support
 
 **User Story:** As a developer, I want to support SageMaker endpoint-based models, so that I can use custom deployed models as Strands Agent models.
 
@@ -67,18 +107,7 @@ This feature expands the workshop4 multi-agent application to support multiple r
 3. THE SageMaker_Model module SHALL configure endpoint settings including region, max_tokens, temperature, and streaming
 4. WHEN the SageMaker endpoint is unavailable, THE SageMaker_Model module SHALL raise a descriptive error
 
-### Requirement 4: SageMaker Endpoint Validation Scripts
-
-**User Story:** As a developer, I want standalone validation scripts for SageMaker endpoints, so that I can validate endpoints work before running the full application.
-
-#### Acceptance Criteria
-
-1. THE validation script for agent models SHALL extract invocation logic from the Jupyter notebook
-2. WHEN the agent model validation script runs, THE script SHALL invoke the provisioned endpoint with sample prompts
-3. THE validation scripts SHALL print clear success or failure messages
-4. THE validation scripts SHALL use the Config_Module for endpoint configuration
-
-### Requirement 5: Model Selection UI
+### Requirement 6: Model Selection UI
 
 **User Story:** As a user, I want to select which model to use for the Strands Agent via a dropdown, so that I can easily switch between different Bedrock and SageMaker models.
 
@@ -96,17 +125,6 @@ This feature expands the workshop4 multi-agent application to support multiple r
 5. THE sidebar SHALL display the currently active model provider and model ID
 6. THE selected model SHALL persist in session state during the user's session
 7. WHEN the model selection changes, THE teacher agent SHALL be recreated with the new model
-
-### Requirement 6: XGBoost Endpoint Validation Script
-
-**User Story:** As a developer, I want a standalone validation script for the XGBoost endpoint, so that I can validate the loan prediction endpoint works before building the loan assistant.
-
-#### Acceptance Criteria
-
-1. THE validation script for XGBoost SHALL extract invocation logic from the Jupyter notebook
-2. WHEN the XGBoost validation script runs, THE script SHALL invoke the serverless endpoint with sample data
-3. THE validation script SHALL print clear success or failure messages
-4. THE validation script SHALL use the Config_Module for endpoint configuration
 
 ### Requirement 7: Loan Prediction Assistant
 
