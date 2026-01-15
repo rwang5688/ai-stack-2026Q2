@@ -26,13 +26,14 @@ This implementation plan follows a local-first development approach: build and t
   - Test validation script with actual endpoint (if available)
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
 
-- [ ] 3. Create configuration module for multi_agent
+- [x] 3. Create configuration module for multi_agent
   - Create `multi_agent/config.py` with environment variable getter functions
   - Implement getter functions in alphabetical order by environment variable name:
     - `get_aws_region()` - AWS_REGION
     - `get_bedrock_model_id()` - BEDROCK_MODEL_ID
     - `get_max_results()` - MAX_RESULTS
     - `get_min_score()` - MIN_SCORE
+    - `get_sagemaker_inference_component()` - SAGEMAKER_INFERENCE_COMPONENT
     - `get_sagemaker_model_endpoint()` - SAGEMAKER_MODEL_ENDPOINT
     - `get_strands_knowledge_base_id()` - STRANDS_KNOWLEDGE_BASE_ID
     - `get_strands_model_provider()` - STRANDS_MODEL_PROVIDER
