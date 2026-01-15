@@ -112,13 +112,31 @@ export AWS_REGION="us-east-1"
 export BEDROCK_MODEL_ID="us.amazon.nova-pro-v1:0"
 export MAX_RESULTS="9"
 export MIN_SCORE="0.000001"
+export SAGEMAKER_INFERENCE_COMPONENT="my-llm-inference-component"  # Optional: only needed for multi-model endpoints
 export SAGEMAKER_MODEL_ENDPOINT="my-llm-endpoint"
 export STRANDS_KNOWLEDGE_BASE_ID="my-kb-id"
 export STRANDS_MODEL_PROVIDER="bedrock"
 export XGBOOST_ENDPOINT_NAME="my-xgboost-endpoint"
 ```
 
-**Note:** Values with `my-*` prefixes are placeholders. Replace them with your actual AWS resource names when you create them in later modules.
+**Environment Variable Details:**
+
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `AWS_REGION` | AWS region for services | `us-east-1` | Yes |
+| `BEDROCK_MODEL_ID` | Bedrock model/inference profile | `us.amazon.nova-pro-v1:0` | When using Bedrock |
+| `MAX_RESULTS` | Max knowledge base results | `9` | No |
+| `MIN_SCORE` | Min relevance score threshold | `0.000001` | No |
+| `SAGEMAKER_MODEL_ENDPOINT` | SageMaker endpoint name | `my-llm-endpoint` | When using SageMaker |
+| `SAGEMAKER_INFERENCE_COMPONENT` | Inference component name | `my-llm-inference-component` | Only for multi-model endpoints |
+| `STRANDS_KNOWLEDGE_BASE_ID` | Knowledge base ID | `my-kb-id` | For KB features |
+| `STRANDS_MODEL_PROVIDER` | Model provider choice | `bedrock` | Yes |
+| `XGBOOST_ENDPOINT_NAME` | XGBoost endpoint name | `my-xgboost-endpoint` | For loan assistant |
+
+**Note:** 
+- Values with `my-*` prefixes are placeholders. Replace them with your actual AWS resource names when you create them in later modules.
+- `SAGEMAKER_INFERENCE_COMPONENT` is only needed if your SageMaker endpoint uses inference components (multi-model endpoints). Leave empty or unset for standard endpoints.
+- To find your inference component name: `aws sagemaker list-inference-components --endpoint-name-equals <endpoint-name>`
 
 **Windows PowerShell:**
 ```powershell

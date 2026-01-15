@@ -92,6 +92,32 @@ def get_min_score() -> float:
     return float(os.getenv("MIN_SCORE", "0.000001"))
 
 
+def get_sagemaker_inference_component() -> Optional[str]:
+    """
+    Get SageMaker inference component name from environment variable.
+    
+    Environment Variable: SAGEMAKER_INFERENCE_COMPONENT
+    Default: my-llm-inference-component
+    Required: Only when endpoint uses inference components (multi-model endpoints)
+    
+    Inference components allow multiple models/adapters on a single endpoint.
+    If your endpoint uses inference components, you must specify which one to use.
+    
+    Returns:
+        Inference component name or default placeholder
+    
+    Example:
+        >>> component = get_sagemaker_inference_component()
+        >>> print(component)
+        'adapter-my-gpt-oss-20b-1-1768457329-1768457350'
+    
+    Note:
+        To list inference components for an endpoint:
+        aws sagemaker list-inference-components --endpoint-name-equals <endpoint-name>
+    """
+    return os.getenv("SAGEMAKER_INFERENCE_COMPONENT", "my-llm-inference-component")
+
+
 def get_sagemaker_model_endpoint() -> str:
     """
     Get SageMaker model endpoint name from environment variable.
@@ -203,6 +229,7 @@ def get_all_config_values() -> dict:
         "BEDROCK_MODEL_ID": get_bedrock_model_id(),
         "MAX_RESULTS": get_max_results(),
         "MIN_SCORE": get_min_score(),
+        "SAGEMAKER_INFERENCE_COMPONENT": get_sagemaker_inference_component(),
         "SAGEMAKER_MODEL_ENDPOINT": get_sagemaker_model_endpoint(),
         "STRANDS_KNOWLEDGE_BASE_ID": get_strands_knowledge_base_id(),
         "STRANDS_MODEL_PROVIDER": get_strands_model_provider(),

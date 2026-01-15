@@ -61,9 +61,17 @@ def validate_xgboost_endpoint(endpoint_name: str, region: str) -> bool:
         # Format: age, campaign, pdays, previous, + one-hot encoded categorical features
         sample_payload = "29,2,999,0,1,0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0"
         
+        # Parse features for display
+        features = sample_payload.split(',')
+        feature_count = len(features)
+        
         print(f"\n📤 Sending test request...")
-        print(f"   Sample customer data (59 features)")
+        print(f"   Sample customer data ({feature_count} features)")
         print(f"   Format: CSV (text/csv)")
+        print(f"\n   Feature values:")
+        print(f"   {sample_payload}")
+        print(f"\n   First 10 features: {', '.join(features[:10])}")
+        print(f"   Last 10 features: {', '.join(features[-10:])}")
         
         # Invoke endpoint
         response = runtime.invoke_endpoint(
