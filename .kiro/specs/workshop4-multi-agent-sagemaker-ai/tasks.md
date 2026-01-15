@@ -6,7 +6,7 @@ This implementation plan follows a local-first development approach: build and t
 
 ## Tasks
 
-- [ ] 1. Create agent model endpoint validation script
+- [x] 1. Create agent model endpoint validation script
   - Create `workshop4/sagemaker/validate_agent_endpoint.py`
   - Extract endpoint invocation logic from openai-reasoning notebook
   - Use environment variables for endpoint configuration
@@ -16,7 +16,7 @@ This implementation plan follows a local-first development approach: build and t
   - Test validation script with actual endpoint (if available)
   - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
 
-- [ ] 2. Create XGBoost model endpoint validation script
+- [x] 2. Create XGBoost model endpoint validation script
   - Create `workshop4/sagemaker/validate_xgboost_endpoint.py`
   - Extract endpoint invocation logic from numpy_xgboost notebook
   - Use environment variables for endpoint configuration
