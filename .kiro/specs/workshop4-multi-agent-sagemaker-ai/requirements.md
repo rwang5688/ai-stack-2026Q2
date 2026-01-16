@@ -57,12 +57,13 @@ This feature expands the workshop4 multi-agent application to support multiple r
    - MIN_SCORE: Minimum score threshold for knowledge base queries
    - SAGEMAKER_MODEL_ENDPOINT: SageMaker model endpoint name
    - STRANDS_KNOWLEDGE_BASE_ID: Strands knowledge base ID
-   - STRANDS_MODEL_PROVIDER: Model provider choice (bedrock or sagemaker)
    - XGBOOST_ENDPOINT_NAME: XGBoost loan prediction endpoint name
 3. WHEN an environment variable is missing, THE Config_Module SHALL return a sensible default value or raise a descriptive error
 4. THE Config_Module SHALL validate environment variable values before returning them
 5. THE Config_Module SHALL organize getter functions in alphabetical order by environment variable name
 6. THE Multi_Agent_App SHALL use Config_Module functions instead of direct `os.getenv()` calls
+
+**Note**: The model provider (bedrock or sagemaker) is NOT an environment variable. It is determined dynamically based on the user's model selection in the UI.
 
 ### Requirement 4: Bedrock Model Support
 

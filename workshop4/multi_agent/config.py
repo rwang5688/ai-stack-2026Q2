@@ -246,36 +246,22 @@ def get_strands_knowledge_base_id() -> str:
     return _get_parameter('strands', 'knowledge_base_id', default='my-kb-id')
 
 
-def get_strands_model_provider() -> str:
+def get_temperature() -> float:
     """
-    Get Strands Agent model provider from SSM Parameter Store.
+    Get model temperature setting from SSM Parameter Store.
     
-    Parameter: /teachassist/{env}/strands/model_provider
-    Default: bedrock
-    Valid Values: bedrock, sagemaker
+    Parameter: /teachassist/{env}/model/temperature
+    Default: 0.3
     
     Returns:
-        Model provider choice ('bedrock' or 'sagemaker')
-    
-    Raises:
-        ValueError: If provider is not 'bedrock' or 'sagemaker'
+        Model temperature (0.0 to 1.0)
     
     Example:
-        >>> provider = get_strands_model_provider()
-        >>> print(provider)
-        'bedrock'
+        >>> temp = get_temperature()
+        >>> print(temp)
+        0.3
     """
-    provider = _get_parameter('strands', 'model_provider', default='bedrock').lower()
-    
-    # Validate provider value
-    valid_providers = ["bedrock", "sagemaker"]
-    if provider not in valid_providers:
-        raise ValueError(
-            f"Invalid STRANDS_MODEL_PROVIDER: '{provider}'. "
-            f"Must be one of: {', '.join(valid_providers)}"
-        )
-    
-    return provider
+    return float(_get_parameter('model', 'temperature', default='0.3'))
 
 
 def get_xgboost_endpoint_name() -> str:
@@ -307,12 +293,14 @@ def get_default_model_config() -> Dict[str, Any]:
     to create model instances. It supports both Bedrock and SageMaker
     providers.
     
+    Note: The provider is determined dynamically based on user selection
+    in the UI, not from configuration. This function returns Bedrock
+    configuration by default.
+    
     Returns:
         Dictionary with model configuration:
-            - provider: "bedrock" or "sagemaker"
-            - model_id: Bedrock model ID (if provider=bedrock)
-            - endpoint_name: SageMaker endpoint (if provider=sagemaker)
-            - inference_component: SageMaker component (if applicable)
+            - provider: "bedrock" (default)
+            - model_id: Bedrock model ID
             - temperature: Model temperature
             - region: AWS region
     
@@ -323,19 +311,12 @@ def get_default_model_config() -> Dict[str, Any]:
         >>> print(config['model_id'])
         'us.amazon.nova-2-lite-v1:0'
     """
-    provider = get_strands_model_provider()
-    
     config = {
-        "provider": provider,
+        "provider": "bedrock",
+        "model_id": get_bedrock_model_id(),
         "temperature": 0.3,
         "region": get_aws_region()
     }
-    
-    if provider == "bedrock":
-        config["model_id"] = get_bedrock_model_id()
-    elif provider == "sagemaker":
-        config["endpoint_name"] = get_sagemaker_model_endpoint()
-        config["inference_component"] = get_sagemaker_inference_component()
     
     return config
 
@@ -365,7 +346,7 @@ def get_all_config_values() -> dict:
         "SAGEMAKER_INFERENCE_COMPONENT": get_sagemaker_inference_component(),
         "SAGEMAKER_MODEL_ENDPOINT": get_sagemaker_model_endpoint(),
         "STRANDS_KNOWLEDGE_BASE_ID": get_strands_knowledge_base_id(),
-        "STRANDS_MODEL_PROVIDER": get_strands_model_provider(),
+        "TEMPERATURE": get_temperature(),
         "XGBOOST_ENDPOINT_NAME": get_xgboost_endpoint_name(),
     }
 

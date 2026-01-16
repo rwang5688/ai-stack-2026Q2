@@ -1039,3 +1039,262 @@ streamlit run app.py
 ---
 
 **Excellent progress! SSM migration complete - this is a significant architectural improvement that will make the workshop much more flexible and cost-effective.** 🎉
+
+
+---
+
+# January 15, 2026 (Late Evening - Part 2) - Model Provider & Temperature Fixes
+
+## Session Overview
+Fixed critical design issues where STRANDS_MODEL_PROVIDER was incorrectly stored as configuration, and temperature was hardcoded throughout the application. Also fixed model consistency across all agents and added interactive model selection to CLI.
+
+## Key Issues Identified
+
+### Issue 1: Model Provider Should Not Be Configuration
+The original design had `STRANDS_MODEL_PROVIDER` as an SSM parameter, but this doesn't align with actual user experience:
+- Users select a specific model from dropdown (e.g., "Amazon Nova Pro", "Custom gpt-oss-20b")
+- Provider (bedrock or sagemaker) should be derived from that selection
+- Storing provider as separate configuration creates unnecessary complexity and potential inconsistency
+
+### Issue 2: Temperature Hardcoded Everywhere
+- `app.py`: Hardcoded `temperature=0.3` in multiple places
+- `teachers_assistant.py`: Hardcoded `temperature=0.3`
+- No single source of truth for temperature setting
+
+### Issue 3: Model Settings Not Propagated in use_agent() Calls
+- `determine_action()`, `determine_kb_action()`, `run_kb_agent()` hardcoded Bedrock
+- Only passed `model_id`, not complete model settings
+- Temperature never passed to `use_agent()` calls
+- SageMaker inference component not included in model_settings
+
+## Solutions Implemented
+
+### 1. Removed STRANDS_MODEL_PROVIDER from Configuration ✅
+
+**Files Modified**:
+- `.kiro/specs/workshop4-multi-agent-sagemaker-ai/requirements.md` - Removed from Requirement 3.2
+- `.kiro/specs/workshop4-multi-agent-sagemaker-ai/design.md` - Removed `get_strands_model_provider()`, updated Property 9
+- `.kiro/specs/workshop4-multi-agent-sagemaker-ai/tasks.md` - Removed from Task 3
+- `workshop4/ssm/teachassist-params.yaml` - Removed parameter, resource, and output
+- `workshop4/multi_agent/config.py` - Removed `get_strands_model_provider()` function
+
+**New Architecture**:
+1. User selects model from dropdown (e.g., "Amazon Nova 2 Lite")
+2. UI maps to model info: `{"provider": "bedrock", "model_id": "us.amazon.nova-2-lite-v1:0"}`
+3. Application uses `selected_model_info['provider']` to determine model creation
+4. Provider is implicit in model selection - no configuration needed
+
+### 2. Fixed Model Consistency Across All Agents ✅
+
+**Problem**: `determine_action()`, `determine_kb_action()`, and `run_kb_agent()` were hardcoded to use Bedrock, ignoring user's model selection.
+
+**Solution**: Modified all functions to accept `model` and `model_info` parameters:
+```python
+def determine_action(query, model, model_info):
+    # Now uses the selected model, not hardcoded Bedrock
+    ...
+
+def determine_kb_action(query, model, model_info):
+    # Now uses the selected model
+    ...
+
+def run_kb_agent(query, model, model_info):
+    # Now uses the selected model
+    ...
+```
+
+**Result**: ALL agents now consistently use user-selected model:
+- Teacher agent routing
+- Knowledge base action determination
+- Knowledge base store/retrieve operations
+- Answer generation from knowledge base results
+
+### 3. Added Interactive Model Selection to CLI ✅
+
+**File**: `workshop4/multi_agent/teachers_assistant.py`
+
+**New Feature**: Added `select_model()` function that prompts user at startup:
+1. Amazon Nova Pro
+2. Amazon Nova 2 Lite (Default)
+3. Anthropic Claude Haiku 4.5
+4. Anthropic Claude Sonnet 4.5
+5. Custom gpt-oss-20b (SageMaker Endpoint)
+
+**Features**:
+- Supports default selection (option 2) by pressing Enter
+- Displays temperature from config
+- Handles errors gracefully (falls back to Nova 2 Lite)
+- Supports Ctrl+C to cancel and use default
+
+**Difference from Streamlit App**:
+- `app.py`: Can change model during session via dropdown
+- `teachers_assistant.py`: Model selection only at startup
+
+### 4. Added Temperature to SSM Parameter Store ✅
+
+**CloudFormation Template** (`workshop4/ssm/teachassist-params.yaml`):
+- Added `Temperature` parameter (default: 0.3, range: 0.0-1.0)
+- Added `ParamTemperature` resource under `/teachassist/{env}/model/temperature`
+- Added `TemperatureParameter` output
+- **Alphabetically sorted** all Parameters, Resources, and Outputs sections
+
+**Configuration Module** (`workshop4/multi_agent/config.py`):
+```python
+def get_temperature() -> float:
+    """Get model temperature setting from SSM Parameter Store."""
+    return float(_get_parameter('model', 'temperature', default='0.3'))
+```
+
+### 5. Updated app.py for Consistent Temperature Usage ✅
+
+**Changes**:
+- Import `get_temperature` from config
+- Set `TEMPERATURE = get_temperature()` at module level
+- Updated all model creation calls to use `TEMPERATURE`
+- Updated sidebar display to show `TEMPERATURE` dynamically
+
+### 6. Fixed Model Settings Propagation in use_agent() Calls ✅
+
+**Critical Fix**: All three functions now properly build complete `model_settings`:
+
+```python
+def determine_action(query, model, model_info):
+    model_settings = {}
+    if model_info['provider'] == 'bedrock':
+        model_settings = {
+            'model_id': model_info['model_id'],
+            'temperature': TEMPERATURE
+        }
+    elif model_info['provider'] == 'sagemaker':
+        inference_component = get_sagemaker_inference_component()
+        model_settings = {
+            'endpoint_name': get_sagemaker_model_endpoint(),
+            'temperature': TEMPERATURE
+        }
+        # Add inference component if set and not default placeholder
+        if inference_component and inference_component != "my-llm-inference-component":
+            model_settings['inference_component_name'] = inference_component
+    
+    result = agent.tool.use_agent(
+        prompt=f"Query: {query}",
+        system_prompt=ACTION_DETERMINATION_PROMPT,
+        model_provider=model_info['provider'],  # Dynamic!
+        model_settings=model_settings  # Complete settings!
+    )
+```
+
+**Applied to**:
+- `determine_action(query, model, model_info)`
+- `determine_kb_action(query, model, model_info)`
+- `run_kb_agent(query, model, model_info)` - both KB action and answer generation
+
+**Important**: For SageMaker models with inference components, `inference_component_name` is now properly included in `model_settings` for `use_agent()` calls, as required by Strands SDK.
+
+### 7. Updated SSM Parameter Defaults ✅
+
+**File**: `workshop4/ssm/teachassist-params.yaml`
+
+Updated default values to match user's environment:
+- `SageMakerInferenceComponent`: `adapter-my-gpt-oss-20b-1-1768544341-1768544347`
+- `SageMakerModelEndpoint`: `my-gpt-oss-20b-1-1768544341`
+- `StrandsKnowledgeBaseId`: `IMW46CITZE`
+- `XGBoostEndpointName`: `xgboost-serverless-ep2026-01-12-05-31-16`
+
+## Benefits
+
+### Single Source of Truth
+- Temperature defined ONCE in SSM Parameter Store
+- All agents, functions, model creations use same temperature
+- Easy to change globally by updating SSM parameter
+
+### Consistent Agent Model Usage
+- User-selected model used by ALL agents throughout application
+- No more mixing hardcoded Bedrock with user-selected SageMaker
+- True consistency between UI model selection and actual agent behavior
+
+### Proper Model Settings Propagation
+- `use_agent()` calls receive complete model settings:
+  - Correct `model_provider` (bedrock or sagemaker)
+  - Correct `model_id` or `endpoint_name`
+  - Correct `temperature`
+  - Correct `inference_component_name` (for SageMaker with inference components)
+- Works consistently for both Bedrock and SageMaker models
+
+### Simpler Architecture
+- One less configuration parameter (STRANDS_MODEL_PROVIDER removed)
+- Provider is obvious from model selection
+- Prevents mismatched provider and model_id
+- Better UX - users think in terms of models, not providers
+
+## Testing Checklist
+
+When testing Task 7, verify:
+1. ✅ Temperature displayed correctly in Streamlit sidebar
+2. ✅ Temperature displayed correctly in CLI model selection
+3. ✅ All agents use configured temperature (not hardcoded 0.3)
+4. ✅ Bedrock models receive correct model_id and temperature in use_agent() calls
+5. ✅ SageMaker models receive correct endpoint_name, temperature, and inference_component_name
+6. ✅ Knowledge base routing uses selected model (not hardcoded Bedrock)
+7. ✅ Knowledge base answer generation uses selected model
+8. ✅ Each Bedrock model selection correctly creates Bedrock model
+9. ✅ SageMaker model selection correctly creates SageMaker model
+10. ✅ Provider determined from `selected_model_info['provider']` in UI
+
+## Files Modified
+
+### Spec Files
+- `.kiro/specs/workshop4-multi-agent-sagemaker-ai/requirements.md`
+- `.kiro/specs/workshop4-multi-agent-sagemaker-ai/design.md`
+- `.kiro/specs/workshop4-multi-agent-sagemaker-ai/tasks.md`
+
+### Configuration & Infrastructure
+- `workshop4/ssm/teachassist-params.yaml` - Removed STRANDS_MODEL_PROVIDER, added Temperature, alphabetically sorted, updated defaults
+- `workshop4/multi_agent/config.py` - Removed `get_strands_model_provider()`, added `get_temperature()`
+
+### Application Files
+- `workshop4/multi_agent/app.py` - Model consistency fix, temperature usage, model settings propagation
+- `workshop4/multi_agent/teachers_assistant.py` - Interactive model selection, temperature usage
+
+## Configuration Example
+
+To change temperature for all agents:
+```bash
+aws ssm put-parameter \
+  --name "/teachassist/dev/model/temperature" \
+  --value "0.5" \
+  --type String \
+  --overwrite
+```
+
+Then restart application to pick up new value.
+
+## Key Learnings
+
+### Model Provider as Derived Value
+- Provider should be derived from model selection, not stored as config
+- Simpler architecture with fewer configuration parameters
+- Prevents inconsistency between provider and model_id
+- Better aligns with user mental model
+
+### Temperature as Configuration
+- Temperature affects all model behavior
+- Should be centrally configured, not hardcoded
+- SSM Parameter Store provides single source of truth
+- Easy to tune for different use cases
+
+### Complete Model Settings in use_agent()
+- Nested agents (via use_agent()) need complete model settings
+- Must include provider, model_id/endpoint_name, temperature
+- SageMaker models with inference components need inference_component_name
+- Incomplete settings cause agents to use wrong models
+
+### Consistency is Critical
+- Users expect selected model to apply everywhere
+- Mixing models (some Bedrock, some SageMaker) is confusing
+- All agents must use same model for consistent experience
+
+## End of Session - January 15, 2026 (Late Evening - Part 2)
+
+**Time**: Very late evening
+**Status**: Model provider and temperature fixes complete, ready for checkpoint testing
+**Next Session**: Task 7 checkpoint - test model selection with all fixes in place

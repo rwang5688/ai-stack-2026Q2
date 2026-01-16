@@ -3,12 +3,22 @@
 ## Purpose
 Maintain organized session notes to track daily progress, decisions, and learnings across development sessions.
 
-## Rules
+## CRITICAL RULES
+
+### ONE FILE PER DAY - NO EXCEPTIONS
+- **NEVER create multiple session note files for the same day**
+- **ALWAYS use ONLY the standard naming convention**: `yyyymmdd-session-notes.md`
+- **NO topic-specific files** (e.g., NO "model-provider-fix.md", NO "temperature-fix.md")
+- **NO descriptive suffixes** - just the date
+- **ALL content for a day goes in ONE file**
+- User STRONGLY prefers streamlined documentation - extraneous files are wasteful and noisy
 
 ### File Structure
 - Create session notes under `.kiro/session-notes/`
 - Use naming convention: `yyyymmdd-session-notes.md`
-- Where `yyyymmdd` is the date in format: YYYYMMDD (e.g., 20251218)
+- Where `yyyymmdd` is the date in format: YYYYMMDD (e.g., 20260115)
+- **CORRECT**: `20260115-session-notes.md`
+- **WRONG**: `20260115-model-provider-fix.md`, `20260115-temperature-fix.md`, `20260115-comprehensive-review.md`
 
 ### Content Guidelines
 - **Session Overview**: Brief summary of what was accomplished

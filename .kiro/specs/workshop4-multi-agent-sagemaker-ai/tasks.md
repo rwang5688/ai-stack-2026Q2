@@ -36,10 +36,10 @@ This implementation plan follows a local-first development approach: build and t
     - `get_sagemaker_inference_component()` - SAGEMAKER_INFERENCE_COMPONENT
     - `get_sagemaker_model_endpoint()` - SAGEMAKER_MODEL_ENDPOINT
     - `get_strands_knowledge_base_id()` - STRANDS_KNOWLEDGE_BASE_ID
-    - `get_strands_model_provider()` - STRANDS_MODEL_PROVIDER
     - `get_xgboost_endpoint_name()` - XGBOOST_ENDPOINT_NAME
   - Add validation logic and default values for each getter
   - Add comprehensive docstrings explaining each function and its environment variable
+  - **Note**: Do NOT include `get_strands_model_provider()` - provider is determined dynamically from UI selection
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6_
 
 - [ ]* 3.1 Write unit tests for configuration module

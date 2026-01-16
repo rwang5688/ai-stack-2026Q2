@@ -10,8 +10,9 @@ A specialized Strands agent that is the orchestrator to utilize sub-agents and t
 
 from strands import Agent
 from cross_platform_tools import get_platform_capabilities
-from config import get_default_model_config
-from model_factory import create_model_from_config
+from config import get_aws_region, get_temperature
+from bedrock_model import create_bedrock_model
+from sagemaker_model import create_sagemaker_model
 
 from computer_science_assistant import computer_science_assistant
 from english_assistant import english_assistant
@@ -48,19 +49,105 @@ You are TeachAssist, a sophisticated educational orchestrator designed to coordi
 Always confirm your understanding before routing to ensure accurate assistance.
 """
 
-# Get default model config from SSM Parameter Store
-model_config = get_default_model_config()
 
-# Create model from config
-model = create_model_from_config(model_config)
-
-# Create a file-focused agent with selected tools
-teacher_agent = Agent(
-    model=model,
-    system_prompt=TEACHER_SYSTEM_PROMPT,
-    callback_handler=None,
-    tools=[math_assistant, language_assistant, english_assistant, computer_science_assistant, general_assistant],
-)
+def select_model():
+    """
+    Prompt user to select a model at startup.
+    
+    Returns:
+        Configured model instance (BedrockModel or SageMakerAIModel)
+    """
+    # Get temperature from config
+    temperature = get_temperature()
+    
+    print("\n🤖 Model Selection")
+    print("=" * 60)
+    print("Please select the agent model to use:")
+    print()
+    print("  1. Amazon Nova Pro")
+    print("  2. Amazon Nova 2 Lite (Default)")
+    print("  3. Anthropic Claude Haiku 4.5")
+    print("  4. Anthropic Claude Sonnet 4.5")
+    print("  5. Custom gpt-oss-20b (SageMaker Endpoint)")
+    print()
+    
+    # Model configuration mapping
+    model_options = {
+        "1": {
+            "name": "Amazon Nova Pro",
+            "provider": "bedrock",
+            "model_id": "us.amazon.nova-pro-v1:0"
+        },
+        "2": {
+            "name": "Amazon Nova 2 Lite",
+            "provider": "bedrock",
+            "model_id": "us.amazon.nova-2-lite-v1:0"
+        },
+        "3": {
+            "name": "Anthropic Claude Haiku 4.5",
+            "provider": "bedrock",
+            "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0"
+        },
+        "4": {
+            "name": "Anthropic Claude Sonnet 4.5",
+            "provider": "bedrock",
+            "model_id": "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
+        },
+        "5": {
+            "name": "Custom gpt-oss-20b (SageMaker Endpoint)",
+            "provider": "sagemaker",
+            "model_id": "sagemaker-endpoint"
+        }
+    }
+    
+    # Get user selection
+    while True:
+        try:
+            choice = input("Enter your choice (1-5) [default: 2]: ").strip()
+            
+            # Default to option 2 if empty
+            if not choice:
+                choice = "2"
+            
+            if choice in model_options:
+                selected = model_options[choice]
+                print(f"\n✅ Selected: {selected['name']}")
+                print(f"   Provider: {selected['provider'].title()}")
+                print(f"   Model ID: {selected['model_id']}")
+                print(f"   Temperature: {temperature}")
+                print()
+                
+                # Create and return the model
+                if selected['provider'] == 'bedrock':
+                    return create_bedrock_model(
+                        model_id=selected['model_id'],
+                        temperature=temperature
+                    )
+                elif selected['provider'] == 'sagemaker':
+                    try:
+                        return create_sagemaker_model(temperature=temperature)
+                    except ValueError as e:
+                        print(f"\n❌ Error: {str(e)}")
+                        print("💡 SageMaker endpoint not configured. Falling back to Amazon Nova 2 Lite.")
+                        return create_bedrock_model(
+                            model_id="us.amazon.nova-2-lite-v1:0",
+                            temperature=temperature
+                        )
+            else:
+                print("❌ Invalid choice. Please enter a number between 1 and 5.")
+        except KeyboardInterrupt:
+            print("\n\n⚠️  Selection cancelled. Using default: Amazon Nova 2 Lite")
+            return create_bedrock_model(
+                model_id="us.amazon.nova-2-lite-v1:0",
+                temperature=temperature
+            )
+        except Exception as e:
+            print(f"❌ Error: {str(e)}")
+            print("Using default: Amazon Nova 2 Lite")
+            return create_bedrock_model(
+                model_id="us.amazon.nova-2-lite-v1:0",
+                temperature=temperature
+            )
 
 
 # Example usage
@@ -81,6 +168,18 @@ if __name__ == "__main__":
         if 'python_repl' in unavailable_tools or 'shell' in unavailable_tools:
             print("Computer Science Assistant will provide code examples with explanations instead of execution.")
     
+    # Prompt user to select model
+    model = select_model()
+    
+    # Create teacher agent with selected model
+    teacher_agent = Agent(
+        model=model,
+        system_prompt=TEACHER_SYSTEM_PROMPT,
+        callback_handler=None,
+        tools=[math_assistant, language_assistant, english_assistant, computer_science_assistant, general_assistant],
+    )
+    
+    print("=" * 60)
     print("\nAsk a question in any subject area, and I'll route it to the appropriate specialist.")
     print("Type 'exit' to quit.")
 

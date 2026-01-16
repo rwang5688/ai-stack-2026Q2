@@ -2,15 +2,6 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: 'TeachAssist Multi-Agent Application - SSM Parameter Store Configuration'
 
 Parameters:
-  Environment:
-    Type: String
-    Default: dev
-    Description: Environment name (dev, staging, prod)
-    AllowedValues:
-      - dev
-      - staging
-      - prod
-
   AWSRegion:
     Type: String
     Default: us-east-1
@@ -31,33 +22,14 @@ Parameters:
       - us.anthropic.claude-haiku-4-5-20251001-v1:0
       - us.anthropic.claude-sonnet-4-5-20250929-v1:0
 
-  StrandsModelProvider:
+  Environment:
     Type: String
-    Default: bedrock
-    Description: Model provider for Strands Agents (bedrock or sagemaker)
+    Default: dev
+    Description: Environment name (dev, staging, prod)
     AllowedValues:
-      - bedrock
-      - sagemaker
-
-  SageMakerModelEndpoint:
-    Type: String
-    Default: my-llm-endpoint
-    Description: SageMaker model endpoint name (required when provider=sagemaker)
-
-  SageMakerInferenceComponent:
-    Type: String
-    Default: my-llm-inference-component
-    Description: SageMaker inference component name (optional, for multi-model endpoints)
-
-  XGBoostEndpointName:
-    Type: String
-    Default: my-xgboost-endpoint
-    Description: XGBoost loan prediction endpoint name (required for loan assistant)
-
-  StrandsKnowledgeBaseId:
-    Type: String
-    Default: my-kb-id
-    Description: Strands knowledge base ID for memory operations
+      - dev
+      - staging
+      - prod
 
   MaxResults:
     Type: Number
@@ -72,6 +44,33 @@ Parameters:
     Description: Minimum score threshold for knowledge base queries (0.0 to 1.0)
     MinValue: 0
     MaxValue: 1
+
+  SageMakerInferenceComponent:
+    Type: String
+    Default: adapter-my-gpt-oss-20b-1-1768544341-1768544347
+    Description: SageMaker inference component name (optional, for multi-model endpoints)
+
+  SageMakerModelEndpoint:
+    Type: String
+    Default: my-gpt-oss-20b-1-1768544341
+    Description: SageMaker model endpoint name (required when user selects SageMaker model)
+
+  StrandsKnowledgeBaseId:
+    Type: String
+    Default: IMW46CITZE
+    Description: Strands knowledge base ID for memory operations
+
+  Temperature:
+    Type: Number
+    Default: 0.3
+    Description: Model temperature setting for all agents (0.0 to 1.0)
+    MinValue: 0
+    MaxValue: 1
+
+  XGBoostEndpointName:
+    Type: String
+    Default: xgboost-serverless-ep2026-01-12-05-31-16
+    Description: XGBoost loan prediction endpoint name (required for loan assistant)
 
 Resources:
   # AWS Region Parameter
@@ -95,71 +94,6 @@ Resources:
       Description: Bedrock model ID or cross-region inference profile
       Type: String
       Value: !Ref BedrockModelId
-      Tags:
-        Environment: !Ref Environment
-        Application: TeachAssist
-        ManagedBy: CloudFormation
-
-  # Strands Model Provider Parameter
-  ParamStrandsModelProvider:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: !Sub '/teachassist/${Environment}/strands/model_provider'
-      Description: Model provider for Strands Agents (bedrock or sagemaker)
-      Type: String
-      Value: !Ref StrandsModelProvider
-      Tags:
-        Environment: !Ref Environment
-        Application: TeachAssist
-        ManagedBy: CloudFormation
-
-  # SageMaker Model Endpoint Parameter
-  ParamSageMakerModelEndpoint:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: !Sub '/teachassist/${Environment}/sagemaker/model_endpoint'
-      Description: SageMaker model endpoint name
-      Type: String
-      Value: !Ref SageMakerModelEndpoint
-      Tags:
-        Environment: !Ref Environment
-        Application: TeachAssist
-        ManagedBy: CloudFormation
-
-  # SageMaker Inference Component Parameter
-  ParamSageMakerInferenceComponent:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: !Sub '/teachassist/${Environment}/sagemaker/inference_component'
-      Description: SageMaker inference component name
-      Type: String
-      Value: !Ref SageMakerInferenceComponent
-      Tags:
-        Environment: !Ref Environment
-        Application: TeachAssist
-        ManagedBy: CloudFormation
-
-  # XGBoost Endpoint Name Parameter
-  ParamXGBoostEndpointName:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: !Sub '/teachassist/${Environment}/xgboost/endpoint_name'
-      Description: XGBoost loan prediction endpoint name
-      Type: String
-      Value: !Ref XGBoostEndpointName
-      Tags:
-        Environment: !Ref Environment
-        Application: TeachAssist
-        ManagedBy: CloudFormation
-
-  # Strands Knowledge Base ID Parameter
-  ParamStrandsKnowledgeBaseId:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: !Sub '/teachassist/${Environment}/strands/knowledge_base_id'
-      Description: Strands knowledge base ID for memory operations
-      Type: String
-      Value: !Ref StrandsKnowledgeBaseId
       Tags:
         Environment: !Ref Environment
         Application: TeachAssist
@@ -191,13 +125,72 @@ Resources:
         Application: TeachAssist
         ManagedBy: CloudFormation
 
-Outputs:
-  ParameterPrefix:
-    Description: SSM Parameter Store prefix for this environment
-    Value: !Sub '/teachassist/${Environment}'
-    Export:
-      Name: !Sub '${AWS::StackName}-ParameterPrefix'
+  # SageMaker Inference Component Parameter
+  ParamSageMakerInferenceComponent:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '/teachassist/${Environment}/sagemaker/inference_component'
+      Description: SageMaker inference component name
+      Type: String
+      Value: !Ref SageMakerInferenceComponent
+      Tags:
+        Environment: !Ref Environment
+        Application: TeachAssist
+        ManagedBy: CloudFormation
 
+  # SageMaker Model Endpoint Parameter
+  ParamSageMakerModelEndpoint:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '/teachassist/${Environment}/sagemaker/model_endpoint'
+      Description: SageMaker model endpoint name
+      Type: String
+      Value: !Ref SageMakerModelEndpoint
+      Tags:
+        Environment: !Ref Environment
+        Application: TeachAssist
+        ManagedBy: CloudFormation
+
+  # Strands Knowledge Base ID Parameter
+  ParamStrandsKnowledgeBaseId:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '/teachassist/${Environment}/strands/knowledge_base_id'
+      Description: Strands knowledge base ID for memory operations
+      Type: String
+      Value: !Ref StrandsKnowledgeBaseId
+      Tags:
+        Environment: !Ref Environment
+        Application: TeachAssist
+        ManagedBy: CloudFormation
+
+  # Temperature Parameter
+  ParamTemperature:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '/teachassist/${Environment}/model/temperature'
+      Description: Model temperature setting for all agents
+      Type: String
+      Value: !Ref Temperature
+      Tags:
+        Environment: !Ref Environment
+        Application: TeachAssist
+        ManagedBy: CloudFormation
+
+  # XGBoost Endpoint Name Parameter
+  ParamXGBoostEndpointName:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '/teachassist/${Environment}/xgboost/endpoint_name'
+      Description: XGBoost loan prediction endpoint name
+      Type: String
+      Value: !Ref XGBoostEndpointName
+      Tags:
+        Environment: !Ref Environment
+        Application: TeachAssist
+        ManagedBy: CloudFormation
+
+Outputs:
   AWSRegionParameter:
     Description: SSM Parameter name for AWS Region
     Value: !Ref ParamAWSRegion
@@ -206,26 +199,6 @@ Outputs:
     Description: SSM Parameter name for Bedrock Model ID
     Value: !Ref ParamBedrockModelId
 
-  StrandsModelProviderParameter:
-    Description: SSM Parameter name for Strands Model Provider
-    Value: !Ref ParamStrandsModelProvider
-
-  SageMakerModelEndpointParameter:
-    Description: SSM Parameter name for SageMaker Model Endpoint
-    Value: !Ref ParamSageMakerModelEndpoint
-
-  SageMakerInferenceComponentParameter:
-    Description: SSM Parameter name for SageMaker Inference Component
-    Value: !Ref ParamSageMakerInferenceComponent
-
-  XGBoostEndpointNameParameter:
-    Description: SSM Parameter name for XGBoost Endpoint
-    Value: !Ref ParamXGBoostEndpointName
-
-  StrandsKnowledgeBaseIdParameter:
-    Description: SSM Parameter name for Strands Knowledge Base ID
-    Value: !Ref ParamStrandsKnowledgeBaseId
-
   MaxResultsParameter:
     Description: SSM Parameter name for Max Results
     Value: !Ref ParamMaxResults
@@ -233,3 +206,29 @@ Outputs:
   MinScoreParameter:
     Description: SSM Parameter name for Min Score
     Value: !Ref ParamMinScore
+
+  ParameterPrefix:
+    Description: SSM Parameter Store prefix for this environment
+    Value: !Sub '/teachassist/${Environment}'
+    Export:
+      Name: !Sub '${AWS::StackName}-ParameterPrefix'
+
+  SageMakerInferenceComponentParameter:
+    Description: SSM Parameter name for SageMaker Inference Component
+    Value: !Ref ParamSageMakerInferenceComponent
+
+  SageMakerModelEndpointParameter:
+    Description: SSM Parameter name for SageMaker Model Endpoint
+    Value: !Ref ParamSageMakerModelEndpoint
+
+  StrandsKnowledgeBaseIdParameter:
+    Description: SSM Parameter name for Strands Knowledge Base ID
+    Value: !Ref ParamStrandsKnowledgeBaseId
+
+  TemperatureParameter:
+    Description: SSM Parameter name for Model Temperature
+    Value: !Ref ParamTemperature
+
+  XGBoostEndpointNameParameter:
+    Description: SSM Parameter name for XGBoost Endpoint
+    Value: !Ref ParamXGBoostEndpointName

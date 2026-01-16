@@ -193,9 +193,6 @@ def get_sagemaker_model_endpoint() -> str:
 def get_strands_knowledge_base_id() -> str:
     """Get Strands knowledge base ID from environment variable."""
     
-def get_strands_model_provider() -> str:
-    """Get Strands Agent model provider (bedrock or sagemaker)."""
-    
 def get_xgboost_endpoint_name() -> str:
     """Get XGBoost model endpoint name from environment variable."""
 ```
@@ -205,10 +202,13 @@ def get_xgboost_endpoint_name() -> str:
 - `BEDROCK_MODEL_ID`: Bedrock model ID (default: us.amazon.nova-pro-v1:0)
 - `MAX_RESULTS`: Maximum results for knowledge base queries (default: 9)
 - `MIN_SCORE`: Minimum score threshold for knowledge base queries (default: 0.000001)
-- `SAGEMAKER_MODEL_ENDPOINT`: SageMaker model endpoint name (optional, required when provider=sagemaker)
+- `SAGEMAKER_MODEL_ENDPOINT`: SageMaker model endpoint name (optional, required when user selects SageMaker model)
 - `STRANDS_KNOWLEDGE_BASE_ID`: Knowledge base ID (default: demokb123)
-- `STRANDS_MODEL_PROVIDER`: Model provider choice (bedrock or sagemaker, default: bedrock)
 - `XGBOOST_ENDPOINT_NAME`: XGBoost loan prediction endpoint name (required when using loan assistant)
+
+**Note**: The model provider is NOT an environment variable or SSM parameter. It is determined dynamically at runtime based on the user's model selection in the UI:
+- If user selects a Bedrock model (Nova, Claude) → provider = "bedrock"
+- If user selects the SageMaker model (gpt-oss-20b) → provider = "sagemaker"
 
 ### 4. Bedrock Model Module (bedrock_model.py)
 
@@ -403,8 +403,8 @@ class LoanPrediction:
 *For any* endpoint invocation failure, the assistant should return a descriptive error message rather than raising an unhandled exception.
 **Validates: Requirements 7.6**
 
-### Property 9: Provider Selection Consistency
-*For any* value of STRANDS_MODEL_PROVIDER environment variable, the application should use exactly one model provider (Bedrock or SageMaker), never both simultaneously.
+### Property 9: Model Selection Consistency
+*For any* user model selection in the UI, the application should use exactly one model provider (Bedrock or SageMaker) based on the selected model, never both simultaneously.
 **Validates: Requirements 6.3, 6.4**
 
 ### Property 10: Validation Script Independence

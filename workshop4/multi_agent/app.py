@@ -9,7 +9,10 @@ from config import (
     get_bedrock_model_id,
     get_max_results,
     get_min_score,
+    get_sagemaker_inference_component,
+    get_sagemaker_model_endpoint,
     get_strands_knowledge_base_id,
+    get_temperature,
     get_default_model_config,
 )
 
@@ -148,6 +151,7 @@ Example response for missing information:
 KB_ID = get_strands_knowledge_base_id()
 MIN_SCORE = get_min_score()
 MAX_RESULTS = get_max_results()
+TEMPERATURE = get_temperature()
 
 # Set up the page
 st.set_page_config(
@@ -199,7 +203,7 @@ with st.sidebar:
     
     # Model selection dropdown
     selected_model_key = st.selectbox(
-        "Choose Reasoning Model:",
+        "Choose Agent Model:",
         options=list(model_options.keys()),
         index=list(model_options.keys()).index(st.session_state.selected_model_key),
         help="Select which model to use for the teacher agent"
@@ -224,7 +228,7 @@ with st.sidebar:
     st.markdown(f"""
     **Model Provider**: {selected_model_info['provider'].title()}  
     **Model ID**: `{selected_model_info['model_id']}`  
-    **Temperature**: 0.3  
+    **Temperature**: {TEMPERATURE}  
     **Knowledge Base**: {KB_ID}  
     **AWS Region**: {aws_region}
     """)
@@ -285,23 +289,36 @@ if "messages" not in st.session_state:
     st.session_state.messages = []
 
 # Knowledge base functions
-def determine_action(query):
+def determine_action(query, model, model_info):
     """Determine if the query should go to teacher agent or knowledge base agent."""
-    bedrock_model = create_bedrock_model(temperature=0.1)
-    
     agent = Agent(
-        model=bedrock_model,
+        model=model,
         tools=[use_agent]
     )
     
     try:
+        # Build model_settings based on provider
+        model_settings = {}
+        if model_info['provider'] == 'bedrock':
+            model_settings = {
+                'model_id': model_info['model_id'],
+                'temperature': TEMPERATURE
+            }
+        elif model_info['provider'] == 'sagemaker':
+            inference_component = get_sagemaker_inference_component()
+            model_settings = {
+                'endpoint_name': get_sagemaker_model_endpoint(),
+                'temperature': TEMPERATURE
+            }
+            # Add inference component if it's set and not the default placeholder
+            if inference_component and inference_component != "my-llm-inference-component":
+                model_settings['inference_component_name'] = inference_component
+        
         result = agent.tool.use_agent(
             prompt=f"Query: {query}",
             system_prompt=ACTION_DETERMINATION_PROMPT,
-            model_provider="bedrock",
-            model_settings={
-                'model_id': get_bedrock_model_id()
-            }
+            model_provider=model_info['provider'],
+            model_settings=model_settings
         )
         
         # Clean and extract the action
@@ -321,23 +338,36 @@ def determine_action(query):
         st.error(f"Error determining action: {str(e)}")
         return "teacher"  # Default to teacher on error
 
-def determine_kb_action(query):
+def determine_kb_action(query, model, model_info):
     """Determine if the knowledge base query is a store or retrieve action."""
-    bedrock_model = create_bedrock_model(temperature=0.1)
-    
     agent = Agent(
-        model=bedrock_model,
+        model=model,
         tools=[use_agent]
     )
     
     try:
+        # Build model_settings based on provider
+        model_settings = {}
+        if model_info['provider'] == 'bedrock':
+            model_settings = {
+                'model_id': model_info['model_id'],
+                'temperature': TEMPERATURE
+            }
+        elif model_info['provider'] == 'sagemaker':
+            inference_component = get_sagemaker_inference_component()
+            model_settings = {
+                'endpoint_name': get_sagemaker_model_endpoint(),
+                'temperature': TEMPERATURE
+            }
+            # Add inference component if it's set and not the default placeholder
+            if inference_component and inference_component != "my-llm-inference-component":
+                model_settings['inference_component_name'] = inference_component
+        
         result = agent.tool.use_agent(
             prompt=f"Query: {query}",
             system_prompt=KB_ACTION_SYSTEM_PROMPT,
-            model_provider="bedrock",
-            model_settings={
-                'model_id': get_bedrock_model_id()
-            }
+            model_provider=model_info['provider'],
+            model_settings=model_settings
         )
         
         # Clean and extract the action
@@ -357,16 +387,15 @@ def determine_kb_action(query):
         st.error(f"Error determining KB action: {str(e)}")
         return "retrieve"  # Default to retrieve on error
 
-def run_kb_agent(query):
+def run_kb_agent(query, model, model_info):
     """Process a user query with the knowledge base agent."""
-    bedrock_model = create_bedrock_model(temperature=0.1)
     agent = Agent(
-        model=bedrock_model,
+        model=model,
         tools=[memory, use_agent]
     )
     
     # Determine the action - store or retrieve
-    action = determine_kb_action(query)
+    action = determine_kb_action(query, model, model_info)
     
     if action == "store":
         # For store actions, store the full query
@@ -390,14 +419,29 @@ def run_kb_agent(query):
             # Convert the result to a string to extract just the content text
             result_str = str(result)
             
+            # Build model_settings based on provider
+            model_settings = {}
+            if model_info['provider'] == 'bedrock':
+                model_settings = {
+                    'model_id': model_info['model_id'],
+                    'temperature': TEMPERATURE
+                }
+            elif model_info['provider'] == 'sagemaker':
+                inference_component = get_sagemaker_inference_component()
+                model_settings = {
+                    'endpoint_name': get_sagemaker_model_endpoint(),
+                    'temperature': TEMPERATURE
+                }
+                # Add inference component if it's set and not the default placeholder
+                if inference_component and inference_component != "my-llm-inference-component":
+                    model_settings['inference_component_name'] = inference_component
+            
             # Generate a clear, conversational answer using the retrieved information
             answer = agent.tool.use_agent(
                 prompt=f"User question: \"{query}\"\n\nInformation from knowledge base:\n{result_str}\n\nStart your answer with newline character and provide a helpful answer based on this information:",
                 system_prompt=KB_ANSWER_SYSTEM_PROMPT,
-                model_provider="bedrock",
-                model_settings={
-                    'model_id': get_bedrock_model_id()
-                }
+                model_provider=model_info['provider'],
+                model_settings=model_settings
             )
             
             # Extract clean response from the structured result
@@ -460,12 +504,12 @@ def create_model_from_selection(model_info):
     if model_info['provider'] == 'bedrock':
         return create_bedrock_model(
             model_id=model_info['model_id'],
-            temperature=0.3
+            temperature=TEMPERATURE
         )
     elif model_info['provider'] == 'sagemaker':
         try:
             return create_sagemaker_model(
-                temperature=0.3
+                temperature=TEMPERATURE
             )
         except ValueError as e:
             st.error(f"❌ SageMaker endpoint not configured: {str(e)}")
@@ -474,7 +518,7 @@ def create_model_from_selection(model_info):
             st.warning("⚠️ Falling back to Amazon Nova 2 Lite (Bedrock)")
             return create_bedrock_model(
                 model_id="us.amazon.nova-2-lite-v1:0",
-                temperature=0.3
+                temperature=TEMPERATURE
             )
     else:
         raise ValueError(f"Unknown provider: {model_info['provider']}")
@@ -512,18 +556,18 @@ if query:
             elif selected_agent_type == "Knowledge Base":
                 # Route directly to knowledge base agent
                 with st.spinner("Processing with Knowledge Base..."):
-                    response = run_kb_agent(query)
+                    response = run_kb_agent(query, current_model, selected_model_info)
                     content = str(response)
             
             else:  # Auto-Route
                 # Determine if query should go to teacher agent or knowledge base
                 with st.spinner("Analyzing query..."):
-                    action = determine_action(query)
+                    action = determine_action(query, current_model, selected_model_info)
                 
                 if action == "knowledge":
                     # Route to knowledge base agent
                     with st.spinner("Processing with Knowledge Base..."):
-                        response = run_kb_agent(query)
+                        response = run_kb_agent(query, current_model, selected_model_info)
                         content = str(response)
                 else:
                     # Route to teacher agent (existing functionality)
