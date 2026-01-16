@@ -102,41 +102,103 @@ echo 'export AWS_REGION="us-east-1"' >> ~/.bashrc
 source ~/.bashrc
 ```
 
-**Additional Environment Variables for Multi-Agent Application:**
+### Step 5: Deploy SSM Parameter Store Configuration (For Multi-Agent Application)
 
-Add these to your `~/.bashrc` or `~/.bash_profile` for the multi-agent application:
+The multi-agent application uses AWS Systems Manager (SSM) Parameter Store for centralized configuration management. This eliminates the need for environment variables and enables dynamic configuration updates without restarting the application.
+
+#### Deploy Configuration Parameters
 
 ```bash
-# Workshop4 Multi-Agent SageMaker AI - Environment Variables
-export AWS_REGION="us-east-1"
-export BEDROCK_MODEL_ID="us.amazon.nova-pro-v1:0"
-export MAX_RESULTS="9"
-export MIN_SCORE="0.000001"
-export SAGEMAKER_INFERENCE_COMPONENT="my-llm-inference-component"  # Optional: only needed for multi-model endpoints
-export SAGEMAKER_MODEL_ENDPOINT="my-llm-endpoint"
-export STRANDS_KNOWLEDGE_BASE_ID="my-kb-id"
-export STRANDS_MODEL_PROVIDER="bedrock"
-export XGBOOST_ENDPOINT_NAME="my-xgboost-endpoint"
+# Navigate to SSM configuration directory
+cd workshop4/ssm
+
+# Deploy CloudFormation stack with your configuration
+aws cloudformation create-stack \
+  --stack-name teachassist-params-dev \
+  --template-body file://teachassist-params.yaml \
+  --parameters \
+    ParameterKey=Environment,ParameterValue=dev \
+    ParameterKey=AWSRegion,ParameterValue=us-east-1 \
+    ParameterKey=BedrockModelId,ParameterValue=us.amazon.nova-2-lite-v1:0 \
+    ParameterKey=MaxResults,ParameterValue=9 \
+    ParameterKey=MinScore,ParameterValue=0.000001 \
+    ParameterKey=SageMakerInferenceComponent,ParameterValue=my-llm-inference-component \
+    ParameterKey=SageMakerModelEndpoint,ParameterValue=my-llm-endpoint \
+    ParameterKey=StrandsKnowledgeBaseId,ParameterValue=my-kb-id \
+    ParameterKey=Temperature,ParameterValue=0.3 \
+    ParameterKey=XGBoostEndpointName,ParameterValue=my-xgboost-endpoint
+
+# Wait for stack creation to complete
+aws cloudformation wait stack-create-complete \
+  --stack-name teachassist-params-dev
+
+# Verify parameters were created
+aws ssm get-parameters-by-path \
+  --path "/teachassist/dev" \
+  --recursive
 ```
 
-**Environment Variable Details:**
+#### Set Environment Variable
 
-| Variable | Description | Default | Required |
-|----------|-------------|---------|----------|
-| `AWS_REGION` | AWS region for services | `us-east-1` | Yes |
-| `BEDROCK_MODEL_ID` | Bedrock model/inference profile | `us.amazon.nova-pro-v1:0` | When using Bedrock |
-| `MAX_RESULTS` | Max knowledge base results | `9` | No |
-| `MIN_SCORE` | Min relevance score threshold | `0.000001` | No |
-| `SAGEMAKER_MODEL_ENDPOINT` | SageMaker endpoint name | `my-llm-endpoint` | When using SageMaker |
-| `SAGEMAKER_INFERENCE_COMPONENT` | Inference component name | `my-llm-inference-component` | Only for multi-model endpoints |
-| `STRANDS_KNOWLEDGE_BASE_ID` | Knowledge base ID | `my-kb-id` | For KB features |
-| `STRANDS_MODEL_PROVIDER` | Model provider choice | `bedrock` | Yes |
-| `XGBOOST_ENDPOINT_NAME` | XGBoost endpoint name | `my-xgboost-endpoint` | For loan assistant |
+After deploying the SSM parameters, you only need to set ONE environment variable:
 
-**Note:** 
-- Values with `my-*` prefixes are placeholders. Replace them with your actual AWS resource names when you create them in later modules.
-- `SAGEMAKER_INFERENCE_COMPONENT` is only needed if your SageMaker endpoint uses inference components (multi-model endpoints). Leave empty or unset for standard endpoints.
+```bash
+# Linux/macOS/Git Bash
+export TEACHASSIST_ENV=dev
+
+# Make persistent (optional)
+echo 'export TEACHASSIST_ENV=dev' >> ~/.bashrc
+source ~/.bashrc
+```
+
+**Windows PowerShell:**
+```powershell
+$Env:TEACHASSIST_ENV="dev"
+```
+
+#### Configuration Parameters
+
+The CloudFormation template creates the following SSM parameters:
+
+| Parameter | SSM Path | Default | Description |
+|-----------|----------|---------|-------------|
+| AWS Region | `/teachassist/dev/aws/region` | `us-east-1` | AWS region for all services |
+| Bedrock Model ID | `/teachassist/dev/bedrock/model_id` | `us.amazon.nova-2-lite-v1:0` | Bedrock model or cross-region inference profile |
+| Max Results | `/teachassist/dev/knowledge-base/max_results` | `9` | Maximum knowledge base search results |
+| Min Score | `/teachassist/dev/knowledge-base/min_score` | `0.000001` | Minimum relevance score threshold |
+| Knowledge Base ID | `/teachassist/dev/knowledge-base/id` | `my-kb-id` | Strands Knowledge Base identifier |
+| SageMaker Endpoint | `/teachassist/dev/sagemaker/model_endpoint` | `my-llm-endpoint` | SageMaker model endpoint name |
+| Inference Component | `/teachassist/dev/sagemaker/inference_component` | `my-llm-inference-component` | SageMaker inference component (for multi-model endpoints) |
+| Temperature | `/teachassist/dev/model/temperature` | `0.3` | Model temperature setting (0.0-1.0) |
+| XGBoost Endpoint | `/teachassist/dev/xgboost/endpoint_name` | `my-xgboost-endpoint` | XGBoost model endpoint name |
+
+**Important Notes:**
+- Values with `my-*` prefixes are placeholders. Update them with your actual AWS resource names when you create them in later modules.
+- `SageMakerInferenceComponent` is only needed if your SageMaker endpoint uses inference components (multi-model endpoints).
 - To find your inference component name: `aws sagemaker list-inference-components --endpoint-name-equals <endpoint-name>`
+- Model provider (Bedrock vs SageMaker) is determined dynamically from the UI model selection, not stored as configuration.
+
+#### Update Configuration Parameters
+
+To update a parameter after deployment:
+
+```bash
+# Update a single parameter
+aws ssm put-parameter \
+  --name "/teachassist/dev/bedrock/model_id" \
+  --value "us.amazon.nova-pro-v1:0" \
+  --type String \
+  --overwrite
+
+# Or update the entire stack
+aws cloudformation update-stack \
+  --stack-name teachassist-params-dev \
+  --template-body file://teachassist-params.yaml \
+  --parameters \
+    ParameterKey=BedrockModelId,ParameterValue=us.amazon.nova-pro-v1:0
+```
+
+For detailed SSM deployment instructions, see `workshop4/ssm/README.md`.
 
 **Windows PowerShell:**
 ```powershell
@@ -157,7 +219,7 @@ aws configure
 # Enter your access key, secret key, region, and output format
 ```
 
-### Step 5: Verify Setup
+### Step 6: Verify Setup
 
 #### Test Python and Dependencies
 ```bash
@@ -173,13 +235,20 @@ which python
 # Should show path to .venv/bin/python or .venv/Scripts/python
 ```
 
-#### Test AWS Connectivity
+#### Test AWS Connectivity and SSM Parameters
 ```bash
 # Test AWS credentials
 aws sts get-caller-identity
 
 # Test Bedrock access
 aws bedrock list-foundation-models --region $AWS_REGION
+
+# Verify SSM parameters were created
+aws ssm get-parameters-by-path \
+  --path "/teachassist/dev" \
+  --recursive \
+  --query "Parameters[*].[Name,Value]" \
+  --output table
 ```
 
 #### Test Basic Strands Functionality
