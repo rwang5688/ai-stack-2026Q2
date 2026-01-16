@@ -48,7 +48,7 @@ This implementation plan follows a local-first development approach: build and t
   - Test validation of invalid environment variable values
   - _Requirements: 3.1, 3.2, 3.3_
 
-- [ ] 4. Create Bedrock model module for multi_agent
+- [x] 4. Create Bedrock model module for multi_agent
   - Create `multi_agent/bedrock_model.py` with `create_bedrock_model()` function
   - Import BedrockModel from strands.models
   - Support all four cross-region inference profiles
@@ -63,7 +63,7 @@ This implementation plan follows a local-first development approach: build and t
   - Test temperature configuration
   - _Requirements: 4.2, 4.3, 4.5_
 
-- [ ] 5. Create SageMaker model module for multi_agent
+- [x] 5. Create SageMaker model module for multi_agent
   - Create `multi_agent/sagemaker_model.py` with `create_sagemaker_model()` function
   - Import SageMakerAIModel from strands.models.sagemaker
   - Use config module for endpoint name and region
@@ -77,19 +77,12 @@ This implementation plan follows a local-first development approach: build and t
   - Test configuration parameter passing
   - _Requirements: 5.2, 5.3, 5.4_
 
-- [ ] 6. Checkpoint - Verify model modules and validation scripts work locally
-  - Ensure all tests pass for config, bedrock_model, and sagemaker_model modules
-  - Test agent model validation script with actual endpoint (if available)
-  - Test XGBoost model endpoint validation script with actual endpoint (if available)
-  - Verify validation scripts print clear success/failure messages
-  - Ask the user if questions arise
-
-- [ ] 7. Update multi_agent/app.py to use new model modules with dropdown selection
+- [x] 6. Update multi_agent/app.py to use new model modules with dropdown selection
   - Import config module and replace remaining `os.getenv()` calls if any
   - Import bedrock_model and sagemaker_model modules
   - Add model selection dropdown in sidebar with options:
+    - Amazon Nova 2 Lite (us.amazon.nova-2-lite-v1:0) - DEFAULT
     - Amazon Nova Pro (us.amazon.nova-pro-v1:0)
-    - Amazon Nova 2 Lite (us.amazon.nova-2-lite-v1:0)
     - Anthropic Claude Haiku 4.5 (us.anthropic.claude-haiku-4-5-20251001-v1:0)
     - Anthropic Claude Sonnet 4.5 (us.anthropic.claude-sonnet-4-5-20250929-v1:0)
     - Custom gpt-oss-20b (SageMaker endpoint)
@@ -99,26 +92,31 @@ This implementation plan follows a local-first development approach: build and t
   - Store selected model in session state
   - _Requirements: 3.6, 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7_
 
-- [ ]* 7.1 Write integration test for app with model selection
+- [ ]* 6.1 Write integration test for app with model selection
   - Test teacher agent with Bedrock models
   - Test teacher agent with SageMaker model (if endpoint available)
   - Test model switching between providers
   - _Requirements: 6.3, 6.4, 6.5_
 
-- [ ] 8. Test model selection end-to-end
+- [ ] 7. Checkpoint - Test model selection using the application
   - Run multi_agent/app.py locally
-  - Test each Bedrock model selection from dropdown
+  - Use the sidebar model dropdown to test each Bedrock model selection
   - Test SageMaker model selection (if endpoint available)
   - Verify sidebar displays correct model information
   - Test error handling for missing SageMaker endpoint
+  - Ask the user if questions arise
   - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7_
 
-- [ ] 9. Checkpoint - Model selection complete
-  - Ensure model dropdown works correctly
-  - Ensure all model providers work
+- [ ] 7. Checkpoint - Test model selection using the application
+  - Run multi_agent/app.py locally
+  - Use the sidebar model dropdown to test each Bedrock model selection
+  - Test SageMaker model selection (if endpoint available)
+  - Verify sidebar displays correct model information
+  - Test error handling for missing SageMaker endpoint
   - Ask the user if questions arise
+  - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7_
 
-- [ ] 10. Implement loan assistant data transformation logic
+- [ ] 8. Implement loan assistant data transformation logic
   - Create `multi_agent/loan_assistant.py` with CustomerAttributes handling
   - Implement one-hot encoding for all categorical features
   - Implement CSV payload generation function
@@ -126,21 +124,21 @@ This implementation plan follows a local-first development approach: build and t
   - Create mapping dictionaries for all categorical features
   - _Requirements: 7.2, 7.3, 7.8, 7.9_
 
-- [ ]* 10.1 Write property test for CSV payload format
+- [ ]* 8.1 Write property test for CSV payload format
   - **Property 4: CSV Payload Format Correctness**
   - **Validates: Requirements 7.8, 7.9**
 
-- [ ]* 10.2 Write property test for one-hot encoding
+- [ ]* 8.2 Write property test for one-hot encoding
   - **Property 5: One-Hot Encoding Completeness**
   - **Validates: Requirements 7.9**
 
-- [ ]* 10.3 Write unit tests for data transformation
+- [ ]* 8.3 Write unit tests for data transformation
   - Test one-hot encoding for each categorical feature
   - Test CSV payload generation with sample customer profiles
   - Test edge cases (unknown values, boundary numeric values)
   - _Requirements: 7.8, 7.9_
 
-- [ ] 11. Implement loan assistant XGBoost invocation logic
+- [ ] 9. Implement loan assistant XGBoost invocation logic
   - Add SageMaker runtime client creation in loan_assistant.py
   - Implement endpoint invocation with CSV payload
   - Implement response parsing and prediction extraction
@@ -148,21 +146,21 @@ This implementation plan follows a local-first development approach: build and t
   - Add error handling for endpoint failures
   - _Requirements: 7.2, 7.3, 7.4, 7.5, 7.6, 7.10, 7.11_
 
-- [ ]* 11.1 Write property test for prediction output range
+- [ ]* 9.1 Write property test for prediction output range
   - **Property 6: Prediction Output Range**
   - **Validates: Requirements 7.11**
 
-- [ ]* 11.2 Write property test for binary classification mapping
+- [ ]* 9.2 Write property test for binary classification mapping
   - **Property 7: Binary Classification Mapping**
   - **Validates: Requirements 7.4**
 
-- [ ]* 11.3 Write unit tests for XGBoost invocation
+- [ ]* 9.3 Write unit tests for XGBoost invocation
   - Test endpoint invocation with mocked SageMaker client
   - Test response parsing for various prediction scores
   - Test error handling for endpoint failures
   - _Requirements: 7.6, 7.10, 7.11_
 
-- [ ] 12. Complete loan assistant as Strands tool
+- [ ] 10. Complete loan assistant as Strands tool
   - Wrap loan prediction logic in @tool decorator
   - Define function signature with all customer attribute parameters
   - Add comprehensive docstring with parameter descriptions
@@ -170,35 +168,35 @@ This implementation plan follows a local-first development approach: build and t
   - Add confidence score to response
   - _Requirements: 7.1, 7.2, 7.5_
 
-- [ ]* 12.1 Write integration test for loan assistant tool
+- [ ]* 10.1 Write integration test for loan assistant tool
   - Test loan assistant with sample customer data
   - Test error propagation through tool interface
   - _Requirements: 7.1, 7.2, 7.5, 7.6_
 
-- [ ] 13. Integrate loan assistant into multi_agent/app.py
+- [ ] 11. Integrate loan assistant into multi_agent/app.py
   - Import loan_assistant tool
   - Add loan_assistant to teacher agent's tools list
   - Update sidebar to list loan assistant with icon and description
   - _Requirements: 7.1, 8.1, 8.2_
 
-- [ ]* 13.1 Write integration test for app with loan assistant
+- [ ]* 11.1 Write integration test for app with loan assistant
   - Test teacher agent routing to loan assistant
   - Test loan prediction through full agent hierarchy
   - _Requirements: 8.1, 8.2_
 
-- [ ] 14. Test loan assistant end-to-end
+- [ ] 12. Test loan assistant end-to-end
   - Run multi_agent/app.py locally
   - Test loan assistant with various customer profiles
   - Test error handling for missing XGBoost model endpoint
   - Verify sidebar displays loan assistant
   - _Requirements: 7.1, 7.2, 7.5, 7.6, 8.3, 8.4, 8.5_
 
-- [ ] 15. Checkpoint - Loan assistant complete
+- [ ] 13. Checkpoint - Loan assistant complete
   - Ensure loan assistant works correctly
   - Ensure all tests pass
   - Ask the user if questions arise
 
-- [ ] 16. Merge new modules to deploy_multi_agent/docker_app
+- [ ] 14. Merge new modules to deploy_multi_agent/docker_app
   - Copy `config.py` to `deploy_multi_agent/docker_app/config.py`
   - Copy `bedrock_model.py` to `deploy_multi_agent/docker_app/bedrock_model.py`
   - Copy `sagemaker_model.py` to `deploy_multi_agent/docker_app/sagemaker_model.py`
@@ -206,7 +204,7 @@ This implementation plan follows a local-first development approach: build and t
   - Verify no conflicts with existing files
   - _Requirements: 9.1, 9.3, 9.6_
 
-- [ ] 17. Merge application logic to deploy_multi_agent/docker_app/app.py
+- [ ] 15. Merge application logic to deploy_multi_agent/docker_app/app.py
   - Preserve authentication section (lines 1-25) at the top
   - Preserve authentication UI in sidebar
   - Import new modules (config, bedrock_model, sagemaker_model, loan_assistant)
@@ -219,14 +217,14 @@ This implementation plan follows a local-first development approach: build and t
   - Preserve logout button and user info display
   - _Requirements: 9.2, 9.3, 9.4, 9.5, 9.7, 9.8_
 
-- [ ] 18. Test deployed application logic
+- [ ] 16. Test deployed application logic
   - Review merged code for correctness
   - Verify authentication section is preserved
   - Verify all new features are included
   - Verify no duplicate code or conflicts
   - _Requirements: 9.5, 9.7, 9.8_
 
-- [ ] 19. Final checkpoint - Implementation complete
+- [ ] 17. Final checkpoint - Implementation complete
   - Verify both local and deployed versions have all features
   - Verify all tests pass
   - Verify validation scripts work

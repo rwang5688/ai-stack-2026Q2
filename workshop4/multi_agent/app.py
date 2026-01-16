@@ -1,7 +1,6 @@
 import streamlit as st
 import os
 from strands import Agent
-from strands.models import BedrockModel
 from strands_tools import memory, use_agent
 
 # Import configuration module
@@ -11,9 +10,13 @@ from config import (
     get_max_results,
     get_min_score,
     get_strands_knowledge_base_id,
-    get_strands_model_provider,
-    get_all_config_values,
+    get_default_model_config,
 )
+
+# Import model creation modules
+from bedrock_model import create_bedrock_model
+from sagemaker_model import create_sagemaker_model
+from model_factory import create_model_from_config
 
 # Bypass tool consent for knowledge base operations
 os.environ["BYPASS_TOOL_CONSENT"] = "true"
@@ -158,22 +161,69 @@ st.write("Choose your agent type or let the system auto-route your queries to th
 
 # Add sidebar with information
 with st.sidebar:
-    # Display all configuration values for debugging
-    st.header("⚙️ Configuration (Debug)")
-    with st.expander("View All Environment Variables", expanded=False):
-        config_values = get_all_config_values()
-        for key, value in config_values.items():
-            st.text(f"{key}: {value}")
+    # Model Selection
+    st.header("🤖 Model Selection")
     
-    st.header("🤖 AI Service Details")
+    # Define model options
+    model_options = {
+        "Amazon Nova Pro (us.amazon.nova-pro-v1:0)": {
+            "provider": "bedrock",
+            "model_id": "us.amazon.nova-pro-v1:0",
+            "display_name": "Amazon Nova Pro"
+        },
+        "Amazon Nova 2 Lite (us.amazon.nova-2-lite-v1:0)": {
+            "provider": "bedrock",
+            "model_id": "us.amazon.nova-2-lite-v1:0",
+            "display_name": "Amazon Nova 2 Lite"
+        },
+        "Anthropic Claude Haiku 4.5 (us.anthropic.claude-haiku-4-5-20251001-v1:0)": {
+            "provider": "bedrock",
+            "model_id": "us.anthropic.claude-haiku-4-5-20251001-v1:0",
+            "display_name": "Anthropic Claude Haiku 4.5"
+        },
+        "Anthropic Claude Sonnet 4.5 (us.anthropic.claude-sonnet-4-5-20250929-v1:0)": {
+            "provider": "bedrock",
+            "model_id": "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
+            "display_name": "Anthropic Claude Sonnet 4.5"
+        },
+        "Custom gpt-oss-20b (SageMaker endpoint)": {
+            "provider": "sagemaker",
+            "model_id": "sagemaker-endpoint",
+            "display_name": "Custom gpt-oss-20b (SageMaker endpoint)"
+        }
+    }
+    
+    # Initialize session state for selected model if not exists
+    if "selected_model_key" not in st.session_state:
+        st.session_state.selected_model_key = "Amazon Nova 2 Lite (us.amazon.nova-2-lite-v1:0)"
+    
+    # Model selection dropdown
+    selected_model_key = st.selectbox(
+        "Choose Reasoning Model:",
+        options=list(model_options.keys()),
+        index=list(model_options.keys()).index(st.session_state.selected_model_key),
+        help="Select which model to use for the teacher agent"
+    )
+    
+    # Update session state if model changed
+    if selected_model_key != st.session_state.selected_model_key:
+        st.session_state.selected_model_key = selected_model_key
+        # Clear the cached teacher agent to force recreation with new model
+        if "teacher_agent" in st.session_state:
+            del st.session_state.teacher_agent
+    
+    # Get selected model info
+    selected_model_info = model_options[selected_model_key]
+    
+    # Display active model information
+    st.info(f"**Active Model**: {selected_model_info['display_name']}\n\n**Provider**: {selected_model_info['provider'].title()}")
+    
+    st.header("🔧 AI Service Details")
     aws_region = get_aws_region()
-    bedrock_model_id = get_bedrock_model_id()
-    model_provider = get_strands_model_provider()
     
     st.markdown(f"""
-    **Service**: Amazon Bedrock  
-    **Model**: `{bedrock_model_id}`  
-    **Foundation Model**: Amazon Nova Pro  
+    **Model Provider**: {selected_model_info['provider'].title()}  
+    **Model ID**: `{selected_model_info['model_id']}`  
     **Temperature**: 0.3  
     **Knowledge Base**: {KB_ID}  
     **AWS Region**: {aws_region}
@@ -237,10 +287,7 @@ if "messages" not in st.session_state:
 # Knowledge base functions
 def determine_action(query):
     """Determine if the query should go to teacher agent or knowledge base agent."""
-    bedrock_model = BedrockModel(
-        model_id=get_bedrock_model_id(),
-        temperature=0.1,
-    )
+    bedrock_model = create_bedrock_model(temperature=0.1)
     
     agent = Agent(
         model=bedrock_model,
@@ -276,10 +323,7 @@ def determine_action(query):
 
 def determine_kb_action(query):
     """Determine if the knowledge base query is a store or retrieve action."""
-    bedrock_model = BedrockModel(
-        model_id=get_bedrock_model_id(),
-        temperature=0.1,
-    )
+    bedrock_model = create_bedrock_model(temperature=0.1)
     
     agent = Agent(
         model=bedrock_model,
@@ -315,10 +359,7 @@ def determine_kb_action(query):
 
 def run_kb_agent(query):
     """Process a user query with the knowledge base agent."""
-    bedrock_model = BedrockModel(
-        model_id=get_bedrock_model_id(),
-        temperature=0.1,
-    )
+    bedrock_model = create_bedrock_model(temperature=0.1)
     agent = Agent(
         model=bedrock_model,
         tools=[memory, use_agent]
@@ -385,25 +426,58 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.markdown(message["content"])
 
-# Initialize the teacher agent
+# Initialize the teacher agent with selected model
 @st.cache_resource
-def get_teacher_agent():
-    # Amazon Bedrock Model Configuration
-    # Service: Amazon Bedrock
-    # Model ID: Configured via BEDROCK_MODEL_ID environment variable
-    # Note: This can be replaced with cross-region inference profile IDs for multi-region deployments
-    bedrock_model = BedrockModel(
-        model_id=get_bedrock_model_id(),  # Uses config module
-        temperature=0.3,
-    )
+def get_teacher_agent(_model):
+    """
+    Create teacher agent with the specified model.
     
+    Args:
+        _model: The model instance (BedrockModel or SageMakerAIModel)
+    
+    Returns:
+        Configured Agent instance
+    """
     # Create the teacher agent with specialized tools
     return Agent(
-        model=bedrock_model,
+        model=_model,
         system_prompt=TEACHER_SYSTEM_PROMPT,
         callback_handler=None,
         tools=[math_assistant, language_assistant, english_assistant, computer_science_assistant, general_assistant],
     )
+
+
+def create_model_from_selection(model_info):
+    """
+    Create a model instance based on the selected model info.
+    
+    Args:
+        model_info: Dictionary containing provider and model_id
+    
+    Returns:
+        Model instance (BedrockModel or SageMakerAIModel)
+    """
+    if model_info['provider'] == 'bedrock':
+        return create_bedrock_model(
+            model_id=model_info['model_id'],
+            temperature=0.3
+        )
+    elif model_info['provider'] == 'sagemaker':
+        try:
+            return create_sagemaker_model(
+                temperature=0.3
+            )
+        except ValueError as e:
+            st.error(f"❌ SageMaker endpoint not configured: {str(e)}")
+            st.info("💡 Set the SAGEMAKER_MODEL_ENDPOINT environment variable to use SageMaker models.")
+            # Fallback to default Bedrock model
+            st.warning("⚠️ Falling back to Amazon Nova 2 Lite (Bedrock)")
+            return create_bedrock_model(
+                model_id="us.amazon.nova-2-lite-v1:0",
+                temperature=0.3
+            )
+    else:
+        raise ValueError(f"Unknown provider: {model_info['provider']}")
 
 # Get user input
 query = st.chat_input("Ask your question here...")
@@ -424,10 +498,14 @@ if query:
             # Get selected agent type from session state
             selected_agent_type = st.session_state.get('selected_agent_type', 'Auto-Route')
             
+            # Create model instance based on selection
+            selected_model_info = model_options[st.session_state.selected_model_key]
+            current_model = create_model_from_selection(selected_model_info)
+            
             if selected_agent_type == "Teacher Agent":
                 # Route directly to teacher agent
                 with st.spinner("Routing to educational specialist..."):
-                    teacher_agent = get_teacher_agent()
+                    teacher_agent = get_teacher_agent(current_model)
                     response = teacher_agent(query)
                     content = str(response)
             
@@ -450,7 +528,7 @@ if query:
                 else:
                     # Route to teacher agent (existing functionality)
                     with st.spinner("Routing to educational specialist..."):
-                        teacher_agent = get_teacher_agent()
+                        teacher_agent = get_teacher_agent(current_model)
                         response = teacher_agent(query)
                         content = str(response)
             

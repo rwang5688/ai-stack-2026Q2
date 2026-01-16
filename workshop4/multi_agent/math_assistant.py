@@ -1,5 +1,7 @@
 from strands import Agent, tool
 from cross_platform_tools import get_math_tools
+from config import get_default_model_config
+from model_factory import create_model_from_config
 import json
 
 MATH_ASSISTANT_SYSTEM_PROMPT = """
@@ -43,8 +45,16 @@ def math_assistant(query: str) -> str:
     
     try:
         print("Routed to Math Assistant")
+        
+        # Get default model config from SSM Parameter Store
+        model_config = get_default_model_config()
+        
+        # Create model from config
+        model = create_model_from_config(model_config)
+        
         # Create the math agent with calculator capability
         math_agent = Agent(
+            model=model,
             system_prompt=MATH_ASSISTANT_SYSTEM_PROMPT,
             tools=get_math_tools(),
         )

@@ -2,14 +2,233 @@
 
 ## Multi-Day Session Overview
 
-This document consolidates work from January 13-15, 2026 on the workshop4-multi-agent-sagemaker-ai spec. The work progressed through three phases:
+This document consolidates work from January 13-15, 2026 on the workshop4-multi-agent-sagemaker-ai spec. The work progressed through four phases:
 1. **Jan 13**: Spec reorganization and configuration module
 2. **Jan 14**: Validation script creation and documentation
-3. **Jan 15**: Debugging and inference component support
+3. **Jan 15 (Morning)**: Debugging and inference component support
+4. **Jan 15 (Evening)**: Model modules and application integration
 
 ---
 
-# January 15, 2026 - Debugging & Inference Components
+# January 15, 2026 (Evening) - Model Modules & Application Integration
+
+## Session Overview
+Created Bedrock and SageMaker model wrapper modules, updated application with model selection dropdown, and reorganized task list for better workflow.
+
+## Key Accomplishments
+
+### 1. Created Bedrock Model Module ✅
+- **File**: `workshop4/multi_agent/bedrock_model.py`
+- **Function**: `create_bedrock_model(model_id, temperature)`
+- **Features**:
+  - Wraps Strands Agents `BedrockModel` class
+  - Supports all four cross-region inference profiles
+  - Uses config module for model ID and region
+  - Validates model IDs with clear error messages
+  - **Default model**: Changed from `us.amazon.nova-pro-v1:0` to `us.amazon.nova-2-lite-v1:0`
+
+### 2. Created SageMaker Model Module ✅
+- **File**: `workshop4/multi_agent/sagemaker_model.py`
+- **Function**: `create_sagemaker_model(endpoint_name, inference_component, region, max_tokens, temperature)`
+- **Features**:
+  - Wraps Strands Agents `SageMakerAIModel` class
+  - Supports both standard endpoints and multi-model endpoints with inference components
+  - Uses config module for endpoint name, inference component, and region
+  - Includes comprehensive compatibility documentation about OpenAI-compatible API requirement
+  - Handles connection warnings gracefully
+
+### 3. Updated Configuration Module ✅
+- **File**: `workshop4/multi_agent/config.py`
+- **Change**: Updated default model from `us.amazon.nova-pro-v1:0` to `us.amazon.nova-2-lite-v1:0`
+- **Rationale**: Nova 2 Lite is more cost-effective for workshop demonstrations
+
+### 4. Updated Documentation ✅
+- **File**: `workshop4/PART-3-SAGEMAKER.md`
+- **Addition**: Added prominent "IMPORTANT: SageMaker Model Compatibility" section
+- **Content**:
+  - Explains OpenAI-compatible chat completion API requirement
+  - Lists validated models (Mistral-Small-24B-Instruct-2501)
+  - Warns about models that won't work (base language models)
+  - Provides verification guidance
+  - Links to official Strands Agents documentation
+
+### 5. Updated teachers_assistant.py ✅
+- **File**: `workshop4/multi_agent/teachers_assistant.py`
+- **Change**: Now uses `create_bedrock_model()` instead of creating `BedrockModel` directly
+- **Benefit**: Consistent model creation across all files
+
+### 6. Integrated Model Selection into Application ✅
+- **File**: `workshop4/multi_agent/app.py`
+- **Task 6 Complete**: Added model selection dropdown with 5 options:
+  1. Amazon Nova 2 Lite (us.amazon.nova-2-lite-v1:0) - **DEFAULT**
+  2. Amazon Nova Pro (us.amazon.nova-pro-v1:0)
+  3. Anthropic Claude Haiku 4.5 (us.anthropic.claude-haiku-4-5-20251001-v1:0)
+  4. Anthropic Claude Sonnet 4.5 (us.anthropic.claude-sonnet-4-5-20250929-v1:0)
+  5. Custom gpt-oss-20b (SageMaker endpoint)
+- **Features**:
+  - Dropdown in sidebar for model selection
+  - Displays active model provider and model ID
+  - Stores selection in session state
+  - Recreates teacher agent when model changes
+  - Graceful fallback to Bedrock if SageMaker endpoint not configured
+  - All helper functions updated to use new model modules
+
+### 7. Task List Reorganization ✅
+- **File**: `.kiro/specs/workshop4-multi-agent-sagemaker-ai/tasks.md`
+- **Changes**:
+  - **Old Task 7 → New Task 6**: Model integration (easier way to test model modules)
+  - **Old Task 6 → New Task 7**: Checkpoint task (now focuses on UI testing, not validation scripts)
+  - **Tasks 8-17**: Renumbered accordingly
+  - Removed redundant validation script mentions from checkpoint task
+- **Rationale**: Integrated app.py is the best way to test the model modules
+
+## Technical Decisions
+
+### Decision: Change Default Model to Nova 2 Lite
+**Rationale**: 
+- More cost-effective for workshop demonstrations
+- Still provides good performance for educational use cases
+- Allows students to experiment more without cost concerns
+
+### Decision: Model Selection via Dropdown
+**Rationale**:
+- Provides immediate visual feedback of active model
+- Easy to switch between models for testing
+- No need to restart application or change environment variables
+- Better user experience than environment variable configuration
+
+### Decision: Graceful SageMaker Fallback
+**Rationale**:
+- If SageMaker endpoint not configured, app falls back to Bedrock
+- Prevents application crashes
+- Provides clear error messages and guidance
+- Allows workshop to proceed even if SageMaker endpoints unavailable
+
+### Decision: Separate Model Creation Functions
+**Rationale**:
+- `create_bedrock_model()` and `create_sagemaker_model()` provide clean abstractions
+- Encapsulates model-specific configuration
+- Makes it easy to add new model providers in the future
+- Consistent interface across different model types
+
+## Current Status
+
+### Completed ✅
+- ✅ Task 1: Agent model endpoint validation script
+- ✅ Task 2: XGBoost model endpoint validation script
+- ✅ Task 3: Configuration module (9 environment variables)
+- ✅ Task 4: Bedrock model module
+- ✅ Task 5: SageMaker model module
+- ✅ Task 6: Application integration with model selection dropdown
+
+### Ready for Next Steps
+- 🎯 Task 7: Checkpoint - Test model selection using the application
+  - Run app locally
+  - Test each Bedrock model from dropdown
+  - Test SageMaker model (if endpoint available)
+  - Verify sidebar displays correct information
+
+## Files Modified Today (Evening Session)
+
+### Created
+- `workshop4/multi_agent/bedrock_model.py` - Bedrock model wrapper
+- `workshop4/multi_agent/sagemaker_model.py` - SageMaker model wrapper
+
+### Updated
+- `workshop4/multi_agent/config.py` - Changed default model to Nova 2 Lite
+- `workshop4/multi_agent/app.py` - Added model selection dropdown and integration
+- `workshop4/multi_agent/teachers_assistant.py` - Uses new bedrock_model module
+- `workshop4/PART-3-SAGEMAKER.md` - Added SageMaker compatibility section
+- `.kiro/specs/workshop4-multi-agent-sagemaker-ai/tasks.md` - Reorganized tasks 6-7
+- `.kiro/session-notes/20260115-session-notes.md` - This update
+
+## Model Selection Implementation Details
+
+### Dropdown Options
+```python
+model_options = {
+    "Amazon Nova 2 Lite": {
+        "provider": "bedrock",
+        "model_id": "us.amazon.nova-2-lite-v1:0",
+        "display_name": "Amazon Nova 2 Lite"
+    },
+    "Amazon Nova Pro": {
+        "provider": "bedrock",
+        "model_id": "us.amazon.nova-pro-v1:0",
+        "display_name": "Amazon Nova Pro"
+    },
+    # ... etc
+}
+```
+
+### Model Creation Logic
+```python
+def create_model_from_selection(model_info):
+    if model_info['provider'] == 'bedrock':
+        return create_bedrock_model(
+            model_id=model_info['model_id'],
+            temperature=0.3
+        )
+    elif model_info['provider'] == 'sagemaker':
+        return create_sagemaker_model(temperature=0.3)
+```
+
+### Session State Management
+- `selected_model_key`: Stores current model selection
+- Clears cached teacher agent when model changes
+- Forces recreation with new model
+
+## Next Session Actions
+
+1. **Task 7 Checkpoint**: Test model selection
+   - Run `streamlit run workshop4/multi_agent/app.py`
+   - Test each Bedrock model from dropdown
+   - Verify sidebar displays correct model info
+   - Test SageMaker model if endpoint available
+   - Verify error handling for missing SageMaker endpoint
+
+2. **If Task 7 passes, proceed to Task 8**: Loan assistant data transformation
+   - Create `multi_agent/loan_assistant.py`
+   - Implement one-hot encoding for categorical features
+   - Implement CSV payload generation
+   - Add validation for customer attributes
+
+## Progress Tracker
+
+**Completed**: 6 of 17 tasks (35.3%)
+- ✅ Task 1: Agent endpoint validation
+- ✅ Task 2: XGBoost endpoint validation
+- ✅ Task 3: Configuration module
+- ✅ Task 4: Bedrock model module
+- ✅ Task 5: SageMaker model module
+- ✅ Task 6: Application integration with model selection
+
+**Next Up**: Task 7 (Checkpoint - Test model selection)
+
+**Remaining**: 11 tasks (Tasks 7-17)
+
+## Key Learnings
+
+### Model Abstraction Benefits
+- Clean separation between model creation and usage
+- Easy to add new model providers
+- Consistent error handling across providers
+- Configuration centralized in one place
+
+### UI/UX Considerations
+- Dropdown provides better UX than environment variables
+- Visual feedback of active model is important
+- Graceful degradation improves reliability
+- Clear error messages guide users to solutions
+
+### Workshop Design
+- Validation scripts as prerequisites prevent late-stage failures
+- Integrated testing (via app) is more effective than unit testing alone
+- Task reorganization improved workflow clarity
+
+---
+
+# January 15, 2026 (Morning) - Debugging & Inference Components
 
 ## Session Overview
 Debugged and resolved agent model endpoint validation issues. Successfully validated both SageMaker endpoints (XGBoost and agent model) with inference component support.
@@ -131,7 +350,7 @@ export AWS_REGION="us-east-1"
 
 ---
 
-# Session Summary - January 15, 2026
+# Session Summary - January 15, 2026 (Full Day)
 
 ## What We Accomplished Today
 
@@ -140,39 +359,56 @@ export AWS_REGION="us-east-1"
 2. Validated both SageMaker endpoints successfully
 3. Updated documentation with inference component instructions
 
-### Afternoon/Evening: Configuration Module ✅
+### Afternoon: Configuration Module ✅
 1. Added `SAGEMAKER_INFERENCE_COMPONENT` to config module (9th environment variable)
 2. Maintained alphabetical ordering across all files
 3. Updated GETTING-STARTED.md with comprehensive environment variable table
 4. Tested configuration in running application - all working perfectly
 
-### Improvements Made ✅
-1. **Validation Scripts**:
-   - Agent endpoint: Added note about base model behavior
-   - XGBoost endpoint: Now displays full feature values (not just count)
-2. **Documentation**: 
-   - Added inference component discovery instructions
-   - Created detailed environment variable reference table
-3. **Configuration**:
-   - All 9 variables properly managed and alphabetically sorted
-   - Consistent defaults using `my-*` placeholders
+### Evening: Model Modules & Application Integration ✅
+1. Created Bedrock model wrapper module (`bedrock_model.py`)
+2. Created SageMaker model wrapper module (`sagemaker_model.py`)
+3. Changed default model to Amazon Nova 2 Lite (more cost-effective)
+4. Added model selection dropdown to application with 5 model options
+5. Updated all application code to use new model modules
+6. Added prominent SageMaker compatibility documentation
+7. Reorganized task list for better workflow (Tasks 6-7 swapped)
 
-## Files Modified Today
+## Major Milestones Reached
 
-### Created/Updated
-- `workshop4/sagemaker/validate_agent_endpoint.py` - Inference component support + behavior notes
+✅ **Infrastructure Validation Complete** (Tasks 1-2)
+- Both SageMaker endpoints validated and working
+- Inference component support implemented
+- Comprehensive documentation written
+
+✅ **Foundation Layer Complete** (Tasks 3-6)
+- Configuration module managing 9 environment variables
+- Bedrock model wrapper with 4 cross-region profiles
+- SageMaker model wrapper with inference component support
+- Application integrated with model selection UI
+
+## Files Created Today
+
+### New Files
+- `workshop4/multi_agent/bedrock_model.py` - Bedrock model wrapper
+- `workshop4/multi_agent/sagemaker_model.py` - SageMaker model wrapper
+
+### Updated Files
+- `workshop4/sagemaker/validate_agent_endpoint.py` - Inference component support
 - `workshop4/sagemaker/validate_xgboost_endpoint.py` - Feature value display
-- `workshop4/multi_agent/config.py` - Added 9th environment variable
+- `workshop4/multi_agent/config.py` - 9th environment variable + default model change
+- `workshop4/multi_agent/app.py` - Model selection dropdown integration
+- `workshop4/multi_agent/teachers_assistant.py` - Uses new bedrock_model module
 - `workshop4/GETTING-STARTED.md` - Environment variable reference table
-- `workshop4/PART-3-SAGEMAKER.md` - Inference component documentation
-- `.kiro/session-notes/20260115-session-notes.md` - Consolidated Jan 13-15 notes
-- `.kiro/specs/workshop4-multi-agent-sagemaker-ai/tasks.md` - Marked Tasks 1-3 complete
+- `workshop4/PART-3-SAGEMAKER.md` - Inference component + compatibility documentation
+- `.kiro/specs/workshop4-multi-agent-sagemaker-ai/tasks.md` - Tasks 1-6 complete, reorganized 6-7
+- `.kiro/session-notes/20260115-session-notes.md` - Comprehensive session notes
 
 ## Environment Variables (Final List - 9 Total)
 
 ```bash
 export AWS_REGION="us-east-1"
-export BEDROCK_MODEL_ID="us.amazon.nova-pro-v1:0"
+export BEDROCK_MODEL_ID="us.amazon.nova-2-lite-v1:0"  # Changed default
 export MAX_RESULTS="9"
 export MIN_SCORE="0.000001"
 export SAGEMAKER_INFERENCE_COMPONENT="adapter-my-gpt-oss-20b-1-1768457329-1768457350"
@@ -184,29 +420,36 @@ export XGBOOST_ENDPOINT_NAME="xgboost-serverless-ep2026-01-12-05-31-16"
 
 ## Progress Tracker
 
-**Completed**: 3 of 19 tasks (15.8%)
+**Completed**: 6 of 17 tasks (35.3%)
 - ✅ Task 1: Agent endpoint validation
-- ✅ Task 2: XGBoost endpoint validation  
+- ✅ Task 2: XGBoost endpoint validation
 - ✅ Task 3: Configuration module
+- ✅ Task 4: Bedrock model module
+- ✅ Task 5: SageMaker model module
+- ✅ Task 6: Application integration with model selection
 
-**Next Up**: Tasks 4-5 (Model modules)
-- 🎯 Task 4: Bedrock model module
-- 🎯 Task 5: SageMaker model module
+**Next Up**: Task 7 (Checkpoint - Test model selection via UI)
 
-**Remaining**: 16 tasks (Tasks 4-19)
+**Remaining**: 11 tasks (Tasks 7-17)
 
 ## Tomorrow's Plan
 
-1. Create Bedrock model module (Task 4)
-2. Create SageMaker model module with inference component support (Task 5)
-3. Run checkpoint verification (Task 6)
-4. If time permits, start Task 7 (model selection UI)
+1. **Task 7**: Test model selection using the application
+   - Run app locally with `streamlit run workshop4/multi_agent/app.py`
+   - Test each Bedrock model from dropdown
+   - Test SageMaker model (if endpoint available)
+   - Verify sidebar displays correct information
 
-**Estimated Time**: 2-3 hours for Tasks 4-6
+2. **Task 8**: Start loan assistant implementation
+   - Create loan_assistant.py with data transformation logic
+   - Implement one-hot encoding for categorical features
+   - Implement CSV payload generation
+
+**Estimated Time**: 2-3 hours for Tasks 7-8
 
 ---
 
-**Good night! Ready to continue tomorrow.** 🌙
+**Excellent progress today! Foundation layer complete, ready for feature implementation.** 🎉
 
 ## Resources
 
@@ -418,3 +661,381 @@ This structure prevents the common workshop anti-pattern where students build co
 - [SageMaker Inference Components Documentation](https://docs.aws.amazon.com/sagemaker/latest/dg/inference-components.html)
 - AWS CLI: `aws sagemaker list-inference-components`
 - AWS CLI: `aws sagemaker list-endpoints`
+
+
+---
+
+# January 15, 2026 (Late Evening) - SSM Parameter Store Migration
+
+## Session Overview
+Major architecture refactoring to eliminate environment variables and migrate to AWS Systems Manager (SSM) Parameter Store for all configuration management. This enables dynamic configuration updates without Docker container rebuilds.
+
+## Key Accomplishments
+
+### 1. Created CloudFormation Template for SSM Parameters ✅
+- **File**: `workshop4/ssm/teachassist-params.yaml`
+- **Purpose**: Codifies all 9 configuration parameters as SSM Parameter Store parameters
+- **Features**:
+  - Environment-based parameter paths: `/teachassist/{environment}/{category}/{parameter}`
+  - Default values for all parameters
+  - Organized by category: aws, bedrock, sagemaker, xgboost, knowledge-base
+  - Easy deployment via CloudFormation stack
+  - Students can customize and update without Docker rebuilds
+
+### 2. Created SSM Deployment Documentation ✅
+- **File**: `workshop4/ssm/README.md`
+- **Content**:
+  - Step-by-step CloudFormation deployment instructions
+  - Parameter structure explanation
+  - How to update parameters after deployment
+  - Environment variable setup (only TEACHASSIST_ENV needed)
+  - Verification commands
+
+### 3. Created Migration Guide ✅
+- **File**: `.kiro/specs/workshop4-multi-agent-sagemaker-ai/MIGRATION_GUIDE.md`
+- **Location**: Moved to spec directory as side documentation (not student-facing)
+- **Content**:
+  - Before/after comparison of environment variable vs SSM approach
+  - Benefits of SSM Parameter Store (dynamic updates, no rebuilds, centralized management)
+  - Code examples showing the migration pattern
+  - Clear explanation of the new architecture
+- **Rationale**: Students don't need to know about previous state, only what works now
+
+### 4. Completely Rewrote Configuration Module ✅
+- **File**: `workshop4/multi_agent/config.py`
+- **Changes**:
+  - Removed all `os.getenv()` calls (except TEACHASSIST_ENV and AWS credentials)
+  - Implemented SSM Parameter Store client with caching
+  - Created `get_ssm_parameter()` function with error handling
+  - All getter functions now fetch from SSM Parameter Store
+  - Added `get_default_model_config()` for unified model configuration
+  - Maintains same public API (all getter functions unchanged)
+
+### 5. Created Model Factory Module ✅
+- **File**: `workshop4/multi_agent/model_factory.py`
+- **Purpose**: Unified model creation from configuration dictionaries
+- **Function**: `create_model_from_config(model_config)`
+- **Features**:
+  - Supports both Bedrock and SageMaker providers
+  - Handles all model-specific parameters
+  - Clean abstraction for distributed architectures
+  - Validates provider and required parameters
+
+### 6. Updated Model Modules with Config Support ✅
+- **Files**: 
+  - `workshop4/multi_agent/bedrock_model.py`
+  - `workshop4/multi_agent/sagemaker_model.py`
+- **Changes**:
+  - Added `create_model_from_config()` functions to both modules
+  - Enables model creation from config dictionaries
+  - Supports distributed architecture patterns
+  - Maintains backward compatibility with direct function calls
+
+### 7. Updated All Sub-Assistants ✅
+- **Files Updated**:
+  - `workshop4/multi_agent/math_assistant.py`
+  - `workshop4/multi_agent/english_assistant.py`
+  - `workshop4/multi_agent/language_assistant.py`
+  - `workshop4/multi_agent/computer_science_assistant.py`
+  - `workshop4/multi_agent/no_expertise.py`
+- **Pattern Applied**:
+  ```python
+  @tool
+  def assistant_name(query: str) -> str:
+      # Get default model config from SSM Parameter Store
+      model_config = get_default_model_config()
+      
+      # Create model from config
+      model = create_model_from_config(model_config)
+      
+      # Create agent with model
+      agent = Agent(model=model, ...)
+  ```
+- **Key Changes**:
+  - Removed `model_config` parameter from all tool signatures
+  - Each assistant now fetches config internally using `get_default_model_config()`
+  - Simplified tool signatures (Strands tools can't accept extra parameters)
+  - Consistent pattern across all assistants
+
+### 8. Updated Teachers Assistant (CLI) ✅
+- **File**: `workshop4/multi_agent/teachers_assistant.py`
+- **Changes**:
+  - Removed `create_bedrock_model()` import
+  - Added `get_default_model_config()` and `create_model_from_config()` imports
+  - Fetches model config from SSM Parameter Store
+  - Creates model using model factory
+  - Maintains same functionality with new architecture
+
+### 9. Updated Streamlit Application ✅
+- **File**: `workshop4/multi_agent/app.py`
+- **Changes**:
+  - Removed `get_all_config_values()` debug section
+  - Added `model_factory` import
+  - Simplified imports (removed unused config functions)
+  - Maintains model selection dropdown functionality
+  - Works seamlessly with SSM-based configuration
+
+## Architecture Decisions
+
+### Decision: SSM Parameter Store Only (No Environment Variables)
+**Rationale**:
+- **Dynamic Configuration**: Update parameters without Docker rebuilds
+- **Cost Optimization**: Handle ephemeral SageMaker endpoints (delete/recreate) by just updating SSM parameter
+- **Centralized Management**: All configuration in one place (AWS Systems Manager)
+- **Security**: Sensitive values stored in AWS, not in environment files
+- **Consistency**: Single source of truth for all environments
+
+**Exceptions** (Only 2 environment variables remain):
+1. `TEACHASSIST_ENV` - Determines which parameter path to use (dev/staging/prod)
+2. AWS credentials - Standard AWS SDK credential chain
+
+### Decision: CloudFormation for Parameter Deployment
+**Rationale**:
+- **Infrastructure as Code**: Parameters defined declaratively
+- **Easy Deployment**: Single command to create all parameters
+- **Version Control**: Template can be tracked in Git
+- **Repeatability**: Students can deploy to multiple environments
+- **Updates**: Change template and update stack to modify parameters
+
+### Decision: Sub-Assistants Use Internal Config Fetching
+**Rationale**:
+- **Strands Limitation**: Tools can't accept extra parameters beyond their signature
+- **Simplicity**: Each assistant is self-contained
+- **Consistency**: All assistants follow same pattern
+- **Caching**: SSM client caches parameters, so multiple calls are efficient
+
+### Decision: Model Factory Pattern
+**Rationale**:
+- **Unified Interface**: Single function to create any model type
+- **Distributed Architecture**: Config dictionaries can be passed across process boundaries
+- **Flexibility**: Easy to add new model providers
+- **Testability**: Can mock config dictionaries for testing
+
+## SSM Parameter Structure
+
+### Parameter Path Format
+```
+/teachassist/{environment}/{category}/{parameter_name}
+```
+
+### Categories
+- **aws**: Region configuration
+- **bedrock**: Bedrock model settings
+- **sagemaker**: SageMaker endpoint settings
+- **xgboost**: XGBoost endpoint settings
+- **knowledge-base**: Knowledge base settings
+
+### All 9 Parameters
+1. `/teachassist/dev/aws/region` - AWS region (default: us-east-1)
+2. `/teachassist/dev/bedrock/model_id` - Bedrock model ID (default: us.amazon.nova-2-lite-v1:0)
+3. `/teachassist/dev/knowledge-base/id` - Knowledge base ID
+4. `/teachassist/dev/knowledge-base/max_results` - Max search results (default: 9)
+5. `/teachassist/dev/knowledge-base/min_score` - Min relevance score (default: 0.000001)
+6. `/teachassist/dev/sagemaker/inference_component` - Inference component name
+7. `/teachassist/dev/sagemaker/model_endpoint` - SageMaker endpoint name
+8. `/teachassist/dev/sagemaker/model_provider` - Model provider (default: bedrock)
+9. `/teachassist/dev/xgboost/endpoint_name` - XGBoost endpoint name
+
+## Implementation Pattern
+
+### Before (Environment Variables)
+```python
+import os
+
+BEDROCK_MODEL_ID = os.getenv("BEDROCK_MODEL_ID", "us.amazon.nova-2-lite-v1:0")
+model = create_bedrock_model(model_id=BEDROCK_MODEL_ID)
+```
+
+### After (SSM Parameter Store)
+```python
+from config import get_default_model_config
+from model_factory import create_model_from_config
+
+model_config = get_default_model_config()
+model = create_model_from_config(model_config)
+```
+
+## Benefits of SSM Migration
+
+### 1. Dynamic Configuration Updates
+- Change SageMaker endpoint without rebuilding Docker container
+- Update model IDs without redeploying application
+- Modify knowledge base settings on the fly
+
+### 2. Cost Optimization
+- Delete expensive SageMaker endpoints when not in use
+- Recreate endpoints when needed
+- Update SSM parameter with new endpoint name
+- Application picks up new endpoint automatically
+
+### 3. Environment Management
+- Same codebase for dev/staging/prod
+- Different parameter paths for each environment
+- Switch environments by changing TEACHASSIST_ENV
+
+### 4. Security
+- Sensitive values stored in AWS Systems Manager
+- IAM-based access control
+- No secrets in environment files or Docker images
+
+### 5. Centralized Management
+- All configuration in AWS Console
+- Easy to audit and update
+- Single source of truth
+
+## Current Status
+
+### Completed ✅
+- ✅ Task 1: Agent endpoint validation
+- ✅ Task 2: XGBoost endpoint validation
+- ✅ Task 3: Configuration module (now SSM-based)
+- ✅ Task 4: Bedrock model module (with config support)
+- ✅ Task 5: SageMaker model module (with config support)
+- ✅ Task 6: Application integration (SSM-compatible)
+- ✅ **Architecture Refactoring**: SSM Parameter Store migration complete
+
+### Ready for Testing
+- 🎯 Task 7: Checkpoint - Test with SSM parameters
+  - Deploy SSM parameters via CloudFormation
+  - Set `export TEACHASSIST_ENV=dev`
+  - Run application and verify it fetches config from SSM
+  - Test model selection dropdown
+  - Verify all sub-assistants work correctly
+
+## Files Created/Modified (Late Evening Session)
+
+### Created
+- `workshop4/ssm/teachassist-params.yaml` - CloudFormation template
+- `workshop4/ssm/README.md` - Deployment instructions
+- `.kiro/specs/workshop4-multi-agent-sagemaker-ai/MIGRATION_GUIDE.md` - Migration guide (spec documentation)
+- `workshop4/multi_agent/model_factory.py` - Model factory module
+
+### Completely Rewritten
+- `workshop4/multi_agent/config.py` - SSM-based configuration
+
+### Updated
+- `workshop4/multi_agent/bedrock_model.py` - Added `create_model_from_config()`
+- `workshop4/multi_agent/sagemaker_model.py` - Added `create_model_from_config()`
+- `workshop4/multi_agent/math_assistant.py` - Uses SSM config internally
+- `workshop4/multi_agent/english_assistant.py` - Uses SSM config internally
+- `workshop4/multi_agent/language_assistant.py` - Uses SSM config internally
+- `workshop4/multi_agent/computer_science_assistant.py` - Uses SSM config internally
+- `workshop4/multi_agent/no_expertise.py` - Uses SSM config internally
+- `workshop4/multi_agent/teachers_assistant.py` - Uses SSM config
+- `workshop4/multi_agent/app.py` - Simplified imports, SSM-compatible
+- `.kiro/session-notes/20260115-session-notes.md` - This update
+
+## Deployment Instructions
+
+### 1. Deploy SSM Parameters
+```bash
+cd workshop4/ssm
+aws cloudformation create-stack \
+  --stack-name teachassist-params-dev \
+  --template-body file://teachassist-params.yaml \
+  --parameters ParameterKey=Environment,ParameterValue=dev
+```
+
+### 2. Set Environment Variable
+```bash
+export TEACHASSIST_ENV=dev
+```
+
+### 3. Run Application
+```bash
+cd workshop4/multi_agent
+streamlit run app.py
+```
+
+## Testing Plan
+
+1. **Deploy Parameters**: Use CloudFormation to create SSM parameters
+2. **Verify Parameters**: Check AWS Console or use AWS CLI
+3. **Test CLI Application**: Run `teachers_assistant.py` and verify it works
+4. **Test Streamlit App**: Run `app.py` and test model selection
+5. **Test Sub-Assistants**: Ask questions to each specialist
+6. **Update Parameter**: Change a parameter value and verify app picks it up
+7. **Test SageMaker**: If endpoint available, test SageMaker model selection
+
+## Next Session Actions
+
+1. **Task 7 Checkpoint**: Test SSM-based configuration
+   - Deploy SSM parameters via CloudFormation
+   - Test CLI application (`teachers_assistant.py`)
+   - Test Streamlit application (`app.py`)
+   - Verify model selection works
+   - Test all sub-assistants
+   - Update a parameter and verify dynamic reload
+
+2. **If Task 7 passes, proceed to Task 8**: Loan assistant implementation
+   - Create `multi_agent/loan_assistant.py`
+   - Implement data transformation logic
+   - Implement XGBoost invocation logic
+
+## Progress Tracker
+
+**Completed**: 6 of 17 tasks (35.3%) + Major Architecture Refactoring
+- ✅ Task 1: Agent endpoint validation
+- ✅ Task 2: XGBoost endpoint validation
+- ✅ Task 3: Configuration module (SSM-based)
+- ✅ Task 4: Bedrock model module
+- ✅ Task 5: SageMaker model module
+- ✅ Task 6: Application integration
+- ✅ **Bonus**: SSM Parameter Store migration
+
+**Next Up**: Task 7 (Checkpoint - Test SSM configuration)
+
+**Remaining**: 11 tasks (Tasks 7-17)
+
+## Key Learnings
+
+### SSM Parameter Store Benefits
+- Eliminates need for environment variable management
+- Enables dynamic configuration without rebuilds
+- Perfect for ephemeral resources (SageMaker endpoints)
+- Centralized configuration management
+- Better security posture
+
+### CloudFormation for Configuration
+- Infrastructure as Code for configuration
+- Easy to deploy and update
+- Version controlled
+- Repeatable across environments
+
+### Model Factory Pattern
+- Clean abstraction for model creation
+- Supports distributed architectures
+- Easy to test and mock
+- Flexible for future providers
+
+### Sub-Assistant Pattern
+- Internal config fetching works well with Strands tools
+- Consistent pattern across all assistants
+- SSM caching makes multiple calls efficient
+- Clean separation of concerns
+
+## Technical Debt Resolved
+
+### Before This Session
+- ❌ Environment variables scattered across multiple files
+- ❌ Docker rebuilds required for config changes
+- ❌ Difficult to manage ephemeral SageMaker endpoints
+- ❌ No centralized configuration management
+- ❌ Sub-assistants had complex parameter passing
+
+### After This Session
+- ✅ Single source of truth (SSM Parameter Store)
+- ✅ Dynamic configuration updates (no rebuilds)
+- ✅ Easy to manage ephemeral resources
+- ✅ Centralized configuration in AWS
+- ✅ Clean, simple sub-assistant pattern
+
+## End of Session - January 15, 2026 (Late Evening)
+
+**Time**: Very late evening
+**Status**: Major architecture refactoring complete, ready for testing
+**Next Session**: Deploy SSM parameters and test entire system
+
+---
+
+**Excellent progress! SSM migration complete - this is a significant architectural improvement that will make the workshop much more flexible and cost-effective.** 🎉

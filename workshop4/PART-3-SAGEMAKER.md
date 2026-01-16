@@ -483,7 +483,7 @@ source ~/.bashrc
 
 ┌─────────────────────────────────────────────────────────────┐
 │              Reasoning LLM Layer                             │
-│  ┌──────────────────┐         ┌──────────────────┐         │
+│  ┌──────────────────┐         �┌──────────────────┐         │
 │  │  Bedrock Models  │         │ SageMaker Models │         │
 │  │  ┌────────────┐  │         │  ┌────────────┐  │         │
 │  │  │ Nova Pro   │  │         │  │ Custom LLM │  │         │
@@ -501,6 +501,54 @@ source ~/.bashrc
 3. **Specialized Agents**: Math, English, Language, Computer Science, Loan Assistant
 4. **Predictive Model**: XGBoost model for loan acceptance prediction
 5. **Configuration Module**: Centralized environment variable management
+
+---
+
+## IMPORTANT: SageMaker Model Compatibility
+
+### ⚠️ OpenAI-Compatible Chat Completion API Required
+
+**The Strands Agents SDK `SageMakerAIModel` class requires SageMaker AI models that support OpenAI-compatible chat completion APIs.**
+
+#### What This Means
+
+Not all models deployed on SageMaker will work with Strands Agents. Your model must:
+
+1. **Support Chat Completion Format**: The model must accept and respond to chat-formatted requests (system messages, user messages, assistant messages)
+2. **Use OpenAI-Compatible API**: The model's inference endpoint must implement an OpenAI-compatible interface
+
+#### Validated Models
+
+During development and testing, the following models have been validated:
+
+- ✅ **Mistral-Small-24B-Instruct-2501**: Demonstrated reliable performance across various conversational AI tasks with tool calling support
+
+#### Models That Will NOT Work
+
+- ❌ **Base Language Models** (e.g., Open Llama 7b V2): Will fail with "Template error: template not found" because they lack chat completion API compatibility
+- ❌ **Models Without Chat Templates**: Any model that doesn't have a chat template configured
+
+#### Tool Calling Support
+
+Tool calling support varies by model:
+- Models like **Mistral-Small-24B-Instruct-2501** have demonstrated reliable tool calling capabilities
+- Not all models deployed on SageMaker support this feature
+- **Verify your model's capabilities** before implementing tool-based workflows
+
+#### How to Verify Compatibility
+
+Before deploying your multi-agent application:
+
+1. **Check Model Documentation**: Verify the model supports chat completion format
+2. **Test with Validation Script**: Use `validate_agent_endpoint.py` to test your endpoint
+3. **Review Model Card**: Check if the model explicitly mentions OpenAI compatibility or chat templates
+
+#### Reference
+
+For more information, see the official Strands Agents documentation:
+- [SageMaker Model Provider Guide](https://strandsagents.com/latest/documentation/docs/user-guide/concepts/model-providers/sagemaker/)
+
+---
 
 ---
 

@@ -2,24 +2,115 @@
 """
 Configuration module for multi-agent application.
 
-This module centralizes environment variable management and provides
-validated configuration values for the application. All environment
-variable access should go through this module to ensure consistency
-and proper validation.
+This module fetches all configuration from AWS Systems Manager Parameter Store.
+No environment variables are used except for TEACHASSIST_ENV (which specifies
+the environment: dev, staging, or prod) and AWS credentials.
 
-Environment variables are organized alphabetically for easy lookup.
+All configuration parameters are stored in SSM Parameter Store under:
+    /teachassist/{environment}/{category}/{parameter_name}
+
+Example:
+    /teachassist/dev/bedrock/model_id
+    /teachassist/prod/sagemaker/model_endpoint
+
+To deploy parameters, use the CloudFormation template in workshop4/ssm/
 """
 
 import os
-from typing import Optional
+import boto3
+from typing import Optional, Dict, Any
+from functools import lru_cache
 
+
+# Get environment from environment variable (only env var we use!)
+TEACHASSIST_ENV = os.getenv('TEACHASSIST_ENV', 'dev')
+
+
+@lru_cache(maxsize=1)
+def _get_ssm_client():
+    """Get cached SSM client."""
+    # AWS region can be set via AWS_REGION env var or AWS config
+    region = os.getenv('AWS_REGION', 'us-east-1')
+    return boto3.client('ssm', region_name=region)
+
+
+@lru_cache(maxsize=1)
+def _fetch_all_parameters() -> Dict[str, str]:
+    """
+    Fetch all parameters from SSM Parameter Store for the current environment.
+    
+    This function fetches all parameters under /teachassist/{env}/ and caches them.
+    The cache is cleared when the Python process restarts.
+    
+    Returns:
+        Dictionary mapping parameter names to values
+    """
+    ssm = _get_ssm_client()
+    parameter_path = f'/teachassist/{TEACHASSIST_ENV}'
+    
+    try:
+        # Fetch all parameters recursively
+        response = ssm.get_parameters_by_path(
+            Path=parameter_path,
+            Recursive=True,
+            WithDecryption=True
+        )
+        
+        # Build dictionary of parameter name -> value
+        params = {}
+        for param in response['Parameters']:
+            # Extract the parameter name (last part of the path)
+            # e.g., /teachassist/dev/bedrock/model_id -> bedrock/model_id
+            name = param['Name'].replace(f'{parameter_path}/', '')
+            params[name] = param['Value']
+        
+        return params
+        
+    except Exception as e:
+        print(f"Error fetching parameters from SSM: {e}")
+        print(f"Ensure parameters are deployed for environment: {TEACHASSIST_ENV}")
+        print(f"See workshop4/ssm/README.md for deployment instructions")
+        raise
+
+
+def _get_parameter(category: str, name: str, default: Optional[str] = None) -> str:
+    """
+    Get a parameter value from the cached parameters.
+    
+    Args:
+        category: Parameter category (e.g., 'bedrock', 'sagemaker')
+        name: Parameter name (e.g., 'model_id', 'endpoint_name')
+        default: Default value if parameter not found
+    
+    Returns:
+        Parameter value
+    
+    Raises:
+        KeyError: If parameter not found and no default provided
+    """
+    params = _fetch_all_parameters()
+    key = f'{category}/{name}'
+    
+    if key in params:
+        return params[key]
+    elif default is not None:
+        return default
+    else:
+        raise KeyError(
+            f"Parameter '{key}' not found in SSM Parameter Store for environment '{TEACHASSIST_ENV}'. "
+            f"Deploy parameters using: aws cloudformation create-stack --stack-name teachassist-params-{TEACHASSIST_ENV} "
+            f"--template-body file://workshop4/ssm/teachassist-params.yaml"
+        )
+
+
+# Configuration getter functions (alphabetically sorted)
 
 def get_aws_region() -> str:
     """
-    Get AWS region from environment variable.
+    Get AWS region from SSM Parameter Store.
     
-    Environment Variable: AWS_REGION
-    Default: us-east-1 (recommended for workshop to access Nova Forge)
+    Parameter: /teachassist/{env}/aws/region
+    Default: us-east-1
     
     Returns:
         AWS region string (e.g., 'us-east-1', 'us-west-2')
@@ -29,19 +120,19 @@ def get_aws_region() -> str:
         >>> print(region)
         'us-east-1'
     """
-    return os.getenv("AWS_REGION", "us-east-1")
+    return _get_parameter('aws', 'region', default='us-east-1')
 
 
 def get_bedrock_model_id() -> str:
     """
-    Get Bedrock model ID from environment variable.
+    Get Bedrock model ID from SSM Parameter Store.
     
-    Environment Variable: BEDROCK_MODEL_ID
-    Default: us.amazon.nova-pro-v1:0
+    Parameter: /teachassist/{env}/bedrock/model_id
+    Default: us.amazon.nova-2-lite-v1:0
     
     Supported Models:
-        - us.amazon.nova-pro-v1:0 (default)
-        - us.amazon.nova-2-lite-v1:0
+        - us.amazon.nova-2-lite-v1:0 (default)
+        - us.amazon.nova-pro-v1:0
         - us.anthropic.claude-haiku-4-5-20251001-v1:0
         - us.anthropic.claude-sonnet-4-5-20250929-v1:0
     
@@ -51,16 +142,16 @@ def get_bedrock_model_id() -> str:
     Example:
         >>> model_id = get_bedrock_model_id()
         >>> print(model_id)
-        'us.amazon.nova-pro-v1:0'
+        'us.amazon.nova-2-lite-v1:0'
     """
-    return os.getenv("BEDROCK_MODEL_ID", "us.amazon.nova-pro-v1:0")
+    return _get_parameter('bedrock', 'model_id', default='us.amazon.nova-2-lite-v1:0')
 
 
 def get_max_results() -> int:
     """
-    Get maximum results for knowledge base queries.
+    Get maximum results for knowledge base queries from SSM Parameter Store.
     
-    Environment Variable: MAX_RESULTS
+    Parameter: /teachassist/{env}/knowledge_base/max_results
     Default: 9
     
     Returns:
@@ -71,14 +162,14 @@ def get_max_results() -> int:
         >>> print(max_results)
         9
     """
-    return int(os.getenv("MAX_RESULTS", "9"))
+    return int(_get_parameter('knowledge_base', 'max_results', default='9'))
 
 
 def get_min_score() -> float:
     """
-    Get minimum score threshold for knowledge base queries.
+    Get minimum score threshold for knowledge base queries from SSM Parameter Store.
     
-    Environment Variable: MIN_SCORE
+    Parameter: /teachassist/{env}/knowledge_base/min_score
     Default: 0.000001
     
     Returns:
@@ -89,14 +180,14 @@ def get_min_score() -> float:
         >>> print(min_score)
         0.000001
     """
-    return float(os.getenv("MIN_SCORE", "0.000001"))
+    return float(_get_parameter('knowledge_base', 'min_score', default='0.000001'))
 
 
 def get_sagemaker_inference_component() -> Optional[str]:
     """
-    Get SageMaker inference component name from environment variable.
+    Get SageMaker inference component name from SSM Parameter Store.
     
-    Environment Variable: SAGEMAKER_INFERENCE_COMPONENT
+    Parameter: /teachassist/{env}/sagemaker/inference_component
     Default: my-llm-inference-component
     Required: Only when endpoint uses inference components (multi-model endpoints)
     
@@ -115,36 +206,33 @@ def get_sagemaker_inference_component() -> Optional[str]:
         To list inference components for an endpoint:
         aws sagemaker list-inference-components --endpoint-name-equals <endpoint-name>
     """
-    return os.getenv("SAGEMAKER_INFERENCE_COMPONENT", "my-llm-inference-component")
+    return _get_parameter('sagemaker', 'inference_component', default='my-llm-inference-component')
 
 
 def get_sagemaker_model_endpoint() -> str:
     """
-    Get SageMaker model endpoint name from environment variable.
+    Get SageMaker model endpoint name from SSM Parameter Store.
     
-    Environment Variable: SAGEMAKER_MODEL_ENDPOINT
+    Parameter: /teachassist/{env}/sagemaker/model_endpoint
     Default: my-llm-endpoint
     Required: Only when STRANDS_MODEL_PROVIDER=sagemaker
     
     Returns:
         SageMaker endpoint name
     
-    Raises:
-        ValueError: If provider is 'sagemaker' but endpoint is not set
-    
     Example:
         >>> endpoint = get_sagemaker_model_endpoint()
         >>> print(endpoint)
-        'my-llm-endpoint'
+        'my-gpt-oss-20b-1-1768457329'
     """
-    return os.getenv("SAGEMAKER_MODEL_ENDPOINT", "my-llm-endpoint")
+    return _get_parameter('sagemaker', 'model_endpoint', default='my-llm-endpoint')
 
 
 def get_strands_knowledge_base_id() -> str:
     """
-    Get Strands knowledge base ID from environment variable.
+    Get Strands knowledge base ID from SSM Parameter Store.
     
-    Environment Variable: STRANDS_KNOWLEDGE_BASE_ID
+    Parameter: /teachassist/{env}/strands/knowledge_base_id
     Default: my-kb-id
     
     Returns:
@@ -153,16 +241,16 @@ def get_strands_knowledge_base_id() -> str:
     Example:
         >>> kb_id = get_strands_knowledge_base_id()
         >>> print(kb_id)
-        'my-kb-id'
+        'IMW46CITZE'
     """
-    return os.getenv("STRANDS_KNOWLEDGE_BASE_ID", "my-kb-id")
+    return _get_parameter('strands', 'knowledge_base_id', default='my-kb-id')
 
 
 def get_strands_model_provider() -> str:
     """
-    Get Strands Agent model provider from environment variable.
+    Get Strands Agent model provider from SSM Parameter Store.
     
-    Environment Variable: STRANDS_MODEL_PROVIDER
+    Parameter: /teachassist/{env}/strands/model_provider
     Default: bedrock
     Valid Values: bedrock, sagemaker
     
@@ -177,7 +265,7 @@ def get_strands_model_provider() -> str:
         >>> print(provider)
         'bedrock'
     """
-    provider = os.getenv("STRANDS_MODEL_PROVIDER", "bedrock").lower()
+    provider = _get_parameter('strands', 'model_provider', default='bedrock').lower()
     
     # Validate provider value
     valid_providers = ["bedrock", "sagemaker"]
@@ -192,9 +280,9 @@ def get_strands_model_provider() -> str:
 
 def get_xgboost_endpoint_name() -> str:
     """
-    Get XGBoost model endpoint name from environment variable.
+    Get XGBoost model endpoint name from SSM Parameter Store.
     
-    Environment Variable: XGBOOST_ENDPOINT_NAME
+    Parameter: /teachassist/{env}/xgboost/endpoint_name
     Default: my-xgboost-endpoint
     Required: Only when using loan assistant feature
     
@@ -204,12 +292,56 @@ def get_xgboost_endpoint_name() -> str:
     Example:
         >>> endpoint = get_xgboost_endpoint_name()
         >>> print(endpoint)
-        'my-xgboost-endpoint'
+        'xgboost-serverless-ep2026-01-12-05-31-16'
     """
-    return os.getenv("XGBOOST_ENDPOINT_NAME", "my-xgboost-endpoint")
+    return _get_parameter('xgboost', 'endpoint_name', default='my-xgboost-endpoint')
 
 
-# Utility function for debugging
+# Model configuration functions
+
+def get_default_model_config() -> Dict[str, Any]:
+    """
+    Get default model configuration for creating models.
+    
+    This function returns a configuration dictionary that can be used
+    to create model instances. It supports both Bedrock and SageMaker
+    providers.
+    
+    Returns:
+        Dictionary with model configuration:
+            - provider: "bedrock" or "sagemaker"
+            - model_id: Bedrock model ID (if provider=bedrock)
+            - endpoint_name: SageMaker endpoint (if provider=sagemaker)
+            - inference_component: SageMaker component (if applicable)
+            - temperature: Model temperature
+            - region: AWS region
+    
+    Example:
+        >>> config = get_default_model_config()
+        >>> print(config['provider'])
+        'bedrock'
+        >>> print(config['model_id'])
+        'us.amazon.nova-2-lite-v1:0'
+    """
+    provider = get_strands_model_provider()
+    
+    config = {
+        "provider": provider,
+        "temperature": 0.3,
+        "region": get_aws_region()
+    }
+    
+    if provider == "bedrock":
+        config["model_id"] = get_bedrock_model_id()
+    elif provider == "sagemaker":
+        config["endpoint_name"] = get_sagemaker_model_endpoint()
+        config["inference_component"] = get_sagemaker_inference_component()
+    
+    return config
+
+
+# Utility functions
+
 def get_all_config_values() -> dict:
     """
     Get all configuration values as a dictionary.
@@ -225,6 +357,7 @@ def get_all_config_values() -> dict:
         ...     print(f"{key}: {value}")
     """
     return {
+        "TEACHASSIST_ENV": TEACHASSIST_ENV,
         "AWS_REGION": get_aws_region(),
         "BEDROCK_MODEL_ID": get_bedrock_model_id(),
         "MAX_RESULTS": get_max_results(),
@@ -235,3 +368,16 @@ def get_all_config_values() -> dict:
         "STRANDS_MODEL_PROVIDER": get_strands_model_provider(),
         "XGBOOST_ENDPOINT_NAME": get_xgboost_endpoint_name(),
     }
+
+
+def clear_parameter_cache():
+    """
+    Clear the parameter cache.
+    
+    Call this function if you've updated parameters in SSM and want
+    the application to fetch fresh values without restarting.
+    
+    Note: In production, parameters are cached for the lifetime of the
+    Python process. Restart the application to pick up parameter changes.
+    """
+    _fetch_all_parameters.cache_clear()

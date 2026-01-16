@@ -1,5 +1,7 @@
 from strands import Agent, tool
 from cross_platform_tools import get_computer_science_tools, get_platform_capabilities
+from config import get_default_model_config
+from model_factory import create_model_from_config
 import json
 
 COMPUTER_SCIENCE_ASSISTANT_SYSTEM_PROMPT = """
@@ -50,6 +52,12 @@ def computer_science_assistant(query: str) -> str:
     try:
         print("Routed to Computer Science Assistant")
         
+        # Get default model config from SSM Parameter Store
+        model_config = get_default_model_config()
+        
+        # Create model from config
+        model = create_model_from_config(model_config)
+        
         # Get available tools for this platform
         available_tools = get_computer_science_tools()
         capabilities = get_platform_capabilities()
@@ -65,6 +73,7 @@ def computer_science_assistant(query: str) -> str:
         
         # Create the computer science agent with available tools
         cs_agent = Agent(
+            model=model,
             system_prompt=enhanced_prompt,
             tools=available_tools,
         )
