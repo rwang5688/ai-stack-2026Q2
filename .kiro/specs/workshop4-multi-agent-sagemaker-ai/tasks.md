@@ -6,7 +6,7 @@ This implementation plan follows a local-first development approach: build and t
 
 ## Tasks
 
-- [x] 1. Create agent model endpoint validation script
+- [x] 1. Create SageMaker model endpoint validation script
   - Create `workshop4/sagemaker/validate_agent_endpoint.py`
   - Extract endpoint invocation logic from openai-reasoning notebook
   - Use environment variables for endpoint configuration
@@ -29,12 +29,12 @@ This implementation plan follows a local-first development approach: build and t
 - [x] 3. Create configuration module for multi_agent
   - Create `multi_agent/config.py` with SSM Parameter Store integration
   - Implement getter functions in alphabetical order:
-    - `get_agent_model_endpoint()` - AGENT_MODEL_ENDPOINT
-    - `get_agent_model_inference_component()` - AGENT_MODEL_INFERENCE_COMPONENT
     - `get_aws_region()` - AWS_REGION
     - `get_default_model_id()` - DEFAULT_MODEL_ID
     - `get_max_results()` - MAX_RESULTS
     - `get_min_score()` - MIN_SCORE
+    - `get_sagemaker_model_endpoint()` - SAGEMAKER_MODEL_ENDPOINT
+    - `get_sagemaker_model_inference_component()` - SAGEMAKER_MODEL_INFERENCE_COMPONENT
     - `get_strands_knowledge_base_id()` - STRANDS_KNOWLEDGE_BASE_ID (REQUIRED - Framework integration point)
     - `get_temperature()` - TEMPERATURE
     - `get_xgboost_model_endpoint()` - XGBOOST_MODEL_ENDPOINT

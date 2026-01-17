@@ -33,7 +33,7 @@ The validation scripts serve as **prerequisites** that ensure:
 
 ### What You'll Validate
 
-1. **Agent Model Endpoint**: The reasoning LLM that powers your Strands Agents
+1. **SageMaker Model Endpoint**: The reasoning LLM that powers your Strands Agents
 2. **XGBoost Model Endpoint**: The predictive model for loan acceptance prediction
 
 ---
@@ -126,12 +126,12 @@ aws sts get-caller-identity
 
 ## Step 3: Configure Endpoint Names
 
-### 3.1 Set Agent Model Endpoint
+### 3.1 Set SageMaker Model Endpoint
 
-Set the environment variable for your SageMaker agent model endpoint:
+Set the environment variable for your SageMaker model endpoint:
 
 ```bash
-export SAGEMAKER_MODEL_ENDPOINT="your-agent-model-endpoint-name"
+export SAGEMAKER_MODEL_ENDPOINT="your-sagemaker-model-endpoint-name"
 ```
 
 **How to find your endpoint name:**
@@ -193,7 +193,7 @@ export XGBOOST_ENDPOINT_NAME="your-xgboost-endpoint-name"
 Check that your environment variables are set correctly:
 
 ```bash
-echo "Agent Model Endpoint: $SAGEMAKER_MODEL_ENDPOINT"
+echo "SageMaker Model Endpoint: $SAGEMAKER_MODEL_ENDPOINT"
 echo "Inference Component: $SAGEMAKER_INFERENCE_COMPONENT"
 echo "XGBoost Endpoint: $XGBOOST_ENDPOINT_NAME"
 echo "AWS Region: $AWS_REGION"
@@ -201,7 +201,7 @@ echo "AWS Region: $AWS_REGION"
 
 ---
 
-## Step 4: Validate Agent Model Endpoint
+## Step 4: Validate SageMaker Model Endpoint
 
 ### 4.1 Navigate to SageMaker Directory
 
@@ -227,10 +227,10 @@ uv run validate_agent_endpoint.py
 **✅ Success (with inference component):**
 ```
 ============================================================
-  Agent Model Endpoint Validation
+  SageMaker Model Endpoint Validation
 ============================================================
 
-🔍 Validating Agent Model Endpoint: my-gpt-oss-20b-1-1768457329
+🔍 Validating SageMaker Model Endpoint: my-gpt-oss-20b-1-1768457329
    Region: us-east-1
    Inference Component: adapter-my-gpt-oss-20b-1-1768457329-1768457350
 ------------------------------------------------------------
@@ -247,17 +247,17 @@ uv run validate_agent_endpoint.py
    }
 
 ============================================================
-✅ Agent model endpoint validation PASSED
+✅ SageMaker model endpoint validation PASSED
 ============================================================
 ```
 
 **✅ Success (without inference component):**
 ```
 ============================================================
-  Agent Model Endpoint Validation
+  SageMaker Model Endpoint Validation
 ============================================================
 
-🔍 Validating Agent Model Endpoint: your-agent-model-endpoint-name
+🔍 Validating SageMaker Model Endpoint: your-sagemaker-model-endpoint-name
    Region: us-east-1
 ------------------------------------------------------------
 
@@ -273,7 +273,7 @@ uv run validate_agent_endpoint.py
    }
 
 ============================================================
-✅ Agent model endpoint validation PASSED
+✅ SageMaker model endpoint validation PASSED
 ============================================================
 ```
 
@@ -293,10 +293,10 @@ uv run validate_agent_endpoint.py
 
 ❌ FAILED: Error validating endpoint
    Error type: ValidationException
-   Error message: Could not find endpoint "your-agent-model-endpoint-name"
+   Error message: Could not find endpoint "your-sagemaker-model-endpoint-name"
 
 ============================================================
-❌ Agent model endpoint validation FAILED
+❌ SageMaker model endpoint validation FAILED
 ============================================================
 ```
 
@@ -420,7 +420,7 @@ The sample data used in validation represents a customer profile with specific a
 ### 6.1 What You've Accomplished
 
 Congratulations! You've successfully validated that:
-- ✅ Your SageMaker agent model endpoint is working
+- ✅ Your SageMaker model endpoint is working
 - ✅ Your XGBoost model endpoint is working
 - ✅ Your AWS credentials have the correct permissions
 - ✅ You can invoke both endpoints programmatically
@@ -440,7 +440,7 @@ Now that your infrastructure is validated, you're ready to proceed with building
 Add your endpoint names to your `.bashrc` file so they persist across sessions:
 
 ```bash
-echo 'export SAGEMAKER_MODEL_ENDPOINT="your-agent-model-endpoint-name"' >> ~/.bashrc
+echo 'export SAGEMAKER_MODEL_ENDPOINT="your-sagemaker-model-endpoint-name"' >> ~/.bashrc
 echo 'export XGBOOST_ENDPOINT_NAME="your-xgboost-endpoint-name"' >> ~/.bashrc
 echo 'export AWS_REGION="us-east-1"' >> ~/.bashrc
 source ~/.bashrc
@@ -558,7 +558,7 @@ For more information, see the official Strands Agents documentation:
 
 **Location**: `workshop4/sagemaker/validate_agent_endpoint.py`
 
-**Purpose**: Validates that a SageMaker agent model endpoint is working correctly.
+**Purpose**: Validates that a SageMaker model endpoint is working correctly.
 
 **Environment Variables:**
 - `SAGEMAKER_MODEL_ENDPOINT`: Endpoint name (required)

@@ -11,7 +11,7 @@ All configuration parameters are stored in SSM Parameter Store under:
 
 Example:
     /teachers_assistant/dev/default_model_id
-    /teachers_assistant/prod/agent_model_endpoint
+    /teachers_assistant/prod/sagemaker_model_endpoint
 
 To deploy parameters, use the CloudFormation template in workshop4/ssm/
 """
@@ -78,7 +78,7 @@ def _get_parameter(name: str, default: Optional[str] = None) -> str:
     Get a parameter value from the cached parameters.
     
     Args:
-        name: Parameter name (e.g., 'default_model_id', 'agent_model_endpoint')
+        name: Parameter name (e.g., 'default_model_id', 'sagemaker_model_endpoint')
         default: Default value if parameter not found
     
     Returns:
@@ -102,51 +102,6 @@ def _get_parameter(name: str, default: Optional[str] = None) -> str:
 
 
 # Configuration getter functions (alphabetically sorted)
-
-def get_agent_model_endpoint() -> str:
-    """
-    Get agent model endpoint name from SSM Parameter Store.
-    
-    Parameter: /teachers_assistant/{env}/agent_model_endpoint
-    Default: my-agent-model-endpoint
-    Required: Only when user selects SageMaker model
-    
-    Returns:
-        SageMaker endpoint name for agent reasoning model
-    
-    Example:
-        >>> endpoint = get_agent_model_endpoint()
-        >>> print(endpoint)
-        'my-gpt-oss-20b-1-1768457329'
-    """
-    return _get_parameter('agent_model_endpoint', default='my-agent-model-endpoint')
-
-
-def get_agent_model_inference_component() -> Optional[str]:
-    """
-    Get agent model inference component name from SSM Parameter Store.
-    
-    Parameter: /teachers_assistant/{env}/agent_model_inference_component
-    Default: my-agent-model-inference-component
-    Required: Only when endpoint uses inference components (multi-model endpoints)
-    
-    Inference components allow multiple models/adapters on a single endpoint.
-    If your endpoint uses inference components, you must specify which one to use.
-    
-    Returns:
-        Inference component name or default placeholder
-    
-    Example:
-        >>> component = get_agent_model_inference_component()
-        >>> print(component)
-        'adapter-my-gpt-oss-20b-1-1768457329-1768457350'
-    
-    Note:
-        To list inference components for an endpoint:
-        aws sagemaker list-inference-components --endpoint-name-equals <endpoint-name>
-    """
-    return _get_parameter('agent_model_inference_component', default='my-agent-model-inference-component')
-
 
 def get_aws_region() -> str:
     """
@@ -224,6 +179,51 @@ def get_min_score() -> float:
         0.000001
     """
     return float(_get_parameter('min_score', default='0.000001'))
+
+
+def get_sagemaker_model_endpoint() -> str:
+    """
+    Get SageMaker model endpoint name from SSM Parameter Store.
+    
+    Parameter: /teachers_assistant/{env}/sagemaker_model_endpoint
+    Default: my-sagemaker-model-endpoint
+    Required: Only when user selects SageMaker model
+    
+    Returns:
+        SageMaker endpoint name for agent reasoning model
+    
+    Example:
+        >>> endpoint = get_sagemaker_model_endpoint()
+        >>> print(endpoint)
+        'my-gpt-oss-20b-1-1768457329'
+    """
+    return _get_parameter('sagemaker_model_endpoint', default='my-sagemaker-model-endpoint')
+
+
+def get_sagemaker_model_inference_component() -> Optional[str]:
+    """
+    Get SageMaker model inference component name from SSM Parameter Store.
+    
+    Parameter: /teachers_assistant/{env}/sagemaker_model_inference_component
+    Default: my-sagemaker-model-inference-component
+    Required: Only when endpoint uses inference components (multi-model endpoints)
+    
+    Inference components allow multiple models/adapters on a single endpoint.
+    If your endpoint uses inference components, you must specify which one to use.
+    
+    Returns:
+        Inference component name or default placeholder
+    
+    Example:
+        >>> component = get_sagemaker_model_inference_component()
+        >>> print(component)
+        'adapter-my-gpt-oss-20b-1-1768457329-1768457350'
+    
+    Note:
+        To list inference components for an endpoint:
+        aws sagemaker list-inference-components --endpoint-name-equals <endpoint-name>
+    """
+    return _get_parameter('sagemaker_model_inference_component', default='my-sagemaker-model-inference-component')
 
 
 def get_strands_knowledge_base_id() -> str:
@@ -344,10 +344,10 @@ def get_all_config_values() -> dict:
     """
     return {
         "TEACHERS_ASSISTANT_ENV": TEACHERS_ASSISTANT_ENV,
-        "AGENT_MODEL_ENDPOINT": get_agent_model_endpoint(),
-        "AGENT_MODEL_INFERENCE_COMPONENT": get_agent_model_inference_component(),
         "AWS_REGION": get_aws_region(),
         "DEFAULT_MODEL_ID": get_default_model_id(),
+        "SAGEMAKER_MODEL_ENDPOINT": get_sagemaker_model_endpoint(),
+        "SAGEMAKER_MODEL_INFERENCE_COMPONENT": get_sagemaker_model_inference_component(),
         "MAX_RESULTS": get_max_results(),
         "MIN_SCORE": get_min_score(),
         "STRANDS_KNOWLEDGE_BASE_ID": get_strands_knowledge_base_id(),

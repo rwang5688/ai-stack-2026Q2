@@ -175,11 +175,11 @@ def validate_xgboost_endpoint(endpoint_name: str) -> bool:
 
 **Interface**:
 ```python
-def get_agent_model_endpoint() -> str:
-    """Get agent model endpoint name from SSM Parameter Store."""
+def get_sagemaker_model_endpoint() -> str:
+    """Get SageMaker model endpoint name from SSM Parameter Store."""
     
-def get_agent_model_inference_component() -> Optional[str]:
-    """Get agent model inference component name from SSM Parameter Store."""
+def get_sagemaker_model_inference_component() -> Optional[str]:
+    """Get SageMaker model inference component name from SSM Parameter Store."""
     
 def get_strands_knowledge_base_id() -> str:
     """
@@ -213,13 +213,13 @@ def get_xgboost_model_endpoint() -> str:
 ```
 
 **SSM Parameters** (alphabetically sorted):
-- `/teachers_assistant/{env}/strands_knowledge_base_id`: Strands knowledge base ID (REQUIRED - Framework integration point with Bedrock Knowledge Base)
-- `/teachers_assistant/{env}/agent_model_endpoint`: Agent model endpoint name (default: my-agent-model-endpoint)
-- `/teachers_assistant/{env}/agent_model_inference_component`: Agent model inference component (default: my-agent-model-inference-component)
 - `/teachers_assistant/{env}/aws_region`: AWS region for all services (default: us-east-1)
 - `/teachers_assistant/{env}/default_model_id`: Default model ID (default: us.amazon.nova-2-lite-v1:0)
 - `/teachers_assistant/{env}/max_results`: Maximum results for knowledge base queries (default: 9)
 - `/teachers_assistant/{env}/min_score`: Minimum score threshold for knowledge base queries (default: 0.000001)
+- `/teachers_assistant/{env}/sagemaker_model_endpoint`: SageMaker model endpoint name (default: my-sagemaker-model-endpoint)
+- `/teachers_assistant/{env}/sagemaker_model_inference_component`: SageMaker model inference component (default: my-sagemaker-model-inference-component)
+- `/teachers_assistant/{env}/strands_knowledge_base_id`: Strands knowledge base ID (REQUIRED - Framework integration point with Bedrock Knowledge Base)
 - `/teachers_assistant/{env}/temperature`: Model temperature setting (default: 0.3)
 - `/teachers_assistant/{env}/xgboost_model_endpoint`: XGBoost loan prediction endpoint name (default: my-xgboost-model-endpoint)
 

@@ -29,7 +29,7 @@ tool-based workflows.
 
 import warnings
 from strands.models.sagemaker import SageMakerAIModel
-from config import get_agent_model_endpoint, get_agent_model_inference_component, get_aws_region
+from config import get_sagemaker_model_endpoint, get_sagemaker_model_inference_component, get_aws_region
 
 # Suppress urllib3 warnings about unclosed connections
 warnings.filterwarnings("ignore", message=".*unclosed.*", category=ResourceWarning)
@@ -52,9 +52,9 @@ def create_sagemaker_model(
     
     Args:
         endpoint_name: SageMaker endpoint name.
-                      If None, uses value from get_agent_model_endpoint().
+                      If None, uses value from get_sagemaker_model_endpoint().
         inference_component: Inference component name (for multi-model endpoints).
-                           If None, uses value from get_agent_model_inference_component().
+                           If None, uses value from get_sagemaker_model_inference_component().
                            Set to empty string to disable inference component usage.
         region: AWS region.
                If None, uses value from get_aws_region().
@@ -89,18 +89,18 @@ def create_sagemaker_model(
     """
     # Get endpoint name from parameter or config
     if endpoint_name is None:
-        endpoint_name = get_agent_model_endpoint()
+        endpoint_name = get_sagemaker_model_endpoint()
     
     # Validate endpoint name
-    if not endpoint_name or endpoint_name == "my-agent-model-endpoint":
+    if not endpoint_name or endpoint_name == "my-sagemaker-model-endpoint":
         raise ValueError(
-            "Agent model endpoint name is required. "
-            "Set AGENT_MODEL_ENDPOINT SSM parameter or pass endpoint_name parameter."
+            "SageMaker model endpoint name is required. "
+            "Set SAGEMAKER_MODEL_ENDPOINT SSM parameter or pass endpoint_name parameter."
         )
     
     # Get inference component from parameter or config
     if inference_component is None:
-        inference_component = get_agent_model_inference_component()
+        inference_component = get_sagemaker_model_inference_component()
     
     # Get AWS region from parameter or config
     if region is None:

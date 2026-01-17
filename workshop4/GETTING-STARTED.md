@@ -152,19 +152,19 @@ The CloudFormation template creates the following SSM parameters:
 
 | Parameter | SSM Path | Default | Description |
 |-----------|----------|---------|-------------|
-| Agent Model Endpoint | `/teachers_assistant/dev/agent_model_endpoint` | `my-agent-model-endpoint` | Agent model endpoint name |
-| Agent Model Inference Component | `/teachers_assistant/dev/agent_model_inference_component` | `my-agent-model-inference-component` | Agent model inference component (for multi-model endpoints) |
 | AWS Region | `/teachers_assistant/dev/aws_region` | `us-east-1` | AWS region for all services |
 | Default Model ID | `/teachers_assistant/dev/default_model_id` | `us.amazon.nova-2-lite-v1:0` | Default model ID (typically Bedrock cross-region profile) |
 | Max Results | `/teachers_assistant/dev/max_results` | `9` | Maximum knowledge base search results |
 | Min Score | `/teachers_assistant/dev/min_score` | `0.000001` | Minimum relevance score threshold |
+| SageMaker Model Endpoint | `/teachers_assistant/dev/sagemaker_model_endpoint` | `my-sagemaker-model-endpoint` | SageMaker model endpoint name |
+| SageMaker Model Inference Component | `/teachers_assistant/dev/sagemaker_model_inference_component` | `my-sagemaker-model-inference-component` | SageMaker model inference component (for multi-model endpoints) |
 | Strands Knowledge Base ID | `/teachers_assistant/dev/strands_knowledge_base_id` | `my-strands-knowledge-base-id` | Strands Knowledge Base identifier (Framework requirement) |
 | Temperature | `/teachers_assistant/dev/temperature` | `0.3` | Model temperature setting (0.0-1.0) |
 | XGBoost Model Endpoint | `/teachers_assistant/dev/xgboost_model_endpoint` | `my-xgboost-model-endpoint` | XGBoost model endpoint name |
 
 **Important Notes:**
 - Values with `my-*` prefixes are placeholders. Deploy the CloudFormation template "as is" with these defaults, then update them via AWS Console or CLI with your actual AWS resource names.
-- `agent_model_inference_component` is only needed if your SageMaker endpoint uses inference components (multi-model endpoints).
+- `sagemaker_model_inference_component` is only needed if your SageMaker endpoint uses inference components (multi-model endpoints).
 - To find your inference component name: `aws sagemaker list-inference-components --endpoint-name-equals <endpoint-name>`
 - Model provider (Bedrock vs SageMaker) is determined dynamically from the UI model selection, not stored as configuration.
 - `strands_knowledge_base_id` must keep this exact naming as it's a Strands Agents framework requirement for Bedrock Knowledge Base integration.

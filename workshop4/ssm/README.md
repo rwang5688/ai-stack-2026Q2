@@ -42,15 +42,15 @@ After deployment, update the parameter values with your actual AWS resource name
 
 **Using AWS CLI**:
 ```bash
-# Update agent model endpoint
+# Update SageMaker model endpoint
 aws ssm put-parameter \
-  --name "/teachers_assistant/dev/agent_model_endpoint" \
+  --name "/teachers_assistant/dev/sagemaker_model_endpoint" \
   --value "your-actual-endpoint-name" \
   --overwrite
 
-# Update agent model inference component (if using multi-model endpoints)
+# Update SageMaker model inference component (if using multi-model endpoints)
 aws ssm put-parameter \
-  --name "/teachers_assistant/dev/agent_model_inference_component" \
+  --name "/teachers_assistant/dev/sagemaker_model_inference_component" \
   --value "your-actual-inference-component-name" \
   --overwrite
 
@@ -77,7 +77,7 @@ aws ssm get-parameters-by-path \
 
 # Get a specific parameter
 aws ssm get-parameter \
-  --name "/teachers_assistant/dev/agent_model_endpoint"
+  --name "/teachers_assistant/dev/sagemaker_model_endpoint"
 ```
 
 ## Why Not Use CloudFormation Stack Updates?
@@ -89,7 +89,7 @@ aws ssm get-parameter \
 3. Only changes to **resource configurations** trigger CloudFormation updates
 4. To change values, you must update SSM parameters directly (not via CloudFormation)
 
-**Example**: If you change `AgentModelEndpoint` input parameter from `my-agent-model-endpoint` to `new-endpoint-name` and run `aws cloudformation update-stack`, the SSM parameter value will **not** change because the resource configuration (`ParamAgentModelEndpoint`) hasn't changed.
+**Example**: If you change `SageMakerModelEndpoint` input parameter from `my-sagemaker-model-endpoint` to `new-endpoint-name` and run `aws cloudformation update-stack`, the SSM parameter value will **not** change because the resource configuration (`ParamSageMakerModelEndpoint`) hasn't changed.
 
 ## Parameter Structure
 
@@ -103,12 +103,12 @@ All parameters follow this single-level naming convention:
 | Parameter Path | Description | Default Value |
 |---------------|-------------|---------------|
 | `/teachers_assistant/{env}/strands_knowledge_base_id` | Strands knowledge base ID (Framework requirement) | `my-strands-knowledge-base-id` |
-| `/teachers_assistant/{env}/agent_model_endpoint` | Agent model endpoint name | `my-agent-model-endpoint` |
-| `/teachers_assistant/{env}/agent_model_inference_component` | Agent model inference component | `my-agent-model-inference-component` |
 | `/teachers_assistant/{env}/aws_region` | AWS region for all services | `us-east-1` |
 | `/teachers_assistant/{env}/default_model_id` | Default model ID | `us.amazon.nova-2-lite-v1:0` |
 | `/teachers_assistant/{env}/max_results` | Max KB query results | `9` |
 | `/teachers_assistant/{env}/min_score` | Min KB query score | `0.000001` |
+| `/teachers_assistant/{env}/sagemaker_model_endpoint` | SageMaker model endpoint name | `my-sagemaker-model-endpoint` |
+| `/teachers_assistant/{env}/sagemaker_model_inference_component` | SageMaker model inference component | `my-sagemaker-model-inference-component` |
 | `/teachers_assistant/{env}/temperature` | Model temperature setting | `0.3` |
 | `/teachers_assistant/{env}/xgboost_model_endpoint` | XGBoost model endpoint name | `my-xgboost-model-endpoint` |
 
@@ -155,13 +155,13 @@ If you're deleting and recreating SageMaker endpoints to save costs, simply upda
 ```bash
 # Update endpoint name after recreating endpoint
 aws ssm put-parameter \
-  --name "/teachers_assistant/dev/agent_model_endpoint" \
+  --name "/teachers_assistant/dev/sagemaker_model_endpoint" \
   --value "new-endpoint-name-1234567890" \
   --overwrite
 
 # Update inference component
 aws ssm put-parameter \
-  --name "/teachers_assistant/dev/agent_model_inference_component" \
+  --name "/teachers_assistant/dev/sagemaker_model_inference_component" \
   --value "adapter-new-endpoint-1234567890" \
   --overwrite
 ```

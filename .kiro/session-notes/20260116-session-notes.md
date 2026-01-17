@@ -1618,36 +1618,37 @@ Standardized naming conventions across SSM parameters, configuration module, and
 4. `XGBoostEndpointName` → `XGBoostModelEndpoint`
 
 **Rationale for Each**:
-- **AgentModelInferenceComponent**: This is the inference component for the agent's reasoning model (not just any SageMaker model)
-- **AgentModelEndpoint**: This is the endpoint for the agent's reasoning model (clearer than "SageMaker")
-- **AgentKnowledgeBaseId**: This is the knowledge base used by the agent (not just any Strands KB)
-- **XGBoostModelEndpoint**: Consistent with "AgentModelEndpoint" - both are model endpoints
+- **SageMakerModelInferenceComponent**: This is the inference component for the SageMaker model used by Strands Agents (emphasizes SageMaker integration)
+- **SageMakerModelEndpoint**: This is the SageMaker endpoint for the agent's reasoning model (clearer than generic "agent")
+- **StrandsKnowledgeBaseId**: This is the Strands knowledge base ID (framework requirement - must keep exact naming)
+- **XGBoostModelEndpoint**: Consistent with "SageMakerModelEndpoint" - both are model endpoints
 
-### Decision: Revert SSM Parameter Defaults
-**Rationale**: The current defaults contain user-specific endpoint names. We should revert to generic placeholder values so students can customize them.
+### Decision: Use SageMaker Prefix for Agent Model Parameters
+**Rationale**: Since Strands Agents integrate with Bedrock by default, using "SageMaker" prefix emphasizes that these parameters are specifically for SageMaker integration. This makes it clearer that these are only needed when using SageMaker models (not Bedrock models).
 
 **New Defaults**:
-- `AgentModelInferenceComponent`: `my-agent-model-inference-component`
-- `AgentModelEndpoint`: `my-agent-model-endpoint`
-- `AgentKnowledgeBaseId`: `my-agent-kb-id`
+- `SageMakerModelInferenceComponent`: `my-sagemaker-model-inference-component`
+- `SageMakerModelEndpoint`: `my-sagemaker-model-endpoint`
+- `StrandsKnowledgeBaseId`: `my-strands-knowledge-base-id` (framework requirement - cannot rename)
 - `XGBoostModelEndpoint`: `my-xgboost-model-endpoint`
 
 ## Files to Update
 
 ### 1. SSM CloudFormation Template
-**File**: `workshop4/ssm/teachassist-params.yaml`
-- Rename parameter keys (SageMakerInferenceComponent → AgentModelInferenceComponent, etc.)
+**File**: `workshop4/ssm/teachers-assistant-params.yaml`
+- Rename parameter keys (SageMakerInferenceComponent → SageMakerModelInferenceComponent, etc.)
 - Update default values to generic placeholders
 - Update descriptions to reflect new naming
-- Update resource names (ParamSageMakerInferenceComponent → ParamAgentModelInferenceComponent, etc.)
+- Update resource names (ParamSageMakerInferenceComponent → ParamSageMakerModelInferenceComponent, etc.)
 - Update output names
+- Maintain alphabetical sorting of parameters
 
 ### 2. Configuration Module
 **File**: `workshop4/multi_agent/config.py`
 - Rename functions:
-  - `get_sagemaker_inference_component()` → `get_agent_model_inference_component()`
-  - `get_sagemaker_model_endpoint()` → `get_agent_model_endpoint()`
-  - `get_strands_knowledge_base_id()` → `get_agent_knowledge_base_id()`
+  - `get_sagemaker_inference_component()` → `get_sagemaker_model_inference_component()`
+  - `get_sagemaker_model_endpoint()` → `get_sagemaker_model_endpoint()` (already correct)
+  - `get_strands_knowledge_base_id()` → `get_strands_knowledge_base_id()` (framework requirement - keep as is)
   - `get_xgboost_endpoint_name()` → `get_xgboost_model_endpoint()`
 - Update SSM parameter paths in `_get_parameter()` calls
 - Update docstrings to reflect new naming
@@ -1692,32 +1693,36 @@ Standardized naming conventions across SSM parameters, configuration module, and
 - Clearer relationship between parameters
 - Better alignment with domain concepts
 
-## Final Naming Convention (Revised)
+## Final Naming Convention (Revised - January 16, 2026)
 
-After further discussion, we simplified to single-level SSM parameter paths and adopted functionality-based naming over service-based naming.
+After further discussion, we adopted SageMaker-prefixed naming to emphasize these parameters are specifically for Strands Agents integration with SageMaker (since Strands Agents integrate with Bedrock by default).
 
 ### Key Principles
-1. **Single-Level Paths**: Use `/teacher_assistant/{env}/{parameter_name}` (not multi-level)
-2. **Functionality Over Services**: Use `DefaultModelId` instead of `BedrockModelId`, `AgentKnowledgeBaseId` instead of `StrandsKnowledgeBaseId`
-3. **Consistent Prefixes**: "agent" prefix for agent-related params, "xgboost" prefix for XGBoost params
-4. **Explicit Naming**: Spell everything out (e.g., `my-agent-knowledge-base-id` not `my-agent-kb-id`)
+1. **Single-Level Paths**: Use `/teachers_assistant/{env}/{parameter_name}` (not multi-level)
+2. **SageMaker Prefix**: Use `SageMakerModelEndpoint` to emphasize SageMaker integration (vs Bedrock default)
+3. **Framework Requirements**: Keep `strands_knowledge_base_id` exact naming (Strands Agents framework requirement)
+4. **Alphabetical Sorting**: All parameters sorted alphabetically in SSM and documentation
+5. **Explicit Naming**: Spell everything out (e.g., `my-sagemaker-model-endpoint`)
 
 ### Complete Naming Table
 
 | CloudFormation Input Parameter | SSM Parameter Store Path | Config Function | Session Variable | Default Value |
 |-------------------------------|-------------------------|-----------------|------------------|---------------|
-| `AgentModelInferenceComponent` | `/teacher_assistant/{env}/agent_model_inference_component` | `get_agent_model_inference_component()` | N/A (maps to `inference_component`) | `my-agent-model-inference-component` |
-| `AgentModelEndpoint` | `/teacher_assistant/{env}/agent_model_endpoint` | `get_agent_model_endpoint()` | N/A (maps to `endpoint_name`) | `my-agent-model-endpoint` |
-| `AgentKnowledgeBaseId` | `/teacher_assistant/{env}/agent_knowledge_base_id` | `get_agent_knowledge_base_id()` | `KNOWLEDGE_BASE_ID` | `my-agent-knowledge-base-id` |
-| `XGBoostModelEndpoint` | `/teacher_assistant/{env}/xgboost_model_endpoint` | `get_xgboost_model_endpoint()` | N/A | `my-xgboost-model-endpoint` |
-| `AWSRegion` | `/teacher_assistant/{env}/aws_region` | `get_aws_region()` | `aws_region` | `us-east-1` |
-| `DefaultModelId` | `/teacher_assistant/{env}/default_model_id` | `get_default_model_id()` | N/A | `us.amazon.nova-2-lite-v1:0` |
-| `MaxResults` | `/teacher_assistant/{env}/max_results` | `get_max_results()` | `MAX_RESULTS` | `9` |
-| `MinScore` | `/teacher_assistant/{env}/min_score` | `get_min_score()` | `MIN_SCORE` | `0.000001` |
-| `Temperature` | `/teacher_assistant/{env}/temperature` | `get_temperature()` | `TEMPERATURE` | `0.3` |
+| `AWSRegion` | `/teachers_assistant/{env}/aws_region` | `get_aws_region()` | `aws_region` | `us-east-1` |
+| `DefaultModelId` | `/teachers_assistant/{env}/default_model_id` | `get_default_model_id()` | N/A | `us.amazon.nova-2-lite-v1:0` |
+| `MaxResults` | `/teachers_assistant/{env}/max_results` | `get_max_results()` | `MAX_RESULTS` | `9` |
+| `MinScore` | `/teachers_assistant/{env}/min_score` | `get_min_score()` | `MIN_SCORE` | `0.000001` |
+| `SageMakerModelEndpoint` | `/teachers_assistant/{env}/sagemaker_model_endpoint` | `get_sagemaker_model_endpoint()` | N/A (maps to `endpoint_name`) | `my-sagemaker-model-endpoint` |
+| `SageMakerModelInferenceComponent` | `/teachers_assistant/{env}/sagemaker_model_inference_component` | `get_sagemaker_model_inference_component()` | N/A (maps to `inference_component`) | `my-sagemaker-model-inference-component` |
+| `StrandsKnowledgeBaseId` | `/teachers_assistant/{env}/strands_knowledge_base_id` | `get_strands_knowledge_base_id()` | `STRANDS_KNOWLEDGE_BASE_ID` | `my-strands-knowledge-base-id` |
+| `Temperature` | `/teachers_assistant/{env}/temperature` | `get_temperature()` | `TEMPERATURE` | `0.3` |
+| `XGBoostModelEndpoint` | `/teachers_assistant/{env}/xgboost_model_endpoint` | `get_xgboost_model_endpoint()` | N/A | `my-xgboost-model-endpoint` |
 
-### File Naming Changes
-- CloudFormation template: `ssm/teachassist-params.yaml` → `ssm/teacher-assistant-params.yaml`
+### Naming Rationale
+- **SageMaker prefix**: Emphasizes these are for SageMaker integration (Strands Agents use Bedrock by default)
+- **Strands prefix**: Framework requirement - cannot be changed (STRANDS_KNOWLEDGE_BASE_ID env var)
+- **Alphabetical order**: Improves maintainability and reduces merge conflicts
+- **Generic defaults**: Allow students to customize without exposing real endpoint names
 - Suggested stack name: `teacher-assistant-params`
 - Environment variable: `TEACHASSIST_ENV` → `TEACHER_ASSISTANT_ENV`
 
@@ -1914,3 +1919,77 @@ All naming convention changes have been successfully implemented:
 **Time**: Late evening
 **Status**: Naming convention refactoring complete and ready for testing
 **Next Session**: Deploy SSM parameters and test application (Task 7)
+
+
+---
+
+## Naming Convention Update: Agent → SageMaker (January 16, 2026 - Evening)
+
+### Context
+After implementing the `agent_model_*` naming convention, we reconsidered the naming to better emphasize the purpose of these parameters.
+
+### Decision: Revert to SageMaker Prefix
+**Rationale**: Since Strands Agents integrate with Amazon Bedrock by default, using the "SageMaker" prefix makes it clearer that these parameters are specifically for SageMaker integration. This helps users understand:
+1. These parameters are only needed when using SageMaker models (not Bedrock)
+2. The integration is with SageMaker AI model hosting
+3. The distinction between default (Bedrock) and optional (SageMaker) model providers
+
+### Changes Made
+Renamed all `agent_model_*` references back to `sagemaker_model_*`:
+
+**Parameter Names**:
+- `agent_model_endpoint` → `sagemaker_model_endpoint`
+- `agent_model_inference_component` → `sagemaker_model_inference_component`
+
+**Function Names**:
+- `get_agent_model_endpoint()` → `get_sagemaker_model_endpoint()`
+- `get_agent_model_inference_component()` → `get_sagemaker_model_inference_component()`
+
+**Default Values**:
+- `my-agent-model-endpoint` → `my-sagemaker-model-endpoint`
+- `my-agent-model-inference-component` → `my-sagemaker-model-inference-component`
+
+**CloudFormation Parameters**:
+- `AgentModelEndpoint` → `SageMakerModelEndpoint`
+- `AgentModelInferenceComponent` → `SageMakerModelInferenceComponent`
+
+### Files Updated
+1. **Python Code**:
+   - `workshop4/multi_agent/config.py` - Function names and parameter paths
+   - `workshop4/multi_agent/sagemaker_model.py` - Imports and function calls
+   - `workshop4/multi_agent/app.py` - Imports and function calls
+
+2. **CloudFormation**:
+   - `workshop4/ssm/teachers-assistant-params.yaml` - Parameters, resources, outputs (alphabetically sorted)
+
+3. **Documentation**:
+   - `workshop4/ssm/README.md` - Parameter table and examples
+   - `workshop4/GETTING-STARTED.md` - Configuration table
+   - `workshop4/PART-3-SAGEMAKER.md` - Validation instructions and examples
+   - `.kiro/specs/workshop4-multi-agent-sagemaker-ai/design.md` - Design document
+
+4. **Session Notes**:
+   - `.kiro/session-notes/20260116-session-notes.md` - This file
+
+### Benefits
+1. **Clarity**: "SageMaker" prefix immediately indicates these are for SageMaker integration
+2. **Distinction**: Clear separation between Bedrock (default) and SageMaker (optional) providers
+3. **Consistency**: Aligns with the design principle that Strands Agents use Bedrock by default
+4. **Documentation**: Easier to explain to users when these parameters are needed
+
+### Alphabetical Sorting Maintained
+All SSM parameters remain alphabetically sorted:
+1. `aws_region`
+2. `default_model_id`
+3. `max_results`
+4. `min_score`
+5. `sagemaker_model_endpoint`
+6. `sagemaker_model_inference_component`
+7. `strands_knowledge_base_id`
+8. `temperature`
+9. `xgboost_model_endpoint`
+
+### Next Steps
+- Continue with spec implementation
+- Test the configuration module with new naming
+- Validate that all documentation is consistent

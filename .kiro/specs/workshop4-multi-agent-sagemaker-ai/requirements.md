@@ -19,14 +19,14 @@ This feature expands the workshop4 multi-agent application to support multiple r
 
 ## Requirements
 
-### Requirement 1: Agent Model Endpoint Validation Script
+### Requirement 1: SageMaker Model Endpoint Validation Script
 
-**User Story:** As a developer, I want a standalone validation script for the SageMaker agent model endpoint, so that I can validate the reasoning model endpoint works before running the full application.
+**User Story:** As a developer, I want a standalone validation script for the SageMaker model endpoint, so that I can validate the reasoning model endpoint works before running the full application.
 
 #### Acceptance Criteria
 
-1. THE validation script for agent models SHALL extract invocation logic from the Jupyter notebook
-2. WHEN the agent model validation script runs, THE script SHALL invoke the provisioned endpoint with sample prompts
+1. THE validation script for SageMaker models SHALL extract invocation logic from the Jupyter notebook
+2. WHEN the SageMaker model validation script runs, THE script SHALL invoke the provisioned endpoint with sample prompts
 3. THE validation script SHALL print clear success or failure messages
 4. THE validation script SHALL use environment variables for endpoint configuration
 5. THE validation script SHALL be executable independently without requiring the full application to be running
@@ -50,16 +50,16 @@ This feature expands the workshop4 multi-agent application to support multiple r
 #### Acceptance Criteria
 
 1. THE Config_Module SHALL provide getter functions for all environment variables used by the application
-2. THE Config_Module SHALL manage the following SSM parameters:
-   - AGENT_MODEL_INFERENCE_COMPONENT: Agent model inference component name (for multi-model endpoints)
-   - AGENT_MODEL_ENDPOINT: Agent model endpoint name
-   - STRANDS_KNOWLEDGE_BASE_ID: Strands knowledge base ID (REQUIRED - Framework integration point with Bedrock Knowledge Base)
-   - XGBOOST_MODEL_ENDPOINT: XGBoost loan prediction endpoint name
+2. THE Config_Module SHALL manage the following SSM parameters (alphabetically sorted):
    - AWS_REGION: AWS region for all services
    - DEFAULT_MODEL_ID: Default model ID (typically Bedrock cross-region profile)
    - MAX_RESULTS: Maximum results for knowledge base queries
    - MIN_SCORE: Minimum score threshold for knowledge base queries
+   - SAGEMAKER_MODEL_ENDPOINT: SageMaker model endpoint name
+   - SAGEMAKER_MODEL_INFERENCE_COMPONENT: SageMaker model inference component name (for multi-model endpoints)
+   - STRANDS_KNOWLEDGE_BASE_ID: Strands knowledge base ID (REQUIRED - Framework integration point with Bedrock Knowledge Base)
    - TEMPERATURE: Model temperature setting for all agents
+   - XGBOOST_MODEL_ENDPOINT: XGBoost loan prediction endpoint name
 3. WHEN an environment variable is missing, THE Config_Module SHALL return a sensible default value or raise a descriptive error
 4. THE Config_Module SHALL validate environment variable values before returning them
 5. THE Config_Module SHALL organize getter functions in alphabetical order by environment variable name

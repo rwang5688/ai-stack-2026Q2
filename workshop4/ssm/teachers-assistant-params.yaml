@@ -2,16 +2,6 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: 'Teacher Assistant Multi-Agent Application - SSM Parameter Store Configuration'
 
 Parameters:
-  AgentModelEndpoint:
-    Type: String
-    Default: my-agent-model-endpoint
-    Description: Agent model endpoint name (required when user selects SageMaker model)
-
-  AgentModelInferenceComponent:
-    Type: String
-    Default: my-agent-model-inference-component
-    Description: Agent model inference component name (optional, for multi-model endpoints)
-
   AWSRegion:
     Type: String
     Default: us-east-1
@@ -55,6 +45,16 @@ Parameters:
     MinValue: 0
     MaxValue: 1
 
+  SageMakerModelEndpoint:
+    Type: String
+    Default: my-sagemaker-model-endpoint
+    Description: SageMaker model endpoint name (required when user selects SageMaker model)
+
+  SageMakerModelInferenceComponent:
+    Type: String
+    Default: my-sagemaker-model-inference-component
+    Description: SageMaker model inference component name (optional, for multi-model endpoints)
+
   StrandsKnowledgeBaseId:
     Type: String
     Default: my-strands-knowledge-base-id
@@ -73,32 +73,6 @@ Parameters:
     Description: XGBoost loan prediction model endpoint name (required for loan assistant)
 
 Resources:
-  # Agent Model Endpoint Parameter
-  ParamAgentModelEndpoint:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: !Sub '/teachers_assistant/${Environment}/agent_model_endpoint'
-      Description: Agent model endpoint name
-      Type: String
-      Value: !Ref AgentModelEndpoint
-      Tags:
-        Environment: !Ref Environment
-        Application: TeacherAssistant
-        ManagedBy: CloudFormation
-
-  # Agent Model Inference Component Parameter
-  ParamAgentModelInferenceComponent:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: !Sub '/teachers_assistant/${Environment}/agent_model_inference_component'
-      Description: Agent model inference component name
-      Type: String
-      Value: !Ref AgentModelInferenceComponent
-      Tags:
-        Environment: !Ref Environment
-        Application: TeacherAssistant
-        ManagedBy: CloudFormation
-
   # AWS Region Parameter
   ParamAWSRegion:
     Type: AWS::SSM::Parameter
@@ -151,6 +125,32 @@ Resources:
         Application: TeacherAssistant
         ManagedBy: CloudFormation
 
+  # SageMaker Model Endpoint Parameter
+  ParamSageMakerModelEndpoint:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '/teachers_assistant/${Environment}/sagemaker_model_endpoint'
+      Description: SageMaker model endpoint name
+      Type: String
+      Value: !Ref SageMakerModelEndpoint
+      Tags:
+        Environment: !Ref Environment
+        Application: TeacherAssistant
+        ManagedBy: CloudFormation
+
+  # SageMaker Model Inference Component Parameter
+  ParamSageMakerModelInferenceComponent:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '/teachers_assistant/${Environment}/sagemaker_model_inference_component'
+      Description: SageMaker model inference component name
+      Type: String
+      Value: !Ref SageMakerModelInferenceComponent
+      Tags:
+        Environment: !Ref Environment
+        Application: TeacherAssistant
+        ManagedBy: CloudFormation
+
   # Strands Knowledge Base ID Parameter
   # IMPORTANT: This parameter name MUST be 'strands_knowledge_base_id' because
   # the Strands Agents framework requires the STRANDS_KNOWLEDGE_BASE_ID environment
@@ -194,14 +194,6 @@ Resources:
         ManagedBy: CloudFormation
 
 Outputs:
-  AgentModelEndpointParameter:
-    Description: SSM Parameter name for Agent Model Endpoint
-    Value: !Ref ParamAgentModelEndpoint
-
-  AgentModelInferenceComponentParameter:
-    Description: SSM Parameter name for Agent Model Inference Component
-    Value: !Ref ParamAgentModelInferenceComponent
-
   AWSRegionParameter:
     Description: SSM Parameter name for AWS Region
     Value: !Ref ParamAWSRegion
@@ -223,6 +215,14 @@ Outputs:
     Value: !Sub '/teachers_assistant/${Environment}'
     Export:
       Name: !Sub '${AWS::StackName}-ParameterPrefix'
+
+  SageMakerModelEndpointParameter:
+    Description: SSM Parameter name for SageMaker Model Endpoint
+    Value: !Ref ParamSageMakerModelEndpoint
+
+  SageMakerModelInferenceComponentParameter:
+    Description: SSM Parameter name for SageMaker Model Inference Component
+    Value: !Ref ParamSageMakerModelInferenceComponent
 
   StrandsKnowledgeBaseIdParameter:
     Description: SSM Parameter name for Strands Knowledge Base ID (Framework integration point)

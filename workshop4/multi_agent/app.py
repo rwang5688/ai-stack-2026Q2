@@ -5,8 +5,8 @@ from strands_tools import memory, use_agent
 
 # Import configuration module
 from config import (
-    get_agent_model_endpoint,
-    get_agent_model_inference_component,
+    get_sagemaker_model_endpoint,
+    get_sagemaker_model_inference_component,
     get_aws_region,
     get_default_model_config,
     get_max_results,
@@ -304,13 +304,13 @@ def determine_action(query, model, model_info):
                 'temperature': TEMPERATURE
             }
         elif model_info['provider'] == 'sagemaker':
-            inference_component = get_agent_model_inference_component()
+            inference_component = get_sagemaker_model_inference_component()
             model_settings = {
-                'endpoint_name': get_agent_model_endpoint(),
+                'endpoint_name': get_sagemaker_model_endpoint(),
                 'temperature': TEMPERATURE
             }
             # Add inference component if it's set and not the default placeholder
-            if inference_component and inference_component != "my-agent-model-inference-component":
+            if inference_component and inference_component != "my-sagemaker-model-inference-component":
                 model_settings['inference_component_name'] = inference_component
         
         result = agent.tool.use_agent(
@@ -353,13 +353,13 @@ def determine_kb_action(query, model, model_info):
                 'temperature': TEMPERATURE
             }
         elif model_info['provider'] == 'sagemaker':
-            inference_component = get_agent_model_inference_component()
+            inference_component = get_sagemaker_model_inference_component()
             model_settings = {
-                'endpoint_name': get_agent_model_endpoint(),
+                'endpoint_name': get_sagemaker_model_endpoint(),
                 'temperature': TEMPERATURE
             }
             # Add inference component if it's set and not the default placeholder
-            if inference_component and inference_component != "my-agent-model-inference-component":
+            if inference_component and inference_component != "my-sagemaker-model-inference-component":
                 model_settings['inference_component_name'] = inference_component
         
         result = agent.tool.use_agent(
@@ -426,9 +426,9 @@ def run_kb_agent(query, model, model_info):
                     'temperature': TEMPERATURE
                 }
             elif model_info['provider'] == 'sagemaker':
-                inference_component = get_agent_model_inference_component()
+                inference_component = get_sagemaker_model_inference_component()
                 model_settings = {
-                    'endpoint_name': get_agent_model_endpoint(),
+                    'endpoint_name': get_sagemaker_model_endpoint(),
                     'temperature': TEMPERATURE
                 }
                 # Add inference component if it's set and not the default placeholder
