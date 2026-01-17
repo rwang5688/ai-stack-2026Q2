@@ -32,18 +32,14 @@ Parameters:
       - prod
 
   MaxResults:
-    Type: Number
-    Default: 9
+    Type: String
+    Default: "9"
     Description: Maximum results for knowledge base queries
-    MinValue: 1
-    MaxValue: 100
 
   MinScore:
-    Type: Number
-    Default: 0.000001
+    Type: String
+    Default: "0.000001"
     Description: Minimum score threshold for knowledge base queries (0.0 to 1.0)
-    MinValue: 0
-    MaxValue: 1
 
   SageMakerModelEndpoint:
     Type: String
@@ -61,11 +57,9 @@ Parameters:
     Description: Strands knowledge base ID (REQUIRED - Framework integration point with Bedrock Knowledge Base)
 
   Temperature:
-    Type: Number
-    Default: 0.3
+    Type: String
+    Default: "0.3"
     Description: Model temperature setting for all agents (0.0 to 1.0)
-    MinValue: 0
-    MaxValue: 1
 
   XGBoostModelEndpoint:
     Type: String
