@@ -102,23 +102,38 @@ All parameters follow this single-level naming convention:
 
 | Parameter Path | Description | Default Value |
 |---------------|-------------|---------------|
-| `/teachers_assistant/{env}/strands_knowledge_base_id` | Strands knowledge base ID (Framework requirement) | `my-strands-knowledge-base-id` |
-| `/teachers_assistant/{env}/aws_region` | AWS region for all services | `us-east-1` |
 | `/teachers_assistant/{env}/default_model_id` | Default model ID | `us.amazon.nova-2-lite-v1:0` |
 | `/teachers_assistant/{env}/max_results` | Max KB query results | `9` |
 | `/teachers_assistant/{env}/min_score` | Min KB query score | `0.000001` |
 | `/teachers_assistant/{env}/sagemaker_model_endpoint` | SageMaker model endpoint name | `my-sagemaker-model-endpoint` |
 | `/teachers_assistant/{env}/sagemaker_model_inference_component` | SageMaker model inference component | `my-sagemaker-model-inference-component` |
+| `/teachers_assistant/{env}/strands_knowledge_base_id` | Strands knowledge base ID (Framework requirement) | `my-strands-knowledge-base-id` |
 | `/teachers_assistant/{env}/temperature` | Model temperature setting | `0.3` |
 | `/teachers_assistant/{env}/xgboost_model_endpoint` | XGBoost model endpoint name | `my-xgboost-model-endpoint` |
 
+### Environment Variables
+
+| Environment Variable | Description | Default Value |
+|---------------------|-------------|---------------|
+| `TEACHERS_ASSISTANT_ENV` | Environment name (dev, staging, prod) | `dev` |
+| `AWS_REGION` | AWS region for all services | `us-east-1` |
+
+**Note**: `AWS_REGION` is a standard AWS SDK environment variable. In EC2/ECS deployments, this is automatically set from instance metadata.
+
 ## Environment Configuration
 
-The application reads the environment from the `TEACHERS_ASSISTANT_ENV` environment variable:
+The application reads configuration from two sources:
+
+1. **Environment Variables**:
+   - `TEACHERS_ASSISTANT_ENV`: Determines which SSM parameter path to use (dev, staging, prod)
+   - `AWS_REGION`: AWS region for all AWS service calls
+
+2. **SSM Parameter Store**: All other configuration parameters
 
 ```bash
-# Set environment (only env var needed!)
+# Set environment variables
 export TEACHERS_ASSISTANT_ENV=dev
+export AWS_REGION=us-east-1
 
 # Application will read from /teachers_assistant/dev/* parameters
 python app.py

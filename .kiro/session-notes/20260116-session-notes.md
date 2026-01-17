@@ -1993,3 +1993,284 @@ All SSM parameters remain alphabetically sorted:
 - Continue with spec implementation
 - Test the configuration module with new naming
 - Validate that all documentation is consistent
+
+
+---
+
+# January 17, 2026 - CloudFormation Template Refinement & AWS_REGION Migration
+
+## Session Overview
+Refined CloudFormation template to fix scientific notation display issue and migrated AWS_REGION from SSM Parameter Store to environment variable for better alignment with AWS standards and to resolve chicken-and-egg problem.
+
+## Key Accomplishments
+
+### 1. Fixed Scientific Notation Display in CloudFormation ✅
+- **Issue**: MinScore parameter displayed as `1.0E-6` in CloudFormation console
+- **Root Cause**: CloudFormation displays `Type: Number` parameters in scientific notation
+- **Solution**: Changed numeric parameters to `Type: String` with quoted defaults
+- **Files Modified**:
+  - `workshop4/ssm/teachers-assistant-params.yaml`
+  - Changed `MinScore`, `Temperature`, `MaxResults` from `Number` to `String`
+  - Removed `MinValue`/`MaxValue` constraints (not needed for strings)
+  - Values now display as `0.000001`, `0.3`, `9` instead of scientific notation
+
+### 2. Renamed Validation Script ✅
+- **Old Name**: `validate_agent_endpoint.py`
+- **New Name**: `validate_sagemaker_endpoint.py`
+- **Rationale**: More descriptive name that clearly indicates it validates SageMaker endpoints
+- **Files Updated**:
+  - Created new `workshop4/sagemaker/validate_sagemaker_endpoint.py`
+  - Deleted old `workshop4/sagemaker/validate_agent_endpoint.py`
+  - Updated `workshop4/PART-3-SAGEMAKER.md` - All references updated
+  - Updated `.kiro/specs/workshop4-multi-agent-sagemaker-ai/design.md` - Module structure and interface
+  - Updated `.kiro/specs/workshop4-multi-agent-sagemaker-ai/tasks.md` - Task 1 description
+
+### 3. Updated Validation Scripts to Use SSM Parameter Store ✅
+- **Files Modified**:
+  - `workshop4/sagemaker/validate_sagemaker_endpoint.py`
+  - `workshop4/sagemaker/validate_xgboost_endpoint.py`
+- **Changes**:
+  - Added `get_ssm_parameter()` function to fetch parameters from SSM
+  - Added `get_environment()` function to read `TEACHERS_ASSISTANT_ENV`
+  - Updated `main()` to fetch configuration from SSM instead of environment variables
+  - Added region parameter to SSM client creation
+- **Environment Variables Required**:
+  - `TEACHERS_ASSISTANT_ENV`: Environment name (dev, staging, prod)
+  - `AWS_REGION`: AWS region for SSM client (needed to connect to SSM)
+- **SSM Parameters Read**:
+  - `sagemaker_model_endpoint`
+  - `sagemaker_model_inference_component` (optional)
+  - `xgboost_model_endpoint`
+  - `aws_region` (for endpoint validation)
+
+### 4. Discovered Chicken-and-Egg Problem with AWS_REGION ✅
+- **Issue**: SSM client needs a region to be created, but region was stored in SSM
+- **Error**: `botocore.exceptions.NoRegionError: You must specify a region`
+- **Root Cause**: Can't fetch region from SSM without first specifying region for SSM client
+- **Initial Fix**: Use `AWS_REGION` env var for SSM client, then read `aws_region` from SSM for endpoint validation
+
+### 5. Migrated AWS_REGION to Environment Variable ✅
+- **Decision**: Move `AWS_REGION` from SSM Parameter Store to environment variable
+- **Rationale**:
+  1. **Chicken-and-egg problem**: Need region to connect to SSM in the first place
+  2. **AWS Standard**: `AWS_REGION` is a standard AWS SDK environment variable
+  3. **Deployment context**: Region is typically determined by where application is deployed
+  4. **Simpler**: One less parameter to manage in SSM
+  5. **Consistency**: AWS SDKs automatically detect region from instance metadata in EC2/ECS
+
+**Files Modified**:
+
+**CloudFormation Template** (`workshop4/ssm/teachers-assistant-params.yaml`):
+- Removed `AWSRegion` input parameter
+- Removed `ParamAWSRegion` SSM parameter resource
+- Removed `AWSRegionParameter` output
+- Now has 8 SSM parameters instead of 9
+
+**Configuration Module** (`workshop4/multi_agent/config.py`):
+- Updated module docstring to document environment variables
+- `get_aws_region()` now reads from `AWS_REGION` environment variable (not SSM)
+- Added note about EC2/ECS auto-detection
+- Updated `_get_ssm_client()` comment
+
+**SSM README** (`workshop4/ssm/README.md`):
+- Updated parameter table (removed aws_region)
+- Added "Environment Variables" section
+- Updated usage examples to show both `TEACHERS_ASSISTANT_ENV` and `AWS_REGION`
+- Added note about EC2/ECS auto-detection
+
+**Validation Scripts**:
+- `workshop4/sagemaker/validate_sagemaker_endpoint.py`:
+  - Simplified to use `AWS_REGION` env var directly for both SSM client and endpoint validation
+  - No longer fetches `aws_region` from SSM
+  - Updated docstring
+  
+- `workshop4/sagemaker/validate_xgboost_endpoint.py`:
+  - Simplified to use `AWS_REGION` env var directly
+  - No longer fetches `aws_region` from SSM
+  - Updated docstring
+
+**Spec Documents**:
+- `.kiro/specs/workshop4-multi-agent-sagemaker-ai/requirements.md`:
+  - Updated Requirement 3.2 to remove AWS_REGION from SSM parameters
+  - Added Requirement 3.2a for AWS_REGION environment variable
+  
+- `.kiro/specs/workshop4-multi-agent-sagemaker-ai/design.md`:
+  - Updated SSM parameters list (removed aws_region)
+  - Updated environment variables section
+  - Added note about AWS_REGION being standard AWS SDK variable
+
+### 6. Validation Scripts Now Working ✅
+- **Status**: Both validation scripts tested and working
+- **Usage**:
+  ```bash
+  export TEACHERS_ASSISTANT_ENV=dev
+  export AWS_REGION=us-east-1
+  
+  uv run validate_sagemaker_endpoint.py
+  uv run validate_xgboost_endpoint.py
+  ```
+
+## Technical Decisions
+
+### Decision: Use String Type for Numeric CloudFormation Parameters
+**Rationale**:
+- CloudFormation displays `Type: Number` in scientific notation (1.0E-6)
+- SSM Parameter Store stores all values as strings anyway
+- Config module converts strings to appropriate types (int/float)
+- More readable and predictable in CloudFormation console
+
+### Decision: Rename validate_agent_endpoint.py to validate_sagemaker_endpoint.py
+**Rationale**:
+- More descriptive and clear about what it validates
+- Consistent with "SageMaker endpoint" terminology used throughout
+- Avoids confusion with "agent" (which could mean Strands Agent)
+
+### Decision: Migrate AWS_REGION to Environment Variable
+**Rationale**:
+- **Solves chicken-and-egg problem**: No longer need region to fetch region
+- **AWS Standard**: Follows AWS SDK conventions
+- **Auto-detection**: EC2/ECS instances automatically have region context
+- **Simpler**: One less parameter to manage in SSM
+- **Deployment-aware**: Region is inherent to where application runs
+
+## Current Status
+
+### Completed ✅
+- ✅ Task 1: SageMaker model endpoint validation script (renamed and SSM-enabled)
+- ✅ Task 2: XGBoost model endpoint validation script (SSM-enabled)
+- ✅ Task 3: Configuration module (SSM-based with AWS_REGION as env var)
+- ✅ Task 4: Bedrock model module
+- ✅ Task 5: SageMaker model module
+- ✅ Task 6: Application integration with model selection dropdown
+- ✅ CloudFormation template refinements (string types, AWS_REGION removed)
+- ✅ Validation scripts updated to use SSM Parameter Store
+- ✅ AWS_REGION migration to environment variable
+
+### Ready for Next Steps
+- 🎯 Task 7: Deploy SSM parameters and test application
+  - User is deploying CloudFormation stack in AWS Console
+  - Will set environment variables: `TEACHERS_ASSISTANT_ENV=dev` and `AWS_REGION=us-east-1`
+  - Will test validation scripts with SSM parameters
+  - Will run multi_agent/app.py locally and verify SSM integration
+  - Will test model selection dropdown with each model
+
+## Files Modified (January 17, 2026)
+
+### Updated
+- `workshop4/ssm/teachers-assistant-params.yaml` - String types, removed AWS_REGION parameter
+- `workshop4/multi_agent/config.py` - AWS_REGION from environment variable
+- `workshop4/ssm/README.md` - Updated parameter table and environment variables
+- `workshop4/sagemaker/validate_sagemaker_endpoint.py` - Renamed, SSM-enabled, AWS_REGION from env var
+- `workshop4/sagemaker/validate_xgboost_endpoint.py` - SSM-enabled, AWS_REGION from env var
+- `workshop4/PART-3-SAGEMAKER.md` - Updated all references to validation script
+- `.kiro/specs/workshop4-multi-agent-sagemaker-ai/requirements.md` - Updated Requirement 3.2
+- `.kiro/specs/workshop4-multi-agent-sagemaker-ai/design.md` - Updated SSM parameters and environment variables
+- `.kiro/specs/workshop4-multi-agent-sagemaker-ai/tasks.md` - Updated Task 1 and Task 2 descriptions
+- `.kiro/session-notes/20260116-session-notes.md` - This update
+
+### Deleted
+- `workshop4/sagemaker/validate_agent_endpoint.py` - Renamed to validate_sagemaker_endpoint.py
+
+## SSM Parameters (Final List - 8 Total)
+
+### SSM Parameter Store
+1. `/teachers_assistant/{env}/default_model_id` - Default model ID
+2. `/teachers_assistant/{env}/max_results` - Max KB query results
+3. `/teachers_assistant/{env}/min_score` - Min KB query score
+4. `/teachers_assistant/{env}/sagemaker_model_endpoint` - SageMaker model endpoint name
+5. `/teachers_assistant/{env}/sagemaker_model_inference_component` - SageMaker inference component
+6. `/teachers_assistant/{env}/strands_knowledge_base_id` - Strands knowledge base ID
+7. `/teachers_assistant/{env}/temperature` - Model temperature setting
+8. `/teachers_assistant/{env}/xgboost_model_endpoint` - XGBoost model endpoint name
+
+### Environment Variables
+1. `TEACHERS_ASSISTANT_ENV` - Environment name (dev, staging, prod)
+2. `AWS_REGION` - AWS region for all AWS services
+
+## Usage Examples
+
+### Deploy CloudFormation Stack
+```bash
+cd workshop4/ssm
+aws cloudformation create-stack \
+  --stack-name teachers-assistant-params-dev \
+  --template-body file://teachers-assistant-params.yaml \
+  --parameters ParameterKey=Environment,ParameterValue=dev
+```
+
+### Set Environment Variables
+```bash
+export TEACHERS_ASSISTANT_ENV=dev
+export AWS_REGION=us-east-1
+```
+
+### Run Validation Scripts
+```bash
+cd workshop4/sagemaker
+uv run validate_sagemaker_endpoint.py
+uv run validate_xgboost_endpoint.py
+```
+
+### Run Application
+```bash
+cd workshop4/multi_agent
+streamlit run app.py
+```
+
+## Key Learnings
+
+### CloudFormation Display Behavior
+- `Type: Number` parameters display in scientific notation
+- `Type: String` parameters display as-is
+- SSM Parameter Store stores everything as strings anyway
+- Config module handles type conversion
+
+### AWS SDK Standards
+- `AWS_REGION` is a standard AWS SDK environment variable
+- EC2/ECS instances automatically have region context
+- Following AWS standards makes deployment simpler
+- Reduces configuration complexity
+
+### Chicken-and-Egg Problems
+- Always consider bootstrap dependencies
+- SSM client needs region before it can fetch parameters
+- Environment variables are better for bootstrap configuration
+- SSM is better for application-specific configuration
+
+## Next Session Actions
+
+1. **Complete Task 7 Deployment**:
+   - User is deploying CloudFormation stack in AWS Console
+   - Will verify parameters are created correctly
+   - Will test validation scripts
+   - Will test application with SSM integration
+
+2. **If Task 7 passes, proceed to Task 8**: Loan assistant implementation
+   - Create `multi_agent/loan_assistant.py`
+   - Implement data transformation logic
+   - Implement XGBoost invocation logic
+
+## Progress Tracker
+
+**Completed**: 6 of 17 tasks (35.3%) + Infrastructure Refinements
+- ✅ Task 1: SageMaker endpoint validation (renamed, SSM-enabled)
+- ✅ Task 2: XGBoost endpoint validation (SSM-enabled)
+- ✅ Task 3: Configuration module (SSM-based, AWS_REGION as env var)
+- ✅ Task 4: Bedrock model module
+- ✅ Task 5: SageMaker model module
+- ✅ Task 6: Application integration
+- ✅ **Bonus**: CloudFormation refinements and AWS_REGION migration
+
+**Next Up**: Task 7 (Deploy SSM parameters and test)
+
+**Remaining**: 11 tasks (Tasks 7-17)
+
+## End of Session - January 17, 2026
+
+**Time**: Afternoon
+**Status**: CloudFormation template refined, AWS_REGION migrated, validation scripts working
+**Next Session**: User will complete CloudFormation deployment and test application
+
+---
+
+**Excellent progress! CloudFormation template is now cleaner and more readable, and AWS_REGION migration aligns with AWS best practices.** 🎉

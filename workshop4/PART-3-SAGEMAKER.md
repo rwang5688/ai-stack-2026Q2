@@ -212,7 +212,7 @@ cd sagemaker
 ### 4.2 Run Agent Model Validation Script
 
 ```bash
-uv run validate_agent_endpoint.py
+uv run validate_sagemaker_endpoint.py
 ```
 
 **What this script does:**
@@ -540,7 +540,7 @@ Tool calling support varies by model:
 Before deploying your multi-agent application:
 
 1. **Check Model Documentation**: Verify the model supports chat completion format
-2. **Test with Validation Script**: Use `validate_agent_endpoint.py` to test your endpoint
+2. **Test with Validation Script**: Use `validate_sagemaker_endpoint.py` to test your endpoint
 3. **Review Model Card**: Check if the model explicitly mentions OpenAI compatibility or chat templates
 
 #### Reference
@@ -554,9 +554,9 @@ For more information, see the official Strands Agents documentation:
 
 ## Reference: Validation Scripts
 
-### Agent Model Validation Script
+### SageMaker Agent Model Validation Script
 
-**Location**: `workshop4/sagemaker/validate_agent_endpoint.py`
+**Location**: `workshop4/sagemaker/validate_sagemaker_endpoint.py`
 
 **Purpose**: Validates that a SageMaker model endpoint is working correctly.
 
@@ -612,7 +612,7 @@ The following sections will be added as development progresses:
 
 1. **"uv: command not found"**
    - Install uv: `pip install uv`
-   - Or use: `python validate_agent_endpoint.py`
+   - Or use: `python validate_sagemaker_endpoint.py`
 
 2. **"SAGEMAKER_MODEL_ENDPOINT environment variable is not set"**
    - Set the environment variable: `export SAGEMAKER_MODEL_ENDPOINT="your-endpoint-name"`

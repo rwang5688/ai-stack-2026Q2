@@ -2,16 +2,6 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: 'Teacher Assistant Multi-Agent Application - SSM Parameter Store Configuration'
 
 Parameters:
-  AWSRegion:
-    Type: String
-    Default: us-east-1
-    Description: AWS region for all services
-    AllowedValues:
-      - us-east-1
-      - us-west-2
-      - eu-west-1
-      - ap-southeast-1
-
   DefaultModelId:
     Type: String
     Default: us.amazon.nova-2-lite-v1:0
@@ -67,19 +57,6 @@ Parameters:
     Description: XGBoost loan prediction model endpoint name (required for loan assistant)
 
 Resources:
-  # AWS Region Parameter
-  ParamAWSRegion:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: !Sub '/teachers_assistant/${Environment}/aws_region'
-      Description: AWS region for all services
-      Type: String
-      Value: !Ref AWSRegion
-      Tags:
-        Environment: !Ref Environment
-        Application: TeacherAssistant
-        ManagedBy: CloudFormation
-
   # Default Model ID Parameter
   ParamDefaultModelId:
     Type: AWS::SSM::Parameter
@@ -188,10 +165,6 @@ Resources:
         ManagedBy: CloudFormation
 
 Outputs:
-  AWSRegionParameter:
-    Description: SSM Parameter name for AWS Region
-    Value: !Ref ParamAWSRegion
-
   DefaultModelIdParameter:
     Description: SSM Parameter name for Default Model ID
     Value: !Ref ParamDefaultModelId

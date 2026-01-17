@@ -2,12 +2,22 @@
 """
 Configuration module for multi-agent application.
 
-This module fetches all configuration from AWS Systems Manager Parameter Store.
-No environment variables are used except for TEACHERS_ASSISTANT_ENV (which specifies
-the environment: dev, staging, or prod) and AWS credentials.
+This module fetches configuration from AWS Systems Manager Parameter Store and
+environment variables.
 
-All configuration parameters are stored in SSM Parameter Store under:
-    /teachers_assistant/{environment}/{parameter_name}
+Environment Variables:
+    - TEACHERS_ASSISTANT_ENV: Environment name (dev, staging, prod) - defaults to 'dev'
+    - AWS_REGION: AWS region for all services - defaults to 'us-east-1'
+
+SSM Parameters (stored under /teachers_assistant/{environment}/{parameter_name}):
+    - default_model_id
+    - max_results
+    - min_score
+    - sagemaker_model_endpoint
+    - sagemaker_model_inference_component
+    - strands_knowledge_base_id
+    - temperature
+    - xgboost_model_endpoint
 
 Example:
     /teachers_assistant/dev/default_model_id
@@ -22,14 +32,14 @@ from typing import Optional, Dict, Any
 from functools import lru_cache
 
 
-# Get environment from environment variable (only env var we use!)
+# Get environment from environment variable
 TEACHERS_ASSISTANT_ENV = os.getenv('TEACHERS_ASSISTANT_ENV', 'dev')
 
 
 @lru_cache(maxsize=1)
 def _get_ssm_client():
     """Get cached SSM client."""
-    # AWS region can be set via AWS_REGION env var or AWS config
+    # AWS region from environment variable (standard AWS SDK behavior)
     region = os.getenv('AWS_REGION', 'us-east-1')
     return boto3.client('ssm', region_name=region)
 
@@ -105,9 +115,9 @@ def _get_parameter(name: str, default: Optional[str] = None) -> str:
 
 def get_aws_region() -> str:
     """
-    Get AWS region from SSM Parameter Store.
+    Get AWS region from environment variable.
     
-    Parameter: /teachers_assistant/{env}/aws_region
+    Environment Variable: AWS_REGION
     Default: us-east-1
     
     Returns:
@@ -117,8 +127,12 @@ def get_aws_region() -> str:
         >>> region = get_aws_region()
         >>> print(region)
         'us-east-1'
+    
+    Note:
+        AWS_REGION is a standard AWS SDK environment variable.
+        In EC2/ECS, this is automatically set from instance metadata.
     """
-    return _get_parameter('aws_region', default='us-east-1')
+    return os.getenv('AWS_REGION', 'us-east-1')
 
 
 def get_default_model_id() -> str:

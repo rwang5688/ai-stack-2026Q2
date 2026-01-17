@@ -51,7 +51,6 @@ This feature expands the workshop4 multi-agent application to support multiple r
 
 1. THE Config_Module SHALL provide getter functions for all environment variables used by the application
 2. THE Config_Module SHALL manage the following SSM parameters (alphabetically sorted):
-   - AWS_REGION: AWS region for all services
    - DEFAULT_MODEL_ID: Default model ID (typically Bedrock cross-region profile)
    - MAX_RESULTS: Maximum results for knowledge base queries
    - MIN_SCORE: Minimum score threshold for knowledge base queries
@@ -60,6 +59,7 @@ This feature expands the workshop4 multi-agent application to support multiple r
    - STRANDS_KNOWLEDGE_BASE_ID: Strands knowledge base ID (REQUIRED - Framework integration point with Bedrock Knowledge Base)
    - TEMPERATURE: Model temperature setting for all agents
    - XGBOOST_MODEL_ENDPOINT: XGBoost loan prediction endpoint name
+2a. THE Config_Module SHALL read AWS_REGION from environment variable (not SSM Parameter Store)
 3. WHEN an environment variable is missing, THE Config_Module SHALL return a sensible default value or raise a descriptive error
 4. THE Config_Module SHALL validate environment variable values before returning them
 5. THE Config_Module SHALL organize getter functions in alphabetical order by environment variable name

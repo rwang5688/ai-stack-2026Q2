@@ -109,21 +109,21 @@ deploy_multi_agent/docker_app/
 workshop4/sagemaker/
 ├── config.py                   # Existing SageMaker config
 ├── sagemaker_model.py          # Existing SageMaker model
-├── validate_agent_endpoint.py        # Agent model validation script (NEW)
-└── validate_xgboost_endpoint.py      # XGBoost model validation script (NEW)
+├── validate_sagemaker_endpoint.py      # SageMaker agent model validation script (NEW)
+└── validate_xgboost_endpoint.py        # XGBoost model validation script (NEW)
 ```
 
 ## Components and Interfaces
 
-### 1. Agent Model Endpoint Validation Script
+### 1. SageMaker Agent Model Endpoint Validation Script
 
 **Purpose**: Standalone script to validate SageMaker reasoning model endpoint before running the full application.
 
 **Interface**:
 ```python
-def validate_agent_endpoint(endpoint_name: str) -> bool:
+def validate_sagemaker_endpoint(endpoint_name: str) -> bool:
     """
-    Validate agent model endpoint with sample prompt.
+    Validate SageMaker agent model endpoint with sample prompt.
     
     Args:
         endpoint_name: SageMaker endpoint name
@@ -213,7 +213,6 @@ def get_xgboost_model_endpoint() -> str:
 ```
 
 **SSM Parameters** (alphabetically sorted):
-- `/teachers_assistant/{env}/aws_region`: AWS region for all services (default: us-east-1)
 - `/teachers_assistant/{env}/default_model_id`: Default model ID (default: us.amazon.nova-2-lite-v1:0)
 - `/teachers_assistant/{env}/max_results`: Maximum results for knowledge base queries (default: 9)
 - `/teachers_assistant/{env}/min_score`: Minimum score threshold for knowledge base queries (default: 0.000001)
@@ -223,8 +222,9 @@ def get_xgboost_model_endpoint() -> str:
 - `/teachers_assistant/{env}/temperature`: Model temperature setting (default: 0.3)
 - `/teachers_assistant/{env}/xgboost_model_endpoint`: XGBoost loan prediction endpoint name (default: my-xgboost-model-endpoint)
 
-**Environment Variable**:
+**Environment Variables**:
 - `TEACHERS_ASSISTANT_ENV`: Determines which parameter path to use (dev, staging, or prod)
+- `AWS_REGION`: AWS region for all AWS services (default: us-east-1) - standard AWS SDK environment variable
 
 **Note**: The model provider is NOT an environment variable or SSM parameter. It is determined dynamically at runtime based on the user's model selection in the UI:
 - If user selects a Bedrock model (Nova, Claude) → provider = "bedrock"

@@ -1,23 +1,25 @@
 #!/usr/bin/env python3
 """
-XGBoost Model Endpoint Validation Script
+SageMaker Model Endpoint Validation Script
 
-This script validates that a SageMaker XGBoost serverless endpoint is working correctly
-by sending a test inference request with sample customer data and verifying the response.
+This script validates that a SageMaker model endpoint is working correctly
+by sending a test inference request and verifying the response.
 
 Usage:
-    python validate_xgboost_endpoint.py
+    python validate_sagemaker_endpoint.py
 
 Environment Variables:
     TEACHERS_ASSISTANT_ENV: Environment name (dev, staging, prod) - defaults to 'dev'
     AWS_REGION: AWS region for all AWS services - defaults to 'us-east-1'
     
 SSM Parameters (read from /teachers_assistant/{env}/):
-    xgboost_model_endpoint: Name of the SageMaker XGBoost endpoint to validate
+    sagemaker_model_endpoint: Name of the SageMaker endpoint to validate
+    sagemaker_model_inference_component: (Optional) Inference component name for multi-model endpoints
 """
 
 import os
 import sys
+import json
 import boto3
 from typing import Dict, Any, Optional
 
@@ -58,74 +60,70 @@ def get_ssm_parameter(parameter_name: str, env: str, region: str, required: bool
         sys.exit(1)
 
 
-def validate_xgboost_endpoint(endpoint_name: str, region: str) -> bool:
+def validate_sagemaker_endpoint(endpoint_name: str, region: str, inference_component_name: Optional[str] = None) -> bool:
     """
-    Validate the XGBoost model endpoint by sending a test inference request.
+    Validate the SageMaker model endpoint by sending a test inference request.
     
     Args:
         endpoint_name: Name of the SageMaker endpoint
         region: AWS region
+        inference_component_name: Optional inference component name for multi-model endpoints
         
     Returns:
         True if validation succeeds, False otherwise
     """
-    print(f"\n🔍 Validating XGBoost Model Endpoint: {endpoint_name}")
+    print(f"\n🔍 Validating SageMaker Model Endpoint: {endpoint_name}")
     print(f"   Region: {region}")
+    if inference_component_name:
+        print(f"   Inference Component: {inference_component_name}")
     print("-" * 60)
     
     try:
         # Create SageMaker Runtime client
-        runtime = boto3.client(
-            service_name='sagemaker-runtime',
+        sagemaker_runtime = boto3.client(
+            'sagemaker-runtime',
             region_name=region
         )
         
-        # Sample customer data from the Direct Marketing dataset
-        # This is a CSV row with 59 features (one-hot encoded)
-        # Format: age, campaign, pdays, previous, + one-hot encoded categorical features
-        sample_payload = "29,2,999,0,1,0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0"
-        
-        # Parse features for display
-        features = sample_payload.split(',')
-        feature_count = len(features)
+        # Prepare test payload
+        test_prompt = "What is the capital of France?"
+        payload = {
+            "inputs": test_prompt,
+            "parameters": {
+                "max_new_tokens": 50
+            }
+        }
         
         print(f"\n📤 Sending test request...")
-        print(f"   Sample customer data ({feature_count} features)")
-        print(f"   Format: CSV (text/csv)")
-        print(f"\n   Feature values:")
-        print(f"   {sample_payload}")
-        print(f"\n   First 10 features: {', '.join(features[:10])}")
-        print(f"   Last 10 features: {', '.join(features[-10:])}")
+        print(f"   Prompt: {test_prompt}")
+        print(f"   Max tokens: 50")
+        
+        # Prepare invoke_endpoint parameters
+        invoke_params = {
+            'EndpointName': endpoint_name,
+            'Body': json.dumps(payload),
+            'ContentType': 'application/json'
+        }
+        
+        # Add inference component name if provided
+        if inference_component_name:
+            invoke_params['InferenceComponentName'] = inference_component_name
         
         # Invoke endpoint
-        response = runtime.invoke_endpoint(
-            EndpointName=endpoint_name,
-            Body=sample_payload,
-            ContentType="text/csv"
-        )
+        response = sagemaker_runtime.invoke_endpoint(**invoke_params)
         
         # Parse response
-        result = response['Body'].read().decode()
+        result = json.loads(response['Body'].read().decode())
         
-        # Try to parse as float (prediction score)
-        try:
-            prediction = float(result.strip())
-            prediction_label = "Accept" if prediction >= 0.5 else "Reject"
-            
-            print(f"\n✅ SUCCESS: Endpoint is responding correctly!")
-            print(f"\n📥 Response:")
-            print(f"   Raw prediction: {prediction}")
-            print(f"   Prediction label: {prediction_label}")
-            print(f"   Confidence: {prediction * 100:.2f}%")
-            
-        except ValueError:
-            # If not a float, just print the raw response
-            print(f"\n✅ SUCCESS: Endpoint is responding!")
-            print(f"\n📥 Response:")
-            print(f"   {result}")
-        
+        print(f"\n✅ SUCCESS: Endpoint is responding correctly!")
+        print(f"\n📥 Response:")
+        print(f"   {json.dumps(result, indent=2)}")
+        print(f"\n💡 Note: The response quality depends on the model type:")
+        print(f"   - Base models may generate less coherent text")
+        print(f"   - Instruction-tuned models will follow prompts better")
+        print(f"   - The validation confirms the endpoint is operational")
         print("\n" + "=" * 60)
-        print("✅ XGBoost model endpoint validation PASSED")
+        print("✅ SageMaker model endpoint validation PASSED")
         print("=" * 60 + "\n")
         
         return True
@@ -135,7 +133,7 @@ def validate_xgboost_endpoint(endpoint_name: str, region: str) -> bool:
         print(f"   Error type: {type(e).__name__}")
         print(f"   Error message: {str(e)}")
         print("\n" + "=" * 60)
-        print("❌ XGBoost model endpoint validation FAILED")
+        print("❌ SageMaker model endpoint validation FAILED")
         print("=" * 60 + "\n")
         
         return False
@@ -144,7 +142,7 @@ def validate_xgboost_endpoint(endpoint_name: str, region: str) -> bool:
 def main():
     """Main function to run the validation."""
     print("\n" + "=" * 60)
-    print("  XGBoost Model Endpoint Validation")
+    print("  SageMaker Model Endpoint Validation")
     print("=" * 60)
     
     # Get environment and region from environment variables
@@ -157,10 +155,11 @@ def main():
     print(f"   Parameter path: /teachers_assistant/{env}/")
     
     # Get configuration from SSM Parameter Store
-    endpoint_name = get_ssm_parameter('xgboost_model_endpoint', env, region, required=True)
+    endpoint_name = get_ssm_parameter('sagemaker_model_endpoint', env, region, required=True)
+    inference_component_name = get_ssm_parameter('sagemaker_model_inference_component', env, region, required=False)
     
     # Validate the endpoint
-    success = validate_xgboost_endpoint(endpoint_name, region)
+    success = validate_sagemaker_endpoint(endpoint_name, region, inference_component_name)
     
     # Exit with appropriate code
     sys.exit(0 if success else 1)
