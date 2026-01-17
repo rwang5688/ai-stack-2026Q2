@@ -173,9 +173,93 @@ Updated all files to use correct `STRANDS_KNOWLEDGE_BASE_ID` naming:
 - 🎯 Task 7: Deploy SSM parameters and test application
   - Deploy CloudFormation template with placeholder defaults
   - Update SSM parameters via Console or CLI
-  - Set `TEACHER_ASSISTANT_ENV=dev` environment variable
+  - Set `TEACHERS_ASSISTANT_ENV=dev` environment variable
   - Run multi_agent/app.py locally and verify SSM integration
   - Test model selection dropdown with each model
+
+### 5. Naming Consistency Finalization ✅
+- **Possessive Form**: All naming represents "teacher's" (possessive), not "teachers" (plural)
+- **File Naming**: `teachers-assistant-params.yaml` (hyphen, representing "teacher's")
+- **Stack Naming**: `teachers-assistant-params-{env}` (hyphen)
+- **SSM Path**: `/teachers_assistant/{env}/{parameter_name}` (underscore)
+- **Environment Variable**: `TEACHERS_ASSISTANT_ENV` (underscore, all caps)
+- **Python Module**: `teachers_assistant.py` (underscore)
+
+### 6. Alphabetical Ordering Verified ✅
+- **config.py getter functions** - All in correct alphabetical order:
+  1. `get_agent_model_endpoint()` - **a**
+  2. `get_agent_model_inference_component()` - **a**
+  3. `get_aws_region()` - **a**
+  4. `get_default_model_id()` - **d**
+  5. `get_max_results()` - **m**
+  6. `get_min_score()` - **m**
+  7. `get_strands_knowledge_base_id()` - **s** (before 't')
+  8. `get_temperature()` - **t**
+  9. `get_xgboost_model_endpoint()` - **x**
+
+- **app.py imports** - Matching alphabetical order ✅
+- **get_all_config_values() dictionary** - Matching alphabetical order ✅
+
+## Pre-Task 7 Review - Everything Ready! ✅
+
+### Comprehensive Checklist
+
+**1. CloudFormation Template** ✅
+- ✅ File renamed: `teachers-assistant-params.yaml`
+- ✅ All SSM paths use: `/teachers_assistant/${Environment}/{parameter_name}`
+- ✅ Stack name pattern: `teachers-assistant-params-{env}`
+- ✅ All 9 parameters defined with correct naming
+
+**2. Environment Variable** ✅
+- ✅ Changed to: `TEACHERS_ASSISTANT_ENV`
+- ✅ Updated in `config.py`
+- ✅ Updated in `ssm/README.md`
+- ✅ Updated in `GETTING-STARTED.md`
+- ✅ Updated in all spec files
+
+**3. SSM Parameter Paths** ✅
+- ✅ All use single-level format: `/teachers_assistant/{env}/{parameter_name}`
+- ✅ 9 parameters with functionality-based naming
+- ✅ Framework exception: `strands_knowledge_base_id` preserved
+
+**4. Alphabetical Ordering** ✅
+- ✅ All getter functions in alphabetical order
+- ✅ All imports in alphabetical order
+- ✅ Dictionary keys in alphabetical order
+- ✅ `get_strands_knowledge_base_id()` correctly placed BEFORE `get_temperature()`
+
+**5. Framework Requirements** ✅
+- ✅ `STRANDS_KNOWLEDGE_BASE_ID` preserved for framework integration
+- ✅ Comprehensive documentation with reference links
+- ✅ Clear explanation of why this naming is required
+
+**6. Documentation** ✅
+- ✅ `ssm/README.md` - Complete deployment guide
+- ✅ `GETTING-STARTED.md` - Updated with new naming
+- ✅ All spec files updated
+- ✅ Session notes updated
+
+### Task 7 Deployment Commands
+
+```bash
+# 1. Deploy CloudFormation stack
+cd workshop4/ssm
+aws cloudformation create-stack \
+  --stack-name teachers-assistant-params-dev \
+  --template-body file://teachers-assistant-params.yaml \
+  --parameters ParameterKey=Environment,ParameterValue=dev
+
+# 2. Set environment variable
+export TEACHERS_ASSISTANT_ENV=dev
+
+# 3. Run and test the application
+cd workshop4/multi_agent
+streamlit run app.py
+```
+
+### Status: Ready for Task 7 🚀
+
+All naming conventions are consistent, alphabetical ordering is correct, and documentation is complete. User is breaking for dinner and will proceed with Task 7 deployment and testing after dinner.
 
 ## Key Learnings
 

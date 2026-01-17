@@ -238,6 +238,6 @@ echo $TEACHERS_ASSISTANT_ENV
 After deploying parameters:
 
 1. Update parameter values with your actual AWS resource names (via Console or CLI)
-2. Set `TEACHER_ASSISTANT_ENV` environment variable
+2. Set `TEACHERS_ASSISTANT_ENV` environment variable
 3. Run the application - it will automatically fetch parameters from SSM
 4. Update parameters as needed without redeploying the application
