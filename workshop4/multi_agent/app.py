@@ -5,13 +5,13 @@ from strands_tools import memory, use_agent
 
 # Import configuration module
 from config import (
-    get_agent_knowledge_base_id,
     get_agent_model_endpoint,
     get_agent_model_inference_component,
     get_aws_region,
     get_default_model_config,
     get_max_results,
     get_min_score,
+    get_strands_knowledge_base_id,
     get_temperature,
 )
 
@@ -147,7 +147,7 @@ Example response for missing information:
 """
 
 # Knowledge base configuration
-KNOWLEDGE_BASE_ID = get_agent_knowledge_base_id()
+STRANDS_KNOWLEDGE_BASE_ID = get_strands_knowledge_base_id()
 MIN_SCORE = get_min_score()
 MAX_RESULTS = get_max_results()
 TEMPERATURE = get_temperature()
@@ -228,7 +228,7 @@ with st.sidebar:
     **Model Provider**: {selected_model_info['provider'].title()}  
     **Model ID**: `{selected_model_info['model_id']}`  
     **Temperature**: {TEMPERATURE}  
-    **Knowledge Base**: {KNOWLEDGE_BASE_ID}  
+    **Knowledge Base**: {STRANDS_KNOWLEDGE_BASE_ID}  
     **AWS Region**: {aws_region}
     """)
     

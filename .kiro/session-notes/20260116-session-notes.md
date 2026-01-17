@@ -10,7 +10,218 @@ This document consolidates work from January 13-16, 2026 on the workshop4-multi-
 5. **Jan 15 (Evening)**: Model modules and application integration
 6. **Jan 15 (Late Evening)**: SSM Parameter Store migration
 7. **Jan 15 (Late Evening - Part 2)**: Model provider and temperature fixes
-8. **Jan 16**: Naming convention refactoring and implementation
+8. **Jan 16**: Naming convention refactoring and STRANDS_KNOWLEDGE_BASE_ID correction
+
+---
+
+# January 16, 2026 - Naming Convention Refactoring & Knowledge Base ID Correction
+
+## Session Overview
+Completed comprehensive naming convention refactoring across the entire codebase to use functionality-based naming instead of service-based naming. Discovered and corrected critical framework requirement: knowledge base ID must be named `STRANDS_KNOWLEDGE_BASE_ID` for Strands Agents framework integration.
+
+## Key Accomplishments
+
+### 1. Naming Convention Refactoring ✅
+- **CloudFormation Template**: Renamed `ssm/teachassist-params.yaml` → `ssm/teachers-assistant-params.yaml`
+- **Environment Variable**: Changed `TEACHASSIST_ENV` → `TEACHERS_ASSISTANT_ENV`
+- **SSM Parameter Paths**: Changed to single-level format `/teachers_assistant/{env}/{parameter_name}`
+- **Parameter Naming**: Changed from service-based to functionality-based:
+  - `BedrockModelId` → `DefaultModelId`
+  - `SageMakerModelEndpoint` → `AgentModelEndpoint`
+  - `SageMakerInferenceComponent` → `AgentModelInferenceComponent`
+  - `XGBoostEndpointName` → `XGBoostModelEndpoint`
+
+### 2. CRITICAL DISCOVERY: STRANDS_KNOWLEDGE_BASE_ID Framework Requirement ✅
+- **Issue**: Initially renamed `AgentKnowledgeBaseId` but discovered it MUST be `StrandsKnowledgeBaseId`
+- **Reason**: Strands Agents framework requires `STRANDS_KNOWLEDGE_BASE_ID` environment variable for Bedrock Knowledge Base integration
+- **Reference**: https://strandsagents.com/latest/documentation/docs/examples/python/knowledge_base_agent/
+- **Impact**: This is a framework integration point and cannot be renamed to follow our naming conventions
+
+### 3. Knowledge Base ID Reversion Complete ✅
+Updated all files to use correct `STRANDS_KNOWLEDGE_BASE_ID` naming:
+
+**CloudFormation Template** (`workshop4/ssm/teacher-assistant-params.yaml`):
+- Parameter: `StrandsKnowledgeBaseId` with framework documentation
+- SSM Resource: `ParamStrandsKnowledgeBaseId`
+- SSM Path: `/teachers_assistant/{env}/strands_knowledge_base_id`
+- Added comment explaining framework requirement
+
+**Configuration Module** (`workshop4/multi_agent/config.py`):
+- Function: `get_strands_knowledge_base_id()`
+- Comprehensive docstring explaining framework requirement with reference link
+- Updated `get_all_config_values()` to use `STRANDS_KNOWLEDGE_BASE_ID` key
+
+**Application** (`workshop4/multi_agent/app.py`):
+- Import: `get_strands_knowledge_base_id`
+- Variable: `STRANDS_KNOWLEDGE_BASE_ID`
+- Updated sidebar display
+
+**SSM README** (`workshop4/ssm/README.md`):
+- Parameter table updated with `strands_knowledge_base_id`
+- CLI examples updated
+- Added note about framework requirement
+
+**Spec Files**:
+- `requirements.md`: Updated parameter list with framework note
+- `design.md`: Updated function signature with comprehensive documentation
+- `tasks.md`: Updated getter function list with framework note
+
+### 4. Final Naming Conventions ✅
+
+**CloudFormation Input Parameters** (PascalCase):
+- `AgentModelEndpoint`
+- `AgentModelInferenceComponent`
+- `AWSRegion`
+- `DefaultModelId`
+- `Environment`
+- `MaxResults`
+- `MinScore`
+- `StrandsKnowledgeBaseId` (Framework requirement)
+- `Temperature`
+- `XGBoostModelEndpoint`
+
+**SSM Parameter Store Names** (snake_case):
+- `/teachers_assistant/{env}/agent_model_endpoint`
+- `/teachers_assistant/{env}/agent_model_inference_component`
+- `/teachers_assistant/{env}/aws_region`
+- `/teachers_assistant/{env}/default_model_id`
+- `/teachers_assistant/{env}/max_results`
+- `/teachers_assistant/{env}/min_score`
+- `/teachers_assistant/{env}/strands_knowledge_base_id` (Framework requirement)
+- `/teachers_assistant/{env}/temperature`
+- `/teachers_assistant/{env}/xgboost_model_endpoint`
+
+**Config Functions** (snake_case with get_ prefix):
+- `get_agent_model_endpoint()`
+- `get_agent_model_inference_component()`
+- `get_aws_region()`
+- `get_default_model_id()`
+- `get_max_results()`
+- `get_min_score()`
+- `get_strands_knowledge_base_id()` (Framework requirement)
+- `get_temperature()`
+- `get_xgboost_model_endpoint()`
+
+**Session Variables** (SCREAMING_SNAKE_CASE):
+- `AGENT_MODEL_ENDPOINT`
+- `AGENT_MODEL_INFERENCE_COMPONENT`
+- `AWS_REGION`
+- `DEFAULT_MODEL_ID`
+- `MAX_RESULTS`
+- `MIN_SCORE`
+- `STRANDS_KNOWLEDGE_BASE_ID` (Framework requirement)
+- `TEMPERATURE`
+- `XGBOOST_MODEL_ENDPOINT`
+
+## Technical Decisions
+
+### Decision: Single-Level SSM Parameter Paths
+**Rationale**: 
+- Simpler to manage and understand
+- Easier to list and query
+- Avoids unnecessary nesting complexity
+- Format: `/teachers_assistant/{env}/{parameter_name}`
+
+### Decision: Functionality-Based Naming
+**Rationale**:
+- More maintainable as services change
+- Clearer intent (what it does vs. where it comes from)
+- Examples:
+  - `DefaultModelId` (not `BedrockModelId`) - could be any provider
+  - `AgentModelEndpoint` (not `SageMakerModelEndpoint`) - describes purpose
+  - `XGBoostModelEndpoint` - describes the model type
+
+### Decision: Deploy CloudFormation "As Is"
+**Rationale**:
+- Generic placeholder defaults make it clear what needs to be replaced
+- Students deploy once, then update values via AWS Console or CLI
+- CloudFormation stack updates CANNOT change parameter values (only resource configs)
+- Direct SSM updates are the correct approach
+
+### Decision: Preserve STRANDS_KNOWLEDGE_BASE_ID Naming
+**Rationale**:
+- Framework requirement for Bedrock Knowledge Base integration
+- Cannot be renamed without breaking Strands Agents functionality
+- Documented extensively to explain why this parameter doesn't follow our naming convention
+- Added reference links to official Strands Agents documentation
+
+## Files Modified
+
+### Updated
+- `workshop4/ssm/teacher-assistant-params.yaml` - Complete reversion to `StrandsKnowledgeBaseId`
+- `workshop4/multi_agent/config.py` - Updated function and `get_all_config_values()`
+- `workshop4/multi_agent/app.py` - Updated imports and variable names
+- `workshop4/ssm/README.md` - Updated parameter table and examples
+- `.kiro/specs/workshop4-multi-agent-sagemaker-ai/requirements.md` - Updated parameter list
+- `.kiro/specs/workshop4-multi-agent-sagemaker-ai/design.md` - Updated function documentation
+- `.kiro/specs/workshop4-multi-agent-sagemaker-ai/tasks.md` - Updated getter function list
+- `.kiro/session-notes/20260116-session-notes.md` - This update
+
+## Current Status
+
+### Completed ✅
+- ✅ Task 1: Agent model endpoint validation script
+- ✅ Task 2: XGBoost model endpoint validation script
+- ✅ Task 3: Configuration module (SSM Parameter Store integration)
+- ✅ Task 4: Bedrock model module
+- ✅ Task 5: SageMaker model module
+- ✅ Task 6: Application integration with model selection dropdown
+- ✅ Naming convention refactoring complete
+- ✅ STRANDS_KNOWLEDGE_BASE_ID correction complete
+
+### Ready for Next Steps
+- 🎯 Task 7: Deploy SSM parameters and test application
+  - Deploy CloudFormation template with placeholder defaults
+  - Update SSM parameters via Console or CLI
+  - Set `TEACHER_ASSISTANT_ENV=dev` environment variable
+  - Run multi_agent/app.py locally and verify SSM integration
+  - Test model selection dropdown with each model
+
+## Key Learnings
+
+### Framework Integration Points
+- Some naming conventions are dictated by external frameworks
+- Always check framework documentation before renaming
+- Document framework requirements clearly in code and specs
+- Strands Agents requires specific environment variable names for integrations
+
+### SSM Parameter Store Best Practices
+- Deploy CloudFormation once with placeholders
+- Update values directly in SSM (not via CloudFormation)
+- CloudFormation updates only work for resource configuration changes
+- Single-level paths are simpler than multi-level hierarchies
+
+### Naming Convention Consistency
+- Functionality-based naming is more maintainable
+- Consistent naming across all layers (CloudFormation, SSM, config, session)
+- Document exceptions clearly when framework requirements override conventions
+
+## Next Session Actions
+
+1. **Task 7**: Deploy SSM parameters and test
+   - Deploy CloudFormation template
+   - Update parameter values in SSM
+   - Test application with SSM integration
+   - Verify model selection works correctly
+
+2. **Task 8**: Start loan assistant implementation
+   - Create loan_assistant.py
+   - Implement data transformation logic
+   - Implement one-hot encoding
+
+## Progress Tracker
+
+**Completed**: 6 of 17 tasks (35.3%)
+- ✅ Task 1: Agent endpoint validation
+- ✅ Task 2: XGBoost endpoint validation
+- ✅ Task 3: Configuration module
+- ✅ Task 4: Bedrock model module
+- ✅ Task 5: SageMaker model module
+- ✅ Task 6: Application integration with model selection
+
+**Next Up**: Task 7 (Deploy SSM parameters and test)
+
+**Remaining**: 11 tasks (Tasks 7-17)
 
 ---
 

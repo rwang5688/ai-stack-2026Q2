@@ -3,15 +3,15 @@
 Configuration module for multi-agent application.
 
 This module fetches all configuration from AWS Systems Manager Parameter Store.
-No environment variables are used except for TEACHER_ASSISTANT_ENV (which specifies
+No environment variables are used except for TEACHERS_ASSISTANT_ENV (which specifies
 the environment: dev, staging, or prod) and AWS credentials.
 
 All configuration parameters are stored in SSM Parameter Store under:
-    /teacher_assistant/{environment}/{parameter_name}
+    /teachers_assistant/{environment}/{parameter_name}
 
 Example:
-    /teacher_assistant/dev/default_model_id
-    /teacher_assistant/prod/agent_model_endpoint
+    /teachers_assistant/dev/default_model_id
+    /teachers_assistant/prod/agent_model_endpoint
 
 To deploy parameters, use the CloudFormation template in workshop4/ssm/
 """
@@ -23,7 +23,7 @@ from functools import lru_cache
 
 
 # Get environment from environment variable (only env var we use!)
-TEACHER_ASSISTANT_ENV = os.getenv('TEACHER_ASSISTANT_ENV', 'dev')
+TEACHERS_ASSISTANT_ENV = os.getenv('TEACHERS_ASSISTANT_ENV', 'dev')
 
 
 @lru_cache(maxsize=1)
@@ -39,14 +39,14 @@ def _fetch_all_parameters() -> Dict[str, str]:
     """
     Fetch all parameters from SSM Parameter Store for the current environment.
     
-    This function fetches all parameters under /teacher_assistant/{env}/ and caches them.
+    This function fetches all parameters under /teachers_assistant/{env}/ and caches them.
     The cache is cleared when the Python process restarts.
     
     Returns:
         Dictionary mapping parameter names to values
     """
     ssm = _get_ssm_client()
-    parameter_path = f'/teacher_assistant/{TEACHER_ASSISTANT_ENV}'
+    parameter_path = f'/teachers_assistant/{TEACHERS_ASSISTANT_ENV}'
     
     try:
         # Fetch all parameters recursively
@@ -60,7 +60,7 @@ def _fetch_all_parameters() -> Dict[str, str]:
         params = {}
         for param in response['Parameters']:
             # Extract the parameter name (last part of the path)
-            # e.g., /teacher_assistant/dev/default_model_id -> default_model_id
+            # e.g., /teachers_assistant/dev/default_model_id -> default_model_id
             name = param['Name'].replace(f'{parameter_path}/', '')
             params[name] = param['Value']
         
@@ -68,7 +68,7 @@ def _fetch_all_parameters() -> Dict[str, str]:
         
     except Exception as e:
         print(f"Error fetching parameters from SSM: {e}")
-        print(f"Ensure parameters are deployed for environment: {TEACHER_ASSISTANT_ENV}")
+        print(f"Ensure parameters are deployed for environment: {TEACHERS_ASSISTANT_ENV}")
         print(f"See workshop4/ssm/README.md for deployment instructions")
         raise
 
@@ -95,37 +95,19 @@ def _get_parameter(name: str, default: Optional[str] = None) -> str:
         return default
     else:
         raise KeyError(
-            f"Parameter '{name}' not found in SSM Parameter Store for environment '{TEACHER_ASSISTANT_ENV}'. "
-            f"Deploy parameters using: aws cloudformation create-stack --stack-name teacher-assistant-params-{TEACHER_ASSISTANT_ENV} "
-            f"--template-body file://workshop4/ssm/teacher-assistant-params.yaml"
+            f"Parameter '{name}' not found in SSM Parameter Store for environment '{TEACHERS_ASSISTANT_ENV}'. "
+            f"Deploy parameters using: aws cloudformation create-stack --stack-name teachers-assistant-params-{TEACHERS_ASSISTANT_ENV} "
+            f"--template-body file://workshop4/ssm/teachers-assistant-params.yaml"
         )
 
 
 # Configuration getter functions (alphabetically sorted)
 
-def get_agent_knowledge_base_id() -> str:
-    """
-    Get agent knowledge base ID from SSM Parameter Store.
-    
-    Parameter: /teacher_assistant/{env}/agent_knowledge_base_id
-    Default: my-agent-knowledge-base-id
-    
-    Returns:
-        Knowledge base ID for memory operations
-    
-    Example:
-        >>> kb_id = get_agent_knowledge_base_id()
-        >>> print(kb_id)
-        'IMW46CITZE'
-    """
-    return _get_parameter('agent_knowledge_base_id', default='my-agent-knowledge-base-id')
-
-
 def get_agent_model_endpoint() -> str:
     """
     Get agent model endpoint name from SSM Parameter Store.
     
-    Parameter: /teacher_assistant/{env}/agent_model_endpoint
+    Parameter: /teachers_assistant/{env}/agent_model_endpoint
     Default: my-agent-model-endpoint
     Required: Only when user selects SageMaker model
     
@@ -144,7 +126,7 @@ def get_agent_model_inference_component() -> Optional[str]:
     """
     Get agent model inference component name from SSM Parameter Store.
     
-    Parameter: /teacher_assistant/{env}/agent_model_inference_component
+    Parameter: /teachers_assistant/{env}/agent_model_inference_component
     Default: my-agent-model-inference-component
     Required: Only when endpoint uses inference components (multi-model endpoints)
     
@@ -170,7 +152,7 @@ def get_aws_region() -> str:
     """
     Get AWS region from SSM Parameter Store.
     
-    Parameter: /teacher_assistant/{env}/aws_region
+    Parameter: /teachers_assistant/{env}/aws_region
     Default: us-east-1
     
     Returns:
@@ -188,7 +170,7 @@ def get_default_model_id() -> str:
     """
     Get default model ID from SSM Parameter Store.
     
-    Parameter: /teacher_assistant/{env}/default_model_id
+    Parameter: /teachers_assistant/{env}/default_model_id
     Default: us.amazon.nova-2-lite-v1:0
     
     Supported Models:
@@ -212,7 +194,7 @@ def get_max_results() -> int:
     """
     Get maximum results for knowledge base queries from SSM Parameter Store.
     
-    Parameter: /teacher_assistant/{env}/max_results
+    Parameter: /teachers_assistant/{env}/max_results
     Default: 9
     
     Returns:
@@ -230,7 +212,7 @@ def get_min_score() -> float:
     """
     Get minimum score threshold for knowledge base queries from SSM Parameter Store.
     
-    Parameter: /teacher_assistant/{env}/min_score
+    Parameter: /teachers_assistant/{env}/min_score
     Default: 0.000001
     
     Returns:
@@ -244,11 +226,36 @@ def get_min_score() -> float:
     return float(_get_parameter('min_score', default='0.000001'))
 
 
+def get_strands_knowledge_base_id() -> str:
+    """
+    Get Strands knowledge base ID from SSM Parameter Store.
+    
+    Parameter: /teachers_assistant/{env}/strands_knowledge_base_id
+    Default: my-strands-knowledge-base-id
+    
+    IMPORTANT: This parameter MUST be named 'strands_knowledge_base_id' because
+    the Strands Agents framework requires the STRANDS_KNOWLEDGE_BASE_ID environment
+    variable to integrate with Bedrock Knowledge Base. This is a framework requirement
+    and cannot be renamed.
+    
+    Reference: https://strandsagents.com/latest/documentation/docs/examples/python/knowledge_base_agent/
+    
+    Returns:
+        Knowledge base ID for memory operations
+    
+    Example:
+        >>> kb_id = get_strands_knowledge_base_id()
+        >>> print(kb_id)
+        'IMW46CITZE'
+    """
+    return _get_parameter('strands_knowledge_base_id', default='my-strands-knowledge-base-id')
+
+
 def get_temperature() -> float:
     """
     Get model temperature setting from SSM Parameter Store.
     
-    Parameter: /teacher_assistant/{env}/temperature
+    Parameter: /teachers_assistant/{env}/temperature
     Default: 0.3
     
     Returns:
@@ -266,7 +273,7 @@ def get_xgboost_model_endpoint() -> str:
     """
     Get XGBoost model endpoint name from SSM Parameter Store.
     
-    Parameter: /teacher_assistant/{env}/xgboost_model_endpoint
+    Parameter: /teachers_assistant/{env}/xgboost_model_endpoint
     Default: my-xgboost-model-endpoint
     Required: Only when using loan assistant feature
     
@@ -336,14 +343,14 @@ def get_all_config_values() -> dict:
         ...     print(f"{key}: {value}")
     """
     return {
-        "TEACHER_ASSISTANT_ENV": TEACHER_ASSISTANT_ENV,
-        "AGENT_KNOWLEDGE_BASE_ID": get_agent_knowledge_base_id(),
+        "TEACHERS_ASSISTANT_ENV": TEACHERS_ASSISTANT_ENV,
         "AGENT_MODEL_ENDPOINT": get_agent_model_endpoint(),
         "AGENT_MODEL_INFERENCE_COMPONENT": get_agent_model_inference_component(),
         "AWS_REGION": get_aws_region(),
         "DEFAULT_MODEL_ID": get_default_model_id(),
         "MAX_RESULTS": get_max_results(),
         "MIN_SCORE": get_min_score(),
+        "STRANDS_KNOWLEDGE_BASE_ID": get_strands_knowledge_base_id(),
         "TEMPERATURE": get_temperature(),
         "XGBOOST_MODEL_ENDPOINT": get_xgboost_model_endpoint(),
     }

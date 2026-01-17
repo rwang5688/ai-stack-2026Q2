@@ -2,11 +2,6 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: 'Teacher Assistant Multi-Agent Application - SSM Parameter Store Configuration'
 
 Parameters:
-  AgentKnowledgeBaseId:
-    Type: String
-    Default: my-agent-knowledge-base-id
-    Description: Agent knowledge base ID for memory operations
-
   AgentModelEndpoint:
     Type: String
     Default: my-agent-model-endpoint
@@ -60,6 +55,11 @@ Parameters:
     MinValue: 0
     MaxValue: 1
 
+  StrandsKnowledgeBaseId:
+    Type: String
+    Default: my-strands-knowledge-base-id
+    Description: Strands knowledge base ID (REQUIRED - Framework integration point with Bedrock Knowledge Base)
+
   Temperature:
     Type: Number
     Default: 0.3
@@ -73,24 +73,11 @@ Parameters:
     Description: XGBoost loan prediction model endpoint name (required for loan assistant)
 
 Resources:
-  # Agent Knowledge Base ID Parameter
-  ParamAgentKnowledgeBaseId:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: !Sub '/teacher_assistant/${Environment}/agent_knowledge_base_id'
-      Description: Agent knowledge base ID for memory operations
-      Type: String
-      Value: !Ref AgentKnowledgeBaseId
-      Tags:
-        Environment: !Ref Environment
-        Application: TeacherAssistant
-        ManagedBy: CloudFormation
-
   # Agent Model Endpoint Parameter
   ParamAgentModelEndpoint:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: !Sub '/teacher_assistant/${Environment}/agent_model_endpoint'
+      Name: !Sub '/teachers_assistant/${Environment}/agent_model_endpoint'
       Description: Agent model endpoint name
       Type: String
       Value: !Ref AgentModelEndpoint
@@ -103,7 +90,7 @@ Resources:
   ParamAgentModelInferenceComponent:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: !Sub '/teacher_assistant/${Environment}/agent_model_inference_component'
+      Name: !Sub '/teachers_assistant/${Environment}/agent_model_inference_component'
       Description: Agent model inference component name
       Type: String
       Value: !Ref AgentModelInferenceComponent
@@ -116,7 +103,7 @@ Resources:
   ParamAWSRegion:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: !Sub '/teacher_assistant/${Environment}/aws_region'
+      Name: !Sub '/teachers_assistant/${Environment}/aws_region'
       Description: AWS region for all services
       Type: String
       Value: !Ref AWSRegion
@@ -129,7 +116,7 @@ Resources:
   ParamDefaultModelId:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: !Sub '/teacher_assistant/${Environment}/default_model_id'
+      Name: !Sub '/teachers_assistant/${Environment}/default_model_id'
       Description: Default model ID (typically Bedrock cross-region inference profile)
       Type: String
       Value: !Ref DefaultModelId
@@ -142,7 +129,7 @@ Resources:
   ParamMaxResults:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: !Sub '/teacher_assistant/${Environment}/max_results'
+      Name: !Sub '/teachers_assistant/${Environment}/max_results'
       Description: Maximum results for knowledge base queries
       Type: String
       Value: !Ref MaxResults
@@ -155,10 +142,26 @@ Resources:
   ParamMinScore:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: !Sub '/teacher_assistant/${Environment}/min_score'
+      Name: !Sub '/teachers_assistant/${Environment}/min_score'
       Description: Minimum score threshold for knowledge base queries
       Type: String
       Value: !Ref MinScore
+      Tags:
+        Environment: !Ref Environment
+        Application: TeacherAssistant
+        ManagedBy: CloudFormation
+
+  # Strands Knowledge Base ID Parameter
+  # IMPORTANT: This parameter name MUST be 'strands_knowledge_base_id' because
+  # the Strands Agents framework requires the STRANDS_KNOWLEDGE_BASE_ID environment
+  # variable to integrate with Bedrock Knowledge Base. This is a framework requirement.
+  ParamStrandsKnowledgeBaseId:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '/teachers_assistant/${Environment}/strands_knowledge_base_id'
+      Description: Strands knowledge base ID (REQUIRED - Framework integration point)
+      Type: String
+      Value: !Ref StrandsKnowledgeBaseId
       Tags:
         Environment: !Ref Environment
         Application: TeacherAssistant
@@ -168,7 +171,7 @@ Resources:
   ParamTemperature:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: !Sub '/teacher_assistant/${Environment}/temperature'
+      Name: !Sub '/teachers_assistant/${Environment}/temperature'
       Description: Model temperature setting for all agents
       Type: String
       Value: !Ref Temperature
@@ -181,7 +184,7 @@ Resources:
   ParamXGBoostModelEndpoint:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: !Sub '/teacher_assistant/${Environment}/xgboost_model_endpoint'
+      Name: !Sub '/teachers_assistant/${Environment}/xgboost_model_endpoint'
       Description: XGBoost loan prediction model endpoint name
       Type: String
       Value: !Ref XGBoostModelEndpoint
@@ -191,10 +194,6 @@ Resources:
         ManagedBy: CloudFormation
 
 Outputs:
-  AgentKnowledgeBaseIdParameter:
-    Description: SSM Parameter name for Agent Knowledge Base ID
-    Value: !Ref ParamAgentKnowledgeBaseId
-
   AgentModelEndpointParameter:
     Description: SSM Parameter name for Agent Model Endpoint
     Value: !Ref ParamAgentModelEndpoint
@@ -221,9 +220,13 @@ Outputs:
 
   ParameterPrefix:
     Description: SSM Parameter Store prefix for this environment
-    Value: !Sub '/teacher_assistant/${Environment}'
+    Value: !Sub '/teachers_assistant/${Environment}'
     Export:
       Name: !Sub '${AWS::StackName}-ParameterPrefix'
+
+  StrandsKnowledgeBaseIdParameter:
+    Description: SSM Parameter name for Strands Knowledge Base ID (Framework integration point)
+    Value: !Ref ParamStrandsKnowledgeBaseId
 
   TemperatureParameter:
     Description: SSM Parameter name for Model Temperature

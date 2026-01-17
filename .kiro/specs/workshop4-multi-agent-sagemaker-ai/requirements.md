@@ -53,7 +53,7 @@ This feature expands the workshop4 multi-agent application to support multiple r
 2. THE Config_Module SHALL manage the following SSM parameters:
    - AGENT_MODEL_INFERENCE_COMPONENT: Agent model inference component name (for multi-model endpoints)
    - AGENT_MODEL_ENDPOINT: Agent model endpoint name
-   - AGENT_KNOWLEDGE_BASE_ID: Agent knowledge base ID
+   - STRANDS_KNOWLEDGE_BASE_ID: Strands knowledge base ID (REQUIRED - Framework integration point with Bedrock Knowledge Base)
    - XGBOOST_MODEL_ENDPOINT: XGBoost loan prediction endpoint name
    - AWS_REGION: AWS region for all services
    - DEFAULT_MODEL_ID: Default model ID (typically Bedrock cross-region profile)

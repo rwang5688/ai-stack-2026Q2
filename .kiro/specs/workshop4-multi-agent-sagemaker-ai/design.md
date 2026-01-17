@@ -181,8 +181,17 @@ def get_agent_model_endpoint() -> str:
 def get_agent_model_inference_component() -> Optional[str]:
     """Get agent model inference component name from SSM Parameter Store."""
     
-def get_agent_knowledge_base_id() -> str:
-    """Get agent knowledge base ID from SSM Parameter Store."""
+def get_strands_knowledge_base_id() -> str:
+    """
+    Get Strands knowledge base ID from SSM Parameter Store.
+    
+    IMPORTANT: This parameter MUST be named 'strands_knowledge_base_id' because
+    the Strands Agents framework requires the STRANDS_KNOWLEDGE_BASE_ID environment
+    variable to integrate with Bedrock Knowledge Base. This is a framework requirement
+    and cannot be renamed.
+    
+    Reference: https://strandsagents.com/latest/documentation/docs/examples/python/knowledge_base_agent/
+    """
     
 def get_aws_region() -> str:
     """Get AWS region from SSM Parameter Store."""
@@ -204,18 +213,18 @@ def get_xgboost_model_endpoint() -> str:
 ```
 
 **SSM Parameters** (alphabetically sorted):
-- `/teacher_assistant/{env}/agent_knowledge_base_id`: Agent knowledge base ID (default: my-agent-knowledge-base-id)
-- `/teacher_assistant/{env}/agent_model_endpoint`: Agent model endpoint name (default: my-agent-model-endpoint)
-- `/teacher_assistant/{env}/agent_model_inference_component`: Agent model inference component (default: my-agent-model-inference-component)
-- `/teacher_assistant/{env}/aws_region`: AWS region for all services (default: us-east-1)
-- `/teacher_assistant/{env}/default_model_id`: Default model ID (default: us.amazon.nova-2-lite-v1:0)
-- `/teacher_assistant/{env}/max_results`: Maximum results for knowledge base queries (default: 9)
-- `/teacher_assistant/{env}/min_score`: Minimum score threshold for knowledge base queries (default: 0.000001)
-- `/teacher_assistant/{env}/temperature`: Model temperature setting (default: 0.3)
-- `/teacher_assistant/{env}/xgboost_model_endpoint`: XGBoost loan prediction endpoint name (default: my-xgboost-model-endpoint)
+- `/teachers_assistant/{env}/strands_knowledge_base_id`: Strands knowledge base ID (REQUIRED - Framework integration point with Bedrock Knowledge Base)
+- `/teachers_assistant/{env}/agent_model_endpoint`: Agent model endpoint name (default: my-agent-model-endpoint)
+- `/teachers_assistant/{env}/agent_model_inference_component`: Agent model inference component (default: my-agent-model-inference-component)
+- `/teachers_assistant/{env}/aws_region`: AWS region for all services (default: us-east-1)
+- `/teachers_assistant/{env}/default_model_id`: Default model ID (default: us.amazon.nova-2-lite-v1:0)
+- `/teachers_assistant/{env}/max_results`: Maximum results for knowledge base queries (default: 9)
+- `/teachers_assistant/{env}/min_score`: Minimum score threshold for knowledge base queries (default: 0.000001)
+- `/teachers_assistant/{env}/temperature`: Model temperature setting (default: 0.3)
+- `/teachers_assistant/{env}/xgboost_model_endpoint`: XGBoost loan prediction endpoint name (default: my-xgboost-model-endpoint)
 
 **Environment Variable**:
-- `TEACHER_ASSISTANT_ENV`: Determines which parameter path to use (dev, staging, or prod)
+- `TEACHERS_ASSISTANT_ENV`: Determines which parameter path to use (dev, staging, or prod)
 
 **Note**: The model provider is NOT an environment variable or SSM parameter. It is determined dynamically at runtime based on the user's model selection in the UI:
 - If user selects a Bedrock model (Nova, Claude) → provider = "bedrock"

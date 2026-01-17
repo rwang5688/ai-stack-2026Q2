@@ -114,27 +114,17 @@ cd workshop4/ssm
 
 # Deploy CloudFormation stack with your configuration
 aws cloudformation create-stack \
-  --stack-name teachassist-params-dev \
-  --template-body file://teachassist-params.yaml \
-  --parameters \
-    ParameterKey=Environment,ParameterValue=dev \
-    ParameterKey=AWSRegion,ParameterValue=us-east-1 \
-    ParameterKey=BedrockModelId,ParameterValue=us.amazon.nova-2-lite-v1:0 \
-    ParameterKey=MaxResults,ParameterValue=9 \
-    ParameterKey=MinScore,ParameterValue=0.000001 \
-    ParameterKey=SageMakerInferenceComponent,ParameterValue=my-llm-inference-component \
-    ParameterKey=SageMakerModelEndpoint,ParameterValue=my-llm-endpoint \
-    ParameterKey=StrandsKnowledgeBaseId,ParameterValue=my-kb-id \
-    ParameterKey=Temperature,ParameterValue=0.3 \
-    ParameterKey=XGBoostEndpointName,ParameterValue=my-xgboost-endpoint
+  --stack-name teachers-assistant-params-dev \
+  --template-body file://teachers-assistant-params.yaml \
+  --parameters ParameterKey=Environment,ParameterValue=dev
 
 # Wait for stack creation to complete
 aws cloudformation wait stack-create-complete \
-  --stack-name teachassist-params-dev
+  --stack-name teachers-assistant-params-dev
 
 # Verify parameters were created
 aws ssm get-parameters-by-path \
-  --path "/teachassist/dev" \
+  --path "/teachers_assistant/dev" \
   --recursive
 ```
 
@@ -144,16 +134,16 @@ After deploying the SSM parameters, you only need to set ONE environment variabl
 
 ```bash
 # Linux/macOS/Git Bash
-export TEACHASSIST_ENV=dev
+export TEACHERS_ASSISTANT_ENV=dev
 
 # Make persistent (optional)
-echo 'export TEACHASSIST_ENV=dev' >> ~/.bashrc
+echo 'export TEACHERS_ASSISTANT_ENV=dev' >> ~/.bashrc
 source ~/.bashrc
 ```
 
 **Windows PowerShell:**
 ```powershell
-$Env:TEACHASSIST_ENV="dev"
+$Env:TEACHERS_ASSISTANT_ENV="dev"
 ```
 
 #### Configuration Parameters
@@ -162,21 +152,22 @@ The CloudFormation template creates the following SSM parameters:
 
 | Parameter | SSM Path | Default | Description |
 |-----------|----------|---------|-------------|
-| AWS Region | `/teachassist/dev/aws/region` | `us-east-1` | AWS region for all services |
-| Bedrock Model ID | `/teachassist/dev/bedrock/model_id` | `us.amazon.nova-2-lite-v1:0` | Bedrock model or cross-region inference profile |
-| Max Results | `/teachassist/dev/knowledge-base/max_results` | `9` | Maximum knowledge base search results |
-| Min Score | `/teachassist/dev/knowledge-base/min_score` | `0.000001` | Minimum relevance score threshold |
-| Knowledge Base ID | `/teachassist/dev/knowledge-base/id` | `my-kb-id` | Strands Knowledge Base identifier |
-| SageMaker Endpoint | `/teachassist/dev/sagemaker/model_endpoint` | `my-llm-endpoint` | SageMaker model endpoint name |
-| Inference Component | `/teachassist/dev/sagemaker/inference_component` | `my-llm-inference-component` | SageMaker inference component (for multi-model endpoints) |
-| Temperature | `/teachassist/dev/model/temperature` | `0.3` | Model temperature setting (0.0-1.0) |
-| XGBoost Endpoint | `/teachassist/dev/xgboost/endpoint_name` | `my-xgboost-endpoint` | XGBoost model endpoint name |
+| Agent Model Endpoint | `/teachers_assistant/dev/agent_model_endpoint` | `my-agent-model-endpoint` | Agent model endpoint name |
+| Agent Model Inference Component | `/teachers_assistant/dev/agent_model_inference_component` | `my-agent-model-inference-component` | Agent model inference component (for multi-model endpoints) |
+| AWS Region | `/teachers_assistant/dev/aws_region` | `us-east-1` | AWS region for all services |
+| Default Model ID | `/teachers_assistant/dev/default_model_id` | `us.amazon.nova-2-lite-v1:0` | Default model ID (typically Bedrock cross-region profile) |
+| Max Results | `/teachers_assistant/dev/max_results` | `9` | Maximum knowledge base search results |
+| Min Score | `/teachers_assistant/dev/min_score` | `0.000001` | Minimum relevance score threshold |
+| Strands Knowledge Base ID | `/teachers_assistant/dev/strands_knowledge_base_id` | `my-strands-knowledge-base-id` | Strands Knowledge Base identifier (Framework requirement) |
+| Temperature | `/teachers_assistant/dev/temperature` | `0.3` | Model temperature setting (0.0-1.0) |
+| XGBoost Model Endpoint | `/teachers_assistant/dev/xgboost_model_endpoint` | `my-xgboost-model-endpoint` | XGBoost model endpoint name |
 
 **Important Notes:**
-- Values with `my-*` prefixes are placeholders. Update them with your actual AWS resource names when you create them in later modules.
-- `SageMakerInferenceComponent` is only needed if your SageMaker endpoint uses inference components (multi-model endpoints).
+- Values with `my-*` prefixes are placeholders. Deploy the CloudFormation template "as is" with these defaults, then update them via AWS Console or CLI with your actual AWS resource names.
+- `agent_model_inference_component` is only needed if your SageMaker endpoint uses inference components (multi-model endpoints).
 - To find your inference component name: `aws sagemaker list-inference-components --endpoint-name-equals <endpoint-name>`
 - Model provider (Bedrock vs SageMaker) is determined dynamically from the UI model selection, not stored as configuration.
+- `strands_knowledge_base_id` must keep this exact naming as it's a Strands Agents framework requirement for Bedrock Knowledge Base integration.
 
 #### Update Configuration Parameters
 
@@ -185,17 +176,12 @@ To update a parameter after deployment:
 ```bash
 # Update a single parameter
 aws ssm put-parameter \
-  --name "/teachassist/dev/bedrock/model_id" \
+  --name "/teachers_assistant/dev/default_model_id" \
   --value "us.amazon.nova-pro-v1:0" \
-  --type String \
   --overwrite
 
-# Or update the entire stack
-aws cloudformation update-stack \
-  --stack-name teachassist-params-dev \
-  --template-body file://teachassist-params.yaml \
-  --parameters \
-    ParameterKey=BedrockModelId,ParameterValue=us.amazon.nova-pro-v1:0
+# Note: CloudFormation stack updates CANNOT change parameter values
+# You must update parameters directly in SSM Parameter Store
 ```
 
 For detailed SSM deployment instructions, see `workshop4/ssm/README.md`.
@@ -245,7 +231,7 @@ aws bedrock list-foundation-models --region $AWS_REGION
 
 # Verify SSM parameters were created
 aws ssm get-parameters-by-path \
-  --path "/teachassist/dev" \
+  --path "/teachers_assistant/dev" \
   --recursive \
   --query "Parameters[*].[Name,Value]" \
   --output table

@@ -29,18 +29,18 @@ This implementation plan follows a local-first development approach: build and t
 - [x] 3. Create configuration module for multi_agent
   - Create `multi_agent/config.py` with SSM Parameter Store integration
   - Implement getter functions in alphabetical order:
-    - `get_agent_knowledge_base_id()` - AGENT_KNOWLEDGE_BASE_ID
     - `get_agent_model_endpoint()` - AGENT_MODEL_ENDPOINT
     - `get_agent_model_inference_component()` - AGENT_MODEL_INFERENCE_COMPONENT
     - `get_aws_region()` - AWS_REGION
     - `get_default_model_id()` - DEFAULT_MODEL_ID
     - `get_max_results()` - MAX_RESULTS
     - `get_min_score()` - MIN_SCORE
+    - `get_strands_knowledge_base_id()` - STRANDS_KNOWLEDGE_BASE_ID (REQUIRED - Framework integration point)
     - `get_temperature()` - TEMPERATURE
     - `get_xgboost_model_endpoint()` - XGBOOST_MODEL_ENDPOINT
   - Add validation logic and default values for each getter
   - Add comprehensive docstrings explaining each function and its SSM parameter
-  - Use environment variable `TEACHER_ASSISTANT_ENV` to determine parameter path
+  - Use environment variable `TEACHERS_ASSISTANT_ENV` to determine parameter path
   - **Note**: Provider is determined dynamically from UI selection, not from configuration
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6_
 
@@ -102,10 +102,10 @@ This implementation plan follows a local-first development approach: build and t
 
 - [ ] 7. Refactor naming conventions and deploy SSM parameters
   - **Naming Refactoring**:
-    - Rename CloudFormation template: `ssm/teachassist-params.yaml` → `ssm/teacher-assistant-params.yaml`
+    - Rename CloudFormation template: `ssm/teachassist-params.yaml` → `ssm/teachers-assistant-params.yaml`
     - Update all parameter names to use functionality-based naming (not service-based)
-    - Update SSM parameter paths to single-level format: `/teacher_assistant/{env}/{parameter_name}`
-    - Update environment variable: `TEACHASSIST_ENV` → `TEACHER_ASSISTANT_ENV`
+    - Update SSM parameter paths to single-level format: `/teachers_assistant/{env}/{parameter_name}`
+    - Update environment variable: `TEACHASSIST_ENV` → `TEACHERS_ASSISTANT_ENV`
     - Update all config function names to match new parameter names
     - Update all application code to use new config function names
   - **SSM Parameter Deployment**:
@@ -115,7 +115,7 @@ This implementation plan follows a local-first development approach: build and t
     - Explain students must update SSM parameters directly via Console or CLI
   - **Testing**:
     - Deploy SSM parameters using CloudFormation
-    - Set `TEACHER_ASSISTANT_ENV=dev` environment variable
+    - Set `TEACHERS_ASSISTANT_ENV=dev` environment variable
     - Run multi_agent/app.py locally and verify it fetches config from SSM
     - Use the sidebar model dropdown to test each model selection
     - Test SageMaker model selection (if endpoint available)
