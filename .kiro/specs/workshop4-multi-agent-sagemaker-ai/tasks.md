@@ -27,19 +27,21 @@ This implementation plan follows a local-first development approach: build and t
   - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5_
 
 - [x] 3. Create configuration module for multi_agent
-  - Create `multi_agent/config.py` with environment variable getter functions
-  - Implement getter functions in alphabetical order by environment variable name:
+  - Create `multi_agent/config.py` with SSM Parameter Store integration
+  - Implement getter functions in alphabetical order:
+    - `get_agent_knowledge_base_id()` - AGENT_KNOWLEDGE_BASE_ID
+    - `get_agent_model_endpoint()` - AGENT_MODEL_ENDPOINT
+    - `get_agent_model_inference_component()` - AGENT_MODEL_INFERENCE_COMPONENT
     - `get_aws_region()` - AWS_REGION
-    - `get_bedrock_model_id()` - BEDROCK_MODEL_ID
+    - `get_default_model_id()` - DEFAULT_MODEL_ID
     - `get_max_results()` - MAX_RESULTS
     - `get_min_score()` - MIN_SCORE
-    - `get_sagemaker_inference_component()` - SAGEMAKER_INFERENCE_COMPONENT
-    - `get_sagemaker_model_endpoint()` - SAGEMAKER_MODEL_ENDPOINT
-    - `get_strands_knowledge_base_id()` - STRANDS_KNOWLEDGE_BASE_ID
-    - `get_xgboost_endpoint_name()` - XGBOOST_ENDPOINT_NAME
+    - `get_temperature()` - TEMPERATURE
+    - `get_xgboost_model_endpoint()` - XGBOOST_MODEL_ENDPOINT
   - Add validation logic and default values for each getter
-  - Add comprehensive docstrings explaining each function and its environment variable
-  - **Note**: Do NOT include `get_strands_model_provider()` - provider is determined dynamically from UI selection
+  - Add comprehensive docstrings explaining each function and its SSM parameter
+  - Use environment variable `TEACHER_ASSISTANT_ENV` to determine parameter path
+  - **Note**: Provider is determined dynamically from UI selection, not from configuration
   - _Requirements: 3.1, 3.2, 3.3, 3.4, 3.5, 3.6_
 
 - [ ]* 3.1 Write unit tests for configuration module
@@ -98,23 +100,29 @@ This implementation plan follows a local-first development approach: build and t
   - Test model switching between providers
   - _Requirements: 6.3, 6.4, 6.5_
 
-- [ ] 7. Checkpoint - Test model selection using the application
-  - Run multi_agent/app.py locally
-  - Use the sidebar model dropdown to test each Bedrock model selection
-  - Test SageMaker model selection (if endpoint available)
-  - Verify sidebar displays correct model information
-  - Test error handling for missing SageMaker endpoint
-  - Ask the user if questions arise
-  - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7_
-
-- [ ] 7. Checkpoint - Test model selection using the application
-  - Run multi_agent/app.py locally
-  - Use the sidebar model dropdown to test each Bedrock model selection
-  - Test SageMaker model selection (if endpoint available)
-  - Verify sidebar displays correct model information
-  - Test error handling for missing SageMaker endpoint
-  - Ask the user if questions arise
-  - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7_
+- [ ] 7. Refactor naming conventions and deploy SSM parameters
+  - **Naming Refactoring**:
+    - Rename CloudFormation template: `ssm/teachassist-params.yaml` → `ssm/teacher-assistant-params.yaml`
+    - Update all parameter names to use functionality-based naming (not service-based)
+    - Update SSM parameter paths to single-level format: `/teacher_assistant/{env}/{parameter_name}`
+    - Update environment variable: `TEACHASSIST_ENV` → `TEACHER_ASSISTANT_ENV`
+    - Update all config function names to match new parameter names
+    - Update all application code to use new config function names
+  - **SSM Parameter Deployment**:
+    - Deploy CloudFormation template with generic placeholder defaults
+    - Update `ssm/README.md` to document deployment and update process
+    - Document that CloudFormation stack updates cannot change parameter values
+    - Explain students must update SSM parameters directly via Console or CLI
+  - **Testing**:
+    - Deploy SSM parameters using CloudFormation
+    - Set `TEACHER_ASSISTANT_ENV=dev` environment variable
+    - Run multi_agent/app.py locally and verify it fetches config from SSM
+    - Use the sidebar model dropdown to test each model selection
+    - Test SageMaker model selection (if endpoint available)
+    - Verify sidebar displays correct model information
+    - Test error handling for missing SageMaker endpoint
+    - Ask the user if questions arise
+  - _Requirements: 3.1, 3.2, 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7_
 
 - [ ] 8. Implement loan assistant data transformation logic
   - Create `multi_agent/loan_assistant.py` with CustomerAttributes handling

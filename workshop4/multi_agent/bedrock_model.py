@@ -13,7 +13,7 @@ Supported Models:
 """
 
 from strands.models import BedrockModel
-from config import get_bedrock_model_id, get_aws_region
+from config import get_default_model_id, get_aws_region
 
 
 # Supported cross-region inference profiles
@@ -34,7 +34,7 @@ def create_bedrock_model(
     
     Args:
         model_id: Bedrock model ID or cross-region profile.
-                 If None, uses value from get_bedrock_model_id().
+                 If None, uses value from get_default_model_id().
                  Default: us.amazon.nova-2-lite-v1:0
         temperature: Model temperature setting (0.0 to 1.0).
                     Lower values make output more deterministic.
@@ -58,7 +58,7 @@ def create_bedrock_model(
     """
     # Get model ID from parameter or config
     if model_id is None:
-        model_id = get_bedrock_model_id()
+        model_id = get_default_model_id()
     
     # Validate model ID
     if model_id not in SUPPORTED_MODELS:

@@ -5,15 +5,14 @@ from strands_tools import memory, use_agent
 
 # Import configuration module
 from config import (
+    get_agent_knowledge_base_id,
+    get_agent_model_endpoint,
+    get_agent_model_inference_component,
     get_aws_region,
-    get_bedrock_model_id,
+    get_default_model_config,
     get_max_results,
     get_min_score,
-    get_sagemaker_inference_component,
-    get_sagemaker_model_endpoint,
-    get_strands_knowledge_base_id,
     get_temperature,
-    get_default_model_config,
 )
 
 # Import model creation modules
@@ -148,7 +147,7 @@ Example response for missing information:
 """
 
 # Knowledge base configuration
-KB_ID = get_strands_knowledge_base_id()
+KNOWLEDGE_BASE_ID = get_agent_knowledge_base_id()
 MIN_SCORE = get_min_score()
 MAX_RESULTS = get_max_results()
 TEMPERATURE = get_temperature()
@@ -229,7 +228,7 @@ with st.sidebar:
     **Model Provider**: {selected_model_info['provider'].title()}  
     **Model ID**: `{selected_model_info['model_id']}`  
     **Temperature**: {TEMPERATURE}  
-    **Knowledge Base**: {KB_ID}  
+    **Knowledge Base**: {KNOWLEDGE_BASE_ID}  
     **AWS Region**: {aws_region}
     """)
     
@@ -305,13 +304,13 @@ def determine_action(query, model, model_info):
                 'temperature': TEMPERATURE
             }
         elif model_info['provider'] == 'sagemaker':
-            inference_component = get_sagemaker_inference_component()
+            inference_component = get_agent_model_inference_component()
             model_settings = {
-                'endpoint_name': get_sagemaker_model_endpoint(),
+                'endpoint_name': get_agent_model_endpoint(),
                 'temperature': TEMPERATURE
             }
             # Add inference component if it's set and not the default placeholder
-            if inference_component and inference_component != "my-llm-inference-component":
+            if inference_component and inference_component != "my-agent-model-inference-component":
                 model_settings['inference_component_name'] = inference_component
         
         result = agent.tool.use_agent(
@@ -354,13 +353,13 @@ def determine_kb_action(query, model, model_info):
                 'temperature': TEMPERATURE
             }
         elif model_info['provider'] == 'sagemaker':
-            inference_component = get_sagemaker_inference_component()
+            inference_component = get_agent_model_inference_component()
             model_settings = {
-                'endpoint_name': get_sagemaker_model_endpoint(),
+                'endpoint_name': get_agent_model_endpoint(),
                 'temperature': TEMPERATURE
             }
             # Add inference component if it's set and not the default placeholder
-            if inference_component and inference_component != "my-llm-inference-component":
+            if inference_component and inference_component != "my-agent-model-inference-component":
                 model_settings['inference_component_name'] = inference_component
         
         result = agent.tool.use_agent(
@@ -427,13 +426,13 @@ def run_kb_agent(query, model, model_info):
                     'temperature': TEMPERATURE
                 }
             elif model_info['provider'] == 'sagemaker':
-                inference_component = get_sagemaker_inference_component()
+                inference_component = get_agent_model_inference_component()
                 model_settings = {
-                    'endpoint_name': get_sagemaker_model_endpoint(),
+                    'endpoint_name': get_agent_model_endpoint(),
                     'temperature': TEMPERATURE
                 }
                 # Add inference component if it's set and not the default placeholder
-                if inference_component and inference_component != "my-llm-inference-component":
+                if inference_component and inference_component != "my-agent-model-inference-component":
                     model_settings['inference_component_name'] = inference_component
             
             # Generate a clear, conversational answer using the retrieved information

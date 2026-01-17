@@ -1,4 +1,4 @@
-# TeachAssist SSM Parameter Store Configuration
+# Teacher Assistant SSM Parameter Store Configuration
 
 This directory contains CloudFormation templates for deploying application configuration to AWS Systems Manager Parameter Store.
 
@@ -14,96 +14,113 @@ Using SSM Parameter Store instead of environment variables provides several bene
 
 ## Quick Start
 
-### 1. Deploy Parameters (First Time)
+### 1. Deploy Parameters with Placeholder Defaults
+
+**Important**: Deploy the CloudFormation template "as is" with the generic placeholder defaults. You'll customize the actual values afterward using AWS Console or CLI.
 
 ```bash
-# Deploy with default values for development
+# Deploy with placeholder defaults for development
 aws cloudformation create-stack \
-  --stack-name teachassist-params-dev \
-  --template-body file://teachassist-params.yaml \
+  --stack-name teacher-assistant-params-dev \
+  --template-body file://teacher-assistant-params.yaml \
   --parameters ParameterKey=Environment,ParameterValue=dev
 
 # Wait for stack creation to complete
 aws cloudformation wait stack-create-complete \
-  --stack-name teachassist-params-dev
+  --stack-name teacher-assistant-params-dev
 ```
 
-### 2. Customize Parameters
+### 2. Update Parameter Values
 
-Edit the CloudFormation template or provide parameter overrides:
+After deployment, update the parameter values with your actual AWS resource names.
 
+**Using AWS Console**:
+1. Navigate to AWS Systems Manager → Parameter Store
+2. Find parameters under `/teacher_assistant/dev/`
+3. Click on each parameter and update its value
+4. Click "Save changes"
+
+**Using AWS CLI**:
 ```bash
-# Deploy with custom values
-aws cloudformation create-stack \
-  --stack-name teachassist-params-dev \
-  --template-body file://teachassist-params.yaml \
-  --parameters \
-    ParameterKey=Environment,ParameterValue=dev \
-    ParameterKey=BedrockModelId,ParameterValue=us.amazon.nova-pro-v1:0 \
-    ParameterKey=StrandsKnowledgeBaseId,ParameterValue=IMW46CITZE \
-    ParameterKey=SageMakerModelEndpoint,ParameterValue=my-gpt-oss-20b-1-1768457329 \
-    ParameterKey=SageMakerInferenceComponent,ParameterValue=adapter-my-gpt-oss-20b-1-1768457329-1768457350 \
-    ParameterKey=XGBoostEndpointName,ParameterValue=xgboost-serverless-ep2026-01-12-05-31-16
+# Update agent model endpoint
+aws ssm put-parameter \
+  --name "/teacher_assistant/dev/agent_model_endpoint" \
+  --value "your-actual-endpoint-name" \
+  --overwrite
+
+# Update agent model inference component (if using multi-model endpoints)
+aws ssm put-parameter \
+  --name "/teacher_assistant/dev/agent_model_inference_component" \
+  --value "your-actual-inference-component-name" \
+  --overwrite
+
+# Update agent knowledge base ID
+aws ssm put-parameter \
+  --name "/teacher_assistant/dev/agent_knowledge_base_id" \
+  --value "your-actual-knowledge-base-id" \
+  --overwrite
+
+# Update XGBoost model endpoint
+aws ssm put-parameter \
+  --name "/teacher_assistant/dev/xgboost_model_endpoint" \
+  --value "your-actual-xgboost-endpoint-name" \
+  --overwrite
 ```
 
-### 3. Update Parameters
-
-```bash
-# Update existing stack with new values
-aws cloudformation update-stack \
-  --stack-name teachassist-params-dev \
-  --template-body file://teachassist-params.yaml \
-  --parameters \
-    ParameterKey=SageMakerModelEndpoint,ParameterValue=new-endpoint-name
-
-# Wait for update to complete
-aws cloudformation wait stack-update-complete \
-  --stack-name teachassist-params-dev
-```
-
-### 4. View Parameters
+### 3. View Parameters
 
 ```bash
 # List all parameters for an environment
 aws ssm get-parameters-by-path \
-  --path "/teachassist/dev" \
+  --path "/teacher_assistant/dev" \
   --recursive
 
 # Get a specific parameter
 aws ssm get-parameter \
-  --name "/teachassist/dev/sagemaker/model_endpoint"
+  --name "/teacher_assistant/dev/agent_model_endpoint"
 ```
+
+## Why Not Use CloudFormation Stack Updates?
+
+**CloudFormation stack updates cannot be used to change parameter values** because:
+
+1. Changing CloudFormation **input parameter values** alone doesn't trigger SSM resource updates
+2. The SSM parameter values are set at stack **creation time** via `Value: !Ref`
+3. Only changes to **resource configurations** trigger CloudFormation updates
+4. To change values, you must update SSM parameters directly (not via CloudFormation)
+
+**Example**: If you change `AgentModelEndpoint` input parameter from `my-agent-model-endpoint` to `new-endpoint-name` and run `aws cloudformation update-stack`, the SSM parameter value will **not** change because the resource configuration (`ParamAgentModelEndpoint`) hasn't changed.
 
 ## Parameter Structure
 
-All parameters follow this naming convention:
+All parameters follow this single-level naming convention:
 ```
-/teachassist/{environment}/{category}/{parameter_name}
+/teacher_assistant/{environment}/{parameter_name}
 ```
 
 ### Available Parameters
 
 | Parameter Path | Description | Default Value |
 |---------------|-------------|---------------|
-| `/teachassist/{env}/aws/region` | AWS region for all services | `us-east-1` |
-| `/teachassist/{env}/bedrock/model_id` | Bedrock model ID | `us.amazon.nova-2-lite-v1:0` |
-| `/teachassist/{env}/strands/model_provider` | Model provider (bedrock/sagemaker) | `bedrock` |
-| `/teachassist/{env}/sagemaker/model_endpoint` | SageMaker model endpoint name | `my-llm-endpoint` |
-| `/teachassist/{env}/sagemaker/inference_component` | SageMaker inference component | `my-llm-inference-component` |
-| `/teachassist/{env}/xgboost/endpoint_name` | XGBoost endpoint name | `my-xgboost-endpoint` |
-| `/teachassist/{env}/strands/knowledge_base_id` | Strands knowledge base ID | `my-kb-id` |
-| `/teachassist/{env}/knowledge_base/max_results` | Max KB query results | `9` |
-| `/teachassist/{env}/knowledge_base/min_score` | Min KB query score | `0.000001` |
+| `/teacher_assistant/{env}/agent_knowledge_base_id` | Agent knowledge base ID | `my-agent-knowledge-base-id` |
+| `/teacher_assistant/{env}/agent_model_endpoint` | Agent model endpoint name | `my-agent-model-endpoint` |
+| `/teacher_assistant/{env}/agent_model_inference_component` | Agent model inference component | `my-agent-model-inference-component` |
+| `/teacher_assistant/{env}/aws_region` | AWS region for all services | `us-east-1` |
+| `/teacher_assistant/{env}/default_model_id` | Default model ID | `us.amazon.nova-2-lite-v1:0` |
+| `/teacher_assistant/{env}/max_results` | Max KB query results | `9` |
+| `/teacher_assistant/{env}/min_score` | Min KB query score | `0.000001` |
+| `/teacher_assistant/{env}/temperature` | Model temperature setting | `0.3` |
+| `/teacher_assistant/{env}/xgboost_model_endpoint` | XGBoost model endpoint name | `my-xgboost-model-endpoint` |
 
 ## Environment Configuration
 
-The application reads the environment from the `TEACHASSIST_ENV` environment variable:
+The application reads the environment from the `TEACHER_ASSISTANT_ENV` environment variable:
 
 ```bash
 # Set environment (only env var needed!)
-export TEACHASSIST_ENV=dev
+export TEACHER_ASSISTANT_ENV=dev
 
-# Application will read from /teachassist/dev/* parameters
+# Application will read from /teacher_assistant/dev/* parameters
 python app.py
 ```
 
@@ -114,20 +131,20 @@ Deploy separate stacks for each environment:
 ```bash
 # Development
 aws cloudformation create-stack \
-  --stack-name teachassist-params-dev \
-  --template-body file://teachassist-params.yaml \
+  --stack-name teacher-assistant-params-dev \
+  --template-body file://teacher-assistant-params.yaml \
   --parameters ParameterKey=Environment,ParameterValue=dev
 
 # Staging
 aws cloudformation create-stack \
-  --stack-name teachassist-params-staging \
-  --template-body file://teachassist-params.yaml \
+  --stack-name teacher-assistant-params-staging \
+  --template-body file://teacher-assistant-params.yaml \
   --parameters ParameterKey=Environment,ParameterValue=staging
 
 # Production
 aws cloudformation create-stack \
-  --stack-name teachassist-params-prod \
-  --template-body file://teachassist-params.yaml \
+  --stack-name teacher-assistant-params-prod \
+  --template-body file://teacher-assistant-params.yaml \
   --parameters ParameterKey=Environment,ParameterValue=prod
 ```
 
@@ -138,13 +155,13 @@ If you're deleting and recreating SageMaker endpoints to save costs, simply upda
 ```bash
 # Update endpoint name after recreating endpoint
 aws ssm put-parameter \
-  --name "/teachassist/dev/sagemaker/model_endpoint" \
+  --name "/teacher_assistant/dev/agent_model_endpoint" \
   --value "new-endpoint-name-1234567890" \
   --overwrite
 
 # Update inference component
 aws ssm put-parameter \
-  --name "/teachassist/dev/sagemaker/inference_component" \
+  --name "/teacher_assistant/dev/agent_model_inference_component" \
   --value "adapter-new-endpoint-1234567890" \
   --overwrite
 ```
@@ -156,11 +173,11 @@ aws ssm put-parameter \
 ```bash
 # Delete the CloudFormation stack (removes all parameters)
 aws cloudformation delete-stack \
-  --stack-name teachassist-params-dev
+  --stack-name teacher-assistant-params-dev
 
 # Wait for deletion to complete
 aws cloudformation wait stack-delete-complete \
-  --stack-name teachassist-params-dev
+  --stack-name teacher-assistant-params-dev
 ```
 
 ## IAM Permissions Required
@@ -178,7 +195,7 @@ The application needs these IAM permissions:
         "ssm:GetParameters",
         "ssm:GetParametersByPath"
       ],
-      "Resource": "arn:aws:ssm:*:*:parameter/teachassist/*"
+      "Resource": "arn:aws:ssm:*:*:parameter/teacher_assistant/*"
     }
   ]
 }
@@ -190,36 +207,37 @@ The application needs these IAM permissions:
 
 ```bash
 # Verify stack exists
-aws cloudformation describe-stacks --stack-name teachassist-params-dev
+aws cloudformation describe-stacks --stack-name teacher-assistant-params-dev
 
 # List all parameters
-aws ssm get-parameters-by-path --path "/teachassist/dev" --recursive
+aws ssm get-parameters-by-path --path "/teacher_assistant/dev" --recursive
 ```
 
 ### Permission Denied
 
-Ensure your IAM role/user has `ssm:GetParameter` permissions for `/teachassist/*` parameters.
+Ensure your IAM role/user has `ssm:GetParameter` permissions for `/teacher_assistant/*` parameters.
 
 ### Wrong Environment
 
-Check the `TEACHASSIST_ENV` environment variable:
+Check the `TEACHER_ASSISTANT_ENV` environment variable:
 
 ```bash
-echo $TEACHASSIST_ENV
+echo $TEACHER_ASSISTANT_ENV
 ```
 
 ## Best Practices
 
-1. **Use CloudFormation**: Always deploy parameters via CloudFormation for version control
-2. **Tag Parameters**: All parameters are tagged with Environment and Application
-3. **Separate Environments**: Use different stacks for dev/staging/prod
-4. **Document Changes**: Use CloudFormation change sets to review updates
-5. **Backup**: CloudFormation templates serve as configuration backup
+1. **Deploy Once**: Deploy CloudFormation template once with placeholder defaults
+2. **Update via SSM**: Update actual values directly in SSM Parameter Store (not via CloudFormation)
+3. **Tag Parameters**: All parameters are tagged with Environment and Application
+4. **Separate Environments**: Use different stacks for dev/staging/prod
+5. **Document Changes**: Keep track of parameter value changes in your documentation
 
 ## Next Steps
 
 After deploying parameters:
 
-1. Set `TEACHASSIST_ENV` environment variable
-2. Run the application - it will automatically fetch parameters
-3. Update parameters as needed without redeploying the application
+1. Update parameter values with your actual AWS resource names (via Console or CLI)
+2. Set `TEACHER_ASSISTANT_ENV` environment variable
+3. Run the application - it will automatically fetch parameters from SSM
+4. Update parameters as needed without redeploying the application

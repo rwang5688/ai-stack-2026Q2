@@ -50,14 +50,16 @@ This feature expands the workshop4 multi-agent application to support multiple r
 #### Acceptance Criteria
 
 1. THE Config_Module SHALL provide getter functions for all environment variables used by the application
-2. THE Config_Module SHALL manage the following environment variables:
+2. THE Config_Module SHALL manage the following SSM parameters:
+   - AGENT_MODEL_INFERENCE_COMPONENT: Agent model inference component name (for multi-model endpoints)
+   - AGENT_MODEL_ENDPOINT: Agent model endpoint name
+   - AGENT_KNOWLEDGE_BASE_ID: Agent knowledge base ID
+   - XGBOOST_MODEL_ENDPOINT: XGBoost loan prediction endpoint name
    - AWS_REGION: AWS region for all services
-   - BEDROCK_MODEL_ID: Bedrock model ID or cross-region profile
+   - DEFAULT_MODEL_ID: Default model ID (typically Bedrock cross-region profile)
    - MAX_RESULTS: Maximum results for knowledge base queries
    - MIN_SCORE: Minimum score threshold for knowledge base queries
-   - SAGEMAKER_MODEL_ENDPOINT: SageMaker model endpoint name
-   - STRANDS_KNOWLEDGE_BASE_ID: Strands knowledge base ID
-   - XGBOOST_ENDPOINT_NAME: XGBoost loan prediction endpoint name
+   - TEMPERATURE: Model temperature setting for all agents
 3. WHEN an environment variable is missing, THE Config_Module SHALL return a sensible default value or raise a descriptive error
 4. THE Config_Module SHALL validate environment variable values before returning them
 5. THE Config_Module SHALL organize getter functions in alphabetical order by environment variable name

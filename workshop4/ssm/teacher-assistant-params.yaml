@@ -1,0 +1,234 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Teacher Assistant Multi-Agent Application - SSM Parameter Store Configuration'
+
+Parameters:
+  AgentKnowledgeBaseId:
+    Type: String
+    Default: my-agent-knowledge-base-id
+    Description: Agent knowledge base ID for memory operations
+
+  AgentModelEndpoint:
+    Type: String
+    Default: my-agent-model-endpoint
+    Description: Agent model endpoint name (required when user selects SageMaker model)
+
+  AgentModelInferenceComponent:
+    Type: String
+    Default: my-agent-model-inference-component
+    Description: Agent model inference component name (optional, for multi-model endpoints)
+
+  AWSRegion:
+    Type: String
+    Default: us-east-1
+    Description: AWS region for all services
+    AllowedValues:
+      - us-east-1
+      - us-west-2
+      - eu-west-1
+      - ap-southeast-1
+
+  DefaultModelId:
+    Type: String
+    Default: us.amazon.nova-2-lite-v1:0
+    Description: Default model ID (typically Bedrock cross-region inference profile)
+    AllowedValues:
+      - us.amazon.nova-2-lite-v1:0
+      - us.amazon.nova-pro-v1:0
+      - us.anthropic.claude-haiku-4-5-20251001-v1:0
+      - us.anthropic.claude-sonnet-4-5-20250929-v1:0
+
+  Environment:
+    Type: String
+    Default: dev
+    Description: Environment name (dev, staging, prod)
+    AllowedValues:
+      - dev
+      - staging
+      - prod
+
+  MaxResults:
+    Type: Number
+    Default: 9
+    Description: Maximum results for knowledge base queries
+    MinValue: 1
+    MaxValue: 100
+
+  MinScore:
+    Type: Number
+    Default: 0.000001
+    Description: Minimum score threshold for knowledge base queries (0.0 to 1.0)
+    MinValue: 0
+    MaxValue: 1
+
+  Temperature:
+    Type: Number
+    Default: 0.3
+    Description: Model temperature setting for all agents (0.0 to 1.0)
+    MinValue: 0
+    MaxValue: 1
+
+  XGBoostModelEndpoint:
+    Type: String
+    Default: my-xgboost-model-endpoint
+    Description: XGBoost loan prediction model endpoint name (required for loan assistant)
+
+Resources:
+  # Agent Knowledge Base ID Parameter
+  ParamAgentKnowledgeBaseId:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '/teacher_assistant/${Environment}/agent_knowledge_base_id'
+      Description: Agent knowledge base ID for memory operations
+      Type: String
+      Value: !Ref AgentKnowledgeBaseId
+      Tags:
+        Environment: !Ref Environment
+        Application: TeacherAssistant
+        ManagedBy: CloudFormation
+
+  # Agent Model Endpoint Parameter
+  ParamAgentModelEndpoint:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '/teacher_assistant/${Environment}/agent_model_endpoint'
+      Description: Agent model endpoint name
+      Type: String
+      Value: !Ref AgentModelEndpoint
+      Tags:
+        Environment: !Ref Environment
+        Application: TeacherAssistant
+        ManagedBy: CloudFormation
+
+  # Agent Model Inference Component Parameter
+  ParamAgentModelInferenceComponent:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '/teacher_assistant/${Environment}/agent_model_inference_component'
+      Description: Agent model inference component name
+      Type: String
+      Value: !Ref AgentModelInferenceComponent
+      Tags:
+        Environment: !Ref Environment
+        Application: TeacherAssistant
+        ManagedBy: CloudFormation
+
+  # AWS Region Parameter
+  ParamAWSRegion:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '/teacher_assistant/${Environment}/aws_region'
+      Description: AWS region for all services
+      Type: String
+      Value: !Ref AWSRegion
+      Tags:
+        Environment: !Ref Environment
+        Application: TeacherAssistant
+        ManagedBy: CloudFormation
+
+  # Default Model ID Parameter
+  ParamDefaultModelId:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '/teacher_assistant/${Environment}/default_model_id'
+      Description: Default model ID (typically Bedrock cross-region inference profile)
+      Type: String
+      Value: !Ref DefaultModelId
+      Tags:
+        Environment: !Ref Environment
+        Application: TeacherAssistant
+        ManagedBy: CloudFormation
+
+  # Max Results Parameter
+  ParamMaxResults:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '/teacher_assistant/${Environment}/max_results'
+      Description: Maximum results for knowledge base queries
+      Type: String
+      Value: !Ref MaxResults
+      Tags:
+        Environment: !Ref Environment
+        Application: TeacherAssistant
+        ManagedBy: CloudFormation
+
+  # Min Score Parameter
+  ParamMinScore:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '/teacher_assistant/${Environment}/min_score'
+      Description: Minimum score threshold for knowledge base queries
+      Type: String
+      Value: !Ref MinScore
+      Tags:
+        Environment: !Ref Environment
+        Application: TeacherAssistant
+        ManagedBy: CloudFormation
+
+  # Temperature Parameter
+  ParamTemperature:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '/teacher_assistant/${Environment}/temperature'
+      Description: Model temperature setting for all agents
+      Type: String
+      Value: !Ref Temperature
+      Tags:
+        Environment: !Ref Environment
+        Application: TeacherAssistant
+        ManagedBy: CloudFormation
+
+  # XGBoost Model Endpoint Parameter
+  ParamXGBoostModelEndpoint:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '/teacher_assistant/${Environment}/xgboost_model_endpoint'
+      Description: XGBoost loan prediction model endpoint name
+      Type: String
+      Value: !Ref XGBoostModelEndpoint
+      Tags:
+        Environment: !Ref Environment
+        Application: TeacherAssistant
+        ManagedBy: CloudFormation
+
+Outputs:
+  AgentKnowledgeBaseIdParameter:
+    Description: SSM Parameter name for Agent Knowledge Base ID
+    Value: !Ref ParamAgentKnowledgeBaseId
+
+  AgentModelEndpointParameter:
+    Description: SSM Parameter name for Agent Model Endpoint
+    Value: !Ref ParamAgentModelEndpoint
+
+  AgentModelInferenceComponentParameter:
+    Description: SSM Parameter name for Agent Model Inference Component
+    Value: !Ref ParamAgentModelInferenceComponent
+
+  AWSRegionParameter:
+    Description: SSM Parameter name for AWS Region
+    Value: !Ref ParamAWSRegion
+
+  DefaultModelIdParameter:
+    Description: SSM Parameter name for Default Model ID
+    Value: !Ref ParamDefaultModelId
+
+  MaxResultsParameter:
+    Description: SSM Parameter name for Max Results
+    Value: !Ref ParamMaxResults
+
+  MinScoreParameter:
+    Description: SSM Parameter name for Min Score
+    Value: !Ref ParamMinScore
+
+  ParameterPrefix:
+    Description: SSM Parameter Store prefix for this environment
+    Value: !Sub '/teacher_assistant/${Environment}'
+    Export:
+      Name: !Sub '${AWS::StackName}-ParameterPrefix'
+
+  TemperatureParameter:
+    Description: SSM Parameter name for Model Temperature
+    Value: !Ref ParamTemperature
+
+  XGBoostModelEndpointParameter:
+    Description: SSM Parameter name for XGBoost Model Endpoint
+    Value: !Ref ParamXGBoostModelEndpoint

@@ -175,36 +175,47 @@ def validate_xgboost_endpoint(endpoint_name: str) -> bool:
 
 **Interface**:
 ```python
-def get_aws_region() -> str:
-    """Get AWS region from environment variable."""
+def get_agent_model_endpoint() -> str:
+    """Get agent model endpoint name from SSM Parameter Store."""
     
-def get_bedrock_model_id() -> str:
-    """Get Bedrock model ID from environment variable."""
+def get_agent_model_inference_component() -> Optional[str]:
+    """Get agent model inference component name from SSM Parameter Store."""
+    
+def get_agent_knowledge_base_id() -> str:
+    """Get agent knowledge base ID from SSM Parameter Store."""
+    
+def get_aws_region() -> str:
+    """Get AWS region from SSM Parameter Store."""
+    
+def get_default_model_id() -> str:
+    """Get default model ID from SSM Parameter Store."""
     
 def get_max_results() -> int:
-    """Get maximum results for knowledge base queries."""
+    """Get maximum results for knowledge base queries from SSM Parameter Store."""
     
 def get_min_score() -> float:
-    """Get minimum score threshold for knowledge base queries."""
+    """Get minimum score threshold for knowledge base queries from SSM Parameter Store."""
     
-def get_sagemaker_model_endpoint() -> str:
-    """Get SageMaker model endpoint name from environment variable."""
+def get_temperature() -> float:
+    """Get model temperature setting from SSM Parameter Store."""
     
-def get_strands_knowledge_base_id() -> str:
-    """Get Strands knowledge base ID from environment variable."""
-    
-def get_xgboost_endpoint_name() -> str:
-    """Get XGBoost model endpoint name from environment variable."""
+def get_xgboost_model_endpoint() -> str:
+    """Get XGBoost model endpoint name from SSM Parameter Store."""
 ```
 
-**Environment Variables** (alphabetically sorted):
-- `AWS_REGION`: AWS region for all services (default: us-west-2)
-- `BEDROCK_MODEL_ID`: Bedrock model ID (default: us.amazon.nova-pro-v1:0)
-- `MAX_RESULTS`: Maximum results for knowledge base queries (default: 9)
-- `MIN_SCORE`: Minimum score threshold for knowledge base queries (default: 0.000001)
-- `SAGEMAKER_MODEL_ENDPOINT`: SageMaker model endpoint name (optional, required when user selects SageMaker model)
-- `STRANDS_KNOWLEDGE_BASE_ID`: Knowledge base ID (default: demokb123)
-- `XGBOOST_ENDPOINT_NAME`: XGBoost loan prediction endpoint name (required when using loan assistant)
+**SSM Parameters** (alphabetically sorted):
+- `/teacher_assistant/{env}/agent_knowledge_base_id`: Agent knowledge base ID (default: my-agent-knowledge-base-id)
+- `/teacher_assistant/{env}/agent_model_endpoint`: Agent model endpoint name (default: my-agent-model-endpoint)
+- `/teacher_assistant/{env}/agent_model_inference_component`: Agent model inference component (default: my-agent-model-inference-component)
+- `/teacher_assistant/{env}/aws_region`: AWS region for all services (default: us-east-1)
+- `/teacher_assistant/{env}/default_model_id`: Default model ID (default: us.amazon.nova-2-lite-v1:0)
+- `/teacher_assistant/{env}/max_results`: Maximum results for knowledge base queries (default: 9)
+- `/teacher_assistant/{env}/min_score`: Minimum score threshold for knowledge base queries (default: 0.000001)
+- `/teacher_assistant/{env}/temperature`: Model temperature setting (default: 0.3)
+- `/teacher_assistant/{env}/xgboost_model_endpoint`: XGBoost loan prediction endpoint name (default: my-xgboost-model-endpoint)
+
+**Environment Variable**:
+- `TEACHER_ASSISTANT_ENV`: Determines which parameter path to use (dev, staging, or prod)
 
 **Note**: The model provider is NOT an environment variable or SSM parameter. It is determined dynamically at runtime based on the user's model selection in the UI:
 - If user selects a Bedrock model (Nova, Claude) → provider = "bedrock"

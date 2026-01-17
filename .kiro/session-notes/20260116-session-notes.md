@@ -1,12 +1,16 @@
-# Session Notes - January 13-15, 2026
+# Session Notes - January 13-16, 2026
 
 ## Multi-Day Session Overview
 
-This document consolidates work from January 13-15, 2026 on the workshop4-multi-agent-sagemaker-ai spec. The work progressed through four phases:
+This document consolidates work from January 13-16, 2026 on the workshop4-multi-agent-sagemaker-ai spec. The work progressed through multiple phases:
 1. **Jan 13**: Spec reorganization and configuration module
 2. **Jan 14**: Validation script creation and documentation
 3. **Jan 15 (Morning)**: Debugging and inference component support
-4. **Jan 15 (Evening)**: Model modules and application integration
+4. **Jan 15 (Afternoon)**: Configuration module with SSM Parameter Store
+5. **Jan 15 (Evening)**: Model modules and application integration
+6. **Jan 15 (Late Evening)**: SSM Parameter Store migration
+7. **Jan 15 (Late Evening - Part 2)**: Model provider and temperature fixes
+8. **Jan 16**: Naming convention refactoring and implementation
 
 ---
 
@@ -1298,3 +1302,320 @@ Then restart application to pick up new value.
 **Time**: Very late evening
 **Status**: Model provider and temperature fixes complete, ready for checkpoint testing
 **Next Session**: Task 7 checkpoint - test model selection with all fixes in place
+
+
+---
+
+# January 16, 2026 - Consistent Naming Convention
+
+## Session Overview
+Standardized naming conventions across SSM parameters, configuration module, and application code to use consistent "Agent" and "Model" terminology instead of mixed "SageMaker" and "Strands" prefixes.
+
+## Key Decisions
+
+### Decision: Consistent Naming Convention
+**Rationale**: The current naming mixes different prefixes (SageMaker, Strands, XGBoost) which creates confusion. We want consistent naming that clearly indicates what each parameter represents.
+
+**Changes**:
+1. `SageMakerInferenceComponent` → `AgentModelInferenceComponent`
+2. `SageMakerModelEndpoint` → `AgentModelEndpoint`
+3. `StrandsKnowledgeBaseId` → `AgentKnowledgeBaseId`
+4. `XGBoostEndpointName` → `XGBoostModelEndpoint`
+
+**Rationale for Each**:
+- **AgentModelInferenceComponent**: This is the inference component for the agent's reasoning model (not just any SageMaker model)
+- **AgentModelEndpoint**: This is the endpoint for the agent's reasoning model (clearer than "SageMaker")
+- **AgentKnowledgeBaseId**: This is the knowledge base used by the agent (not just any Strands KB)
+- **XGBoostModelEndpoint**: Consistent with "AgentModelEndpoint" - both are model endpoints
+
+### Decision: Revert SSM Parameter Defaults
+**Rationale**: The current defaults contain user-specific endpoint names. We should revert to generic placeholder values so students can customize them.
+
+**New Defaults**:
+- `AgentModelInferenceComponent`: `my-agent-model-inference-component`
+- `AgentModelEndpoint`: `my-agent-model-endpoint`
+- `AgentKnowledgeBaseId`: `my-agent-kb-id`
+- `XGBoostModelEndpoint`: `my-xgboost-model-endpoint`
+
+## Files to Update
+
+### 1. SSM CloudFormation Template
+**File**: `workshop4/ssm/teachassist-params.yaml`
+- Rename parameter keys (SageMakerInferenceComponent → AgentModelInferenceComponent, etc.)
+- Update default values to generic placeholders
+- Update descriptions to reflect new naming
+- Update resource names (ParamSageMakerInferenceComponent → ParamAgentModelInferenceComponent, etc.)
+- Update output names
+
+### 2. Configuration Module
+**File**: `workshop4/multi_agent/config.py`
+- Rename functions:
+  - `get_sagemaker_inference_component()` → `get_agent_model_inference_component()`
+  - `get_sagemaker_model_endpoint()` → `get_agent_model_endpoint()`
+  - `get_strands_knowledge_base_id()` → `get_agent_knowledge_base_id()`
+  - `get_xgboost_endpoint_name()` → `get_xgboost_model_endpoint()`
+- Update SSM parameter paths in `_get_parameter()` calls
+- Update docstrings to reflect new naming
+- Update `get_all_config_values()` dictionary keys
+
+### 3. Application Files
+**Files**: `workshop4/multi_agent/app.py`, `workshop4/multi_agent/teachers_assistant.py`
+- Update all imports to use new function names
+- Update all function calls to use new names
+- Update variable names for consistency (e.g., `inference_component` stays the same, but comes from `get_agent_model_inference_component()`)
+
+### 4. Sub-Assistant Files
+**Files**: All assistant Python scripts that reference these config functions
+- Update imports if they use these functions
+- Most sub-assistants use `get_default_model_config()` so may not need changes
+
+### 5. SageMaker Model Module
+**File**: `workshop4/multi_agent/sagemaker_model.py`
+- Update config function imports
+- Update function calls to use new names
+- Update docstrings
+
+### 6. Validation Scripts
+**Files**: `workshop4/sagemaker/validate_agent_endpoint.py`, `workshop4/sagemaker/validate_xgboost_endpoint.py`
+- These use environment variables directly, not config module
+- May need to update environment variable names in documentation/comments
+
+## Benefits
+
+### Clarity
+- "Agent" prefix clearly indicates these are for the agent's reasoning model
+- "Model" suffix clearly indicates these are model endpoints
+- Consistent terminology throughout the codebase
+
+### Consistency
+- All model endpoints use "ModelEndpoint" suffix
+- All agent-related parameters use "Agent" prefix
+- No mixing of "SageMaker" and "Strands" terminology
+
+### Maintainability
+- Easier to understand what each parameter is for
+- Clearer relationship between parameters
+- Better alignment with domain concepts
+
+## Final Naming Convention (Revised)
+
+After further discussion, we simplified to single-level SSM parameter paths and adopted functionality-based naming over service-based naming.
+
+### Key Principles
+1. **Single-Level Paths**: Use `/teacher_assistant/{env}/{parameter_name}` (not multi-level)
+2. **Functionality Over Services**: Use `DefaultModelId` instead of `BedrockModelId`, `AgentKnowledgeBaseId` instead of `StrandsKnowledgeBaseId`
+3. **Consistent Prefixes**: "agent" prefix for agent-related params, "xgboost" prefix for XGBoost params
+4. **Explicit Naming**: Spell everything out (e.g., `my-agent-knowledge-base-id` not `my-agent-kb-id`)
+
+### Complete Naming Table
+
+| CloudFormation Input Parameter | SSM Parameter Store Path | Config Function | Session Variable | Default Value |
+|-------------------------------|-------------------------|-----------------|------------------|---------------|
+| `AgentModelInferenceComponent` | `/teacher_assistant/{env}/agent_model_inference_component` | `get_agent_model_inference_component()` | N/A (maps to `inference_component`) | `my-agent-model-inference-component` |
+| `AgentModelEndpoint` | `/teacher_assistant/{env}/agent_model_endpoint` | `get_agent_model_endpoint()` | N/A (maps to `endpoint_name`) | `my-agent-model-endpoint` |
+| `AgentKnowledgeBaseId` | `/teacher_assistant/{env}/agent_knowledge_base_id` | `get_agent_knowledge_base_id()` | `KNOWLEDGE_BASE_ID` | `my-agent-knowledge-base-id` |
+| `XGBoostModelEndpoint` | `/teacher_assistant/{env}/xgboost_model_endpoint` | `get_xgboost_model_endpoint()` | N/A | `my-xgboost-model-endpoint` |
+| `AWSRegion` | `/teacher_assistant/{env}/aws_region` | `get_aws_region()` | `aws_region` | `us-east-1` |
+| `DefaultModelId` | `/teacher_assistant/{env}/default_model_id` | `get_default_model_id()` | N/A | `us.amazon.nova-2-lite-v1:0` |
+| `MaxResults` | `/teacher_assistant/{env}/max_results` | `get_max_results()` | `MAX_RESULTS` | `9` |
+| `MinScore` | `/teacher_assistant/{env}/min_score` | `get_min_score()` | `MIN_SCORE` | `0.000001` |
+| `Temperature` | `/teacher_assistant/{env}/temperature` | `get_temperature()` | `TEMPERATURE` | `0.3` |
+
+### File Naming Changes
+- CloudFormation template: `ssm/teachassist-params.yaml` → `ssm/teacher-assistant-params.yaml`
+- Suggested stack name: `teacher-assistant-params`
+- Environment variable: `TEACHASSIST_ENV` → `TEACHER_ASSISTANT_ENV`
+
+### Documentation Strategy
+- Deploy CloudFormation template "as is" with placeholder defaults
+- Update actual values directly in SSM Parameter Store via AWS Console or AWS CLI
+- CloudFormation stack updates **cannot** be used to change parameter values because:
+  - Changing CloudFormation input parameter values alone doesn't trigger SSM resource updates
+  - The SSM parameter values are set at stack creation time via `Value: !Ref`
+  - Only changes to resource configurations trigger CloudFormation updates
+  - Students must update SSM parameters directly after initial stack deployment
+
+### Rationale for Key Changes
+- **Single-Level Paths**: Multi-level paths add unnecessary complexity
+- **teacher_assistant**: More explicit than abbreviated "teachassist"
+- **DefaultModelId**: Functionality-based (not tied to Bedrock service name)
+- **AgentKnowledgeBaseId**: Functionality-based (not tied to Strands SDK name)
+- **Generic Placeholders**: Makes it clear what students must customize
+
+## Implementation Plan
+
+This will be incorporated into the workshop4-multi-agent-sagemaker-ai spec as part of the ongoing work. The changes will be made systematically across all files to ensure consistency.
+
+## End of Session - January 16, 2026
+
+**Time**: Evening
+**Status**: Final naming convention decisions documented and confirmed, ready for implementation
+**Next Session**: Implement naming changes across all files
+
+
+## Files Requiring Updates
+
+### Spec Files
+1. `.kiro/specs/workshop4-multi-agent-sagemaker-ai/requirements.md`
+   - Update Requirement 3.2 with new parameter names
+   - Change `BEDROCK_MODEL_ID` → `DEFAULT_MODEL_ID`
+   - Change `SAGEMAKER_*` → `AGENT_MODEL_*`
+   - Change `STRANDS_KNOWLEDGE_BASE_ID` → `AGENT_KNOWLEDGE_BASE_ID`
+   - Change `XGBOOST_ENDPOINT_NAME` → `XGBOOST_MODEL_ENDPOINT`
+
+2. `.kiro/specs/workshop4-multi-agent-sagemaker-ai/design.md`
+   - Update Configuration Module section with new function names
+   - Update environment variables list
+   - Update SSM parameter paths to single-level format
+
+3. `.kiro/specs/workshop4-multi-agent-sagemaker-ai/tasks.md`
+   - Update Task 3 with new getter function names
+   - Update all references to old function names
+
+4. `.kiro/specs/workshop4-multi-agent-sagemaker-ai/MIGRATION_GUIDE.md`
+   - Update all references to `teachassist` → `teacher_assistant`
+   - Update `TEACHASSIST_ENV` → `TEACHER_ASSISTANT_ENV`
+   - Update SSM parameter paths to single-level format
+   - Update stack name suggestions
+
+### Implementation Files
+1. `workshop4/ssm/teachassist-params.yaml` → `workshop4/ssm/teacher-assistant-params.yaml`
+   - Rename file
+   - Update all parameter names
+   - Update all SSM parameter paths to `/teacher_assistant/{env}/{parameter_name}`
+   - Update all default values to generic placeholders
+   - Update Description field
+
+2. `workshop4/ssm/README.md`
+   - Update to reflect new file name
+   - Update stack name suggestions
+   - Emphasize deploying "as is" with placeholders
+   - Document updating values via AWS Console or CLI
+   - Explain why CloudFormation stack updates don't work for value changes
+
+3. `workshop4/multi_agent/config.py`
+   - Update `TEACHASSIST_ENV` → `TEACHER_ASSISTANT_ENV`
+   - Update parameter path prefix: `teachassist` → `teacher_assistant`
+   - Rename all getter functions
+   - Update all `_get_parameter()` calls with new single-level paths
+   - Update `get_all_config_values()` dictionary keys
+
+4. `workshop4/multi_agent/app.py`
+   - Update all config function imports
+   - Update all config function calls
+   - Update variable names (e.g., `KB_ID` → `KNOWLEDGE_BASE_ID`)
+
+5. `workshop4/multi_agent/teachers_assistant.py`
+   - Update config function imports
+   - Update config function calls
+
+6. `workshop4/multi_agent/sagemaker_model.py`
+   - Update config function imports
+   - Update config function calls
+
+7. `workshop4/multi_agent/bedrock_model.py`
+   - Update config function imports if needed
+   - Update config function calls
+
+8. All sub-assistant files (if they import config functions directly)
+   - Most use `get_default_model_config()` so may not need changes
+
+### Documentation Files
+1. `workshop4/GETTING-STARTED.md`
+   - Update environment variable references
+   - Update SSM parameter path examples
+
+2. `workshop4/PART-3-SAGEMAKER.md`
+   - Update environment variable references
+   - Update SSM parameter path examples
+
+3. Any other workshop4/*.md files with references to old names
+
+## Summary of Changes
+
+### Naming Philosophy
+- **Functionality over Services**: Use domain/functionality names instead of AWS service or SDK names
+- **Explicit over Abbreviated**: Spell things out for clarity
+- **Consistent Prefixes**: Group related parameters with consistent prefixes
+
+### Key Renamings
+- `teachassist` → `teacher_assistant` (more explicit)
+- `TEACHASSIST_ENV` → `TEACHER_ASSISTANT_ENV`
+- `BedrockModelId` → `DefaultModelId` (functionality-based)
+- `SageMaker*` → `AgentModel*` (functionality-based)
+- `StrandsKnowledgeBaseId` → `AgentKnowledgeBaseId` (functionality-based)
+- `XGBoostEndpointName` → `XGBoostModelEndpoint` (consistent with other endpoints)
+
+### Path Structure
+- **Before**: `/teachassist/{env}/{category}/{parameter}` (multi-level)
+- **After**: `/teacher_assistant/{env}/{parameter_name}` (single-level)
+
+This simplification reduces complexity and makes parameter paths easier to work with.
+
+
+## Implementation Complete
+
+All naming convention changes have been successfully implemented:
+
+### Files Created
+1. ✅ `workshop4/ssm/teacher-assistant-params.yaml` - New CloudFormation template with updated naming
+2. ✅ `workshop4/ssm/README.md` - Updated documentation
+
+### Files Updated
+1. ✅ `.kiro/specs/workshop4-multi-agent-sagemaker-ai/requirements.md` - Updated parameter names
+2. ✅ `.kiro/specs/workshop4-multi-agent-sagemaker-ai/design.md` - Updated function names and paths
+3. ✅ `.kiro/specs/workshop4-multi-agent-sagemaker-ai/tasks.md` - Updated Task 3 and Task 7
+4. ✅ `workshop4/multi_agent/config.py` - Complete refactoring with new naming
+5. ✅ `workshop4/multi_agent/app.py` - Updated all config function calls
+6. ✅ `workshop4/multi_agent/sagemaker_model.py` - Updated config function imports and calls
+7. ✅ `workshop4/multi_agent/bedrock_model.py` - Updated config function imports and calls
+
+### Files Deleted
+1. ✅ `workshop4/ssm/teachassist-params.yaml` - Replaced by teacher-assistant-params.yaml
+
+### Key Changes Summary
+- **Environment Variable**: `TEACHASSIST_ENV` → `TEACHER_ASSISTANT_ENV`
+- **SSM Path Prefix**: `/teachassist/{env}/` → `/teacher_assistant/{env}/`
+- **Path Structure**: Multi-level → Single-level (e.g., `/sagemaker/model_endpoint` → `/agent_model_endpoint`)
+- **Parameter Names**: Service-based → Functionality-based
+  - `BedrockModelId` → `DefaultModelId`
+  - `SageMakerModelEndpoint` → `AgentModelEndpoint`
+  - `SageMakerInferenceComponent` → `AgentModelInferenceComponent`
+  - `StrandsKnowledgeBaseId` → `AgentKnowledgeBaseId`
+  - `XGBoostEndpointName` → `XGBoostModelEndpoint`
+- **Config Functions**: Updated to match new parameter names
+  - `get_bedrock_model_id()` → `get_default_model_id()`
+  - `get_sagemaker_model_endpoint()` → `get_agent_model_endpoint()`
+  - `get_sagemaker_inference_component()` → `get_agent_model_inference_component()`
+  - `get_strands_knowledge_base_id()` → `get_agent_knowledge_base_id()`
+  - `get_xgboost_endpoint_name()` → `get_xgboost_model_endpoint()`
+- **Session Variables**: `KB_ID` → `KNOWLEDGE_BASE_ID`
+- **Default Values**: All changed to generic placeholders (e.g., `my-agent-model-endpoint`)
+
+### Next Steps
+1. Deploy the new CloudFormation template:
+   ```bash
+   aws cloudformation create-stack \
+     --stack-name teacher-assistant-params-dev \
+     --template-body file://workshop4/ssm/teacher-assistant-params.yaml \
+     --parameters ParameterKey=Environment,ParameterValue=dev
+   ```
+
+2. Update SSM parameter values with actual resource names via AWS Console or CLI
+
+3. Set environment variable:
+   ```bash
+   export TEACHER_ASSISTANT_ENV=dev
+   ```
+
+4. Test the application:
+   ```bash
+   cd workshop4/multi_agent
+   streamlit run app.py
+   ```
+
+## End of Implementation - January 16, 2026
+
+**Time**: Late evening
+**Status**: Naming convention refactoring complete and ready for testing
+**Next Session**: Deploy SSM parameters and test application (Task 7)
