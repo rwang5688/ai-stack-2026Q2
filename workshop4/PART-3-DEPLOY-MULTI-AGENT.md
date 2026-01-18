@@ -1,633 +1,586 @@
-# Part 3: Multi-Agent with Amazon SageMaker AI
+# Part 3: Production Deployment (Docker + AWS)
 
-Build a sophisticated multi-agent system using Amazon SageMaker AI models, demonstrating flexibility in choosing reasoning LLMs and integrating team-trained predictive models.
+Deploy the multi-agent system to production using Docker containers, AWS CDK, and ECS Fargate. This guide covers building, testing, and deploying the application with full authentication and monitoring.
 
 ## Overview
 
-This track demonstrates how to implement a multi-agent architecture using Amazon SageMaker AI model hosting. You'll learn to integrate both reasoning models (for agent intelligence) and predictive models (for specialized tasks like loan prediction) into a unified multi-agent application.
-
-**Status**: 🚧 **In Development** - Prerequisites validation available now
-**Time Investment**: 6-8 hours total
-**Prerequisites**: [Part 1: Foundational Modules](PART-1-FOUNDATIONS.md) completed
-
-## Learning Journey
-
-```
-Step 1: Validate Endpoints → Step 2: Model Modules → Step 3: Multi-Agent App → Step 4: Production
-   ↓                          ↓                      ↓                         ↓
-Test Infrastructure        Bedrock + SageMaker    Model Selection UI      Docker + AWS CDK
-Endpoint Validation       Model Wrappers         Loan Assistant          Full Deployment
-```
-
-## Prerequisites: Model Endpoint Validation
-
-**⚠️ IMPORTANT**: Before building the multi-agent application, you must validate that your SageMaker endpoints are working correctly. This prevents wasting time on application development only to discover infrastructure issues later.
-
-### Why Validate First?
-
-The validation scripts serve as **prerequisites** that ensure:
-- ✅ Your SageMaker endpoints are deployed and accessible
-- ✅ Your AWS credentials have the correct permissions
-- ✅ The endpoints respond to inference requests correctly
-- ✅ You can proceed with confidence to build the application
-
-### What You'll Validate
-
-1. **SageMaker Model Endpoint**: The reasoning LLM that powers your Strands Agents
-2. **XGBoost Model Endpoint**: The predictive model for loan acceptance prediction
-
----
-
-## Step 1: Environment Setup
-
-### 1.1 Navigate to Workshop Directory
-
-```bash
-cd workshop4
-```
-
-### 1.2 Run Environment Setup Script
-
-This script creates a Python virtual environment and installs all required dependencies:
-
-```bash
-./setup-environment.sh
-```
-
-**What this does:**
-- Creates a Python virtual environment in `venv/`
-- Installs all required packages from `requirements.txt`
-- Sets up the development environment
-
-### 1.3 Activate Virtual Environment
-
-**On Windows (GitBash):**
-```bash
-source venv/Scripts/activate
-```
-
-**On Linux/Mac:**
-```bash
-source venv/bin/activate
-```
-
-**Verify activation:**
-You should see `(venv)` at the beginning of your command prompt.
-
-### 1.4 Load Environment Variables
-
-```bash
-source ~/.bashrc
-```
-
-This loads any environment variables you've configured in your `.bashrc` file.
-
----
-
-## Step 2: Configure AWS Credentials
-
-### 2.1 Set AWS Temporary Credentials
-
-You need to set AWS temporary credentials to access SageMaker endpoints. Follow your organization's process for obtaining temporary credentials.
-
-**Typical process:**
-1. Log in to your AWS SSO portal
-2. Select your AWS account
-3. Click "Command line or programmatic access"
-4. Copy the temporary credentials
-5. Paste them into your terminal
-
-**Example (your actual values will differ):**
-```bash
-export AWS_ACCESS_KEY_ID="ASIA..."
-export AWS_SECRET_ACCESS_KEY="..."
-export AWS_SESSION_TOKEN="..."
-export AWS_REGION="us-east-1"
-```
-
-### 2.2 Verify AWS Credentials
-
-Test that your credentials are working:
-
-```bash
-aws sts get-caller-identity
-```
-
-**Expected output:**
-```json
-{
-    "UserId": "AIDA...",
-    "Account": "123456789012",
-    "Arn": "arn:aws:iam::123456789012:user/your-username"
-}
-```
-
----
-
-## Step 3: Configure Endpoint Names
-
-### 3.1 Set SageMaker Model Endpoint
-
-Set the environment variable for your SageMaker model endpoint:
-
-```bash
-export SAGEMAKER_MODEL_ENDPOINT="your-sagemaker-model-endpoint-name"
-```
-
-**How to find your endpoint name:**
-1. Go to AWS Console → SageMaker → Endpoints
-2. Find your deployed reasoning model endpoint
-3. Copy the endpoint name (e.g., `my-gpt-oss-20b-1-1768457329`)
-
-### 3.1.1 Set Inference Component Name (If Applicable)
-
-If your endpoint uses **Inference Components** (multi-model endpoints), you also need to specify which component to use:
-
-```bash
-export SAGEMAKER_INFERENCE_COMPONENT="your-inference-component-name"
-```
-
-**How to find your inference component name:**
-
-Run this command to list all inference components for your endpoint:
-
-```bash
-aws sagemaker list-inference-components --endpoint-name-equals $SAGEMAKER_MODEL_ENDPOINT --region $AWS_REGION --query 'InferenceComponents[*].[InferenceComponentName,InferenceComponentStatus]' --output table
-```
-
-**Example output:**
-```
------------------------------------------------------------------------|                       ListInferenceComponents                       |
-+--------------------------------------------------------+------------+
-|  base-llmft-gpt-oss-20b-seq4k-gpu-sft-lora-1768457350  |  InService |
-|  adapter-my-gpt-oss-20b-1-1768457329-1768457350        |  InService |
-+--------------------------------------------------------+------------+
-```
-
-Choose the appropriate inference component:
-- **Base model**: Use the `base-*` component for the original model
-- **Adapter/Fine-tuned**: Use the `adapter-*` component for fine-tuned variants
-
-**Example:**
-```bash
-export SAGEMAKER_INFERENCE_COMPONENT="adapter-my-gpt-oss-20b-1-1768457329-1768457350"
-```
-
-**Note**: If your endpoint doesn't use inference components, you can skip this step. The validation script will work without it.
-
-### 3.2 Set XGBoost Model Endpoint
-
-Set the environment variable for your XGBoost model endpoint:
-
-```bash
-export XGBOOST_ENDPOINT_NAME="your-xgboost-endpoint-name"
-```
-
-**How to find your endpoint name:**
-1. Go to AWS Console → SageMaker → Endpoints
-2. Find your deployed XGBoost endpoint
-3. Copy the endpoint name (e.g., `xgboost-loan-prediction-endpoint`)
-
-### 3.3 Verify Environment Variables
-
-Check that your environment variables are set correctly:
-
-```bash
-echo "SageMaker Model Endpoint: $SAGEMAKER_MODEL_ENDPOINT"
-echo "Inference Component: $SAGEMAKER_INFERENCE_COMPONENT"
-echo "XGBoost Endpoint: $XGBOOST_ENDPOINT_NAME"
-echo "AWS Region: $AWS_REGION"
-```
-
----
-
-## Step 4: Validate SageMaker Model Endpoint
-
-### 4.1 Navigate to SageMaker Directory
-
-```bash
-cd sagemaker
-```
-
-### 4.2 Run Agent Model Validation Script
-
-```bash
-uv run validate_sagemaker_endpoint.py
-```
-
-**What this script does:**
-1. Reads `SAGEMAKER_MODEL_ENDPOINT` and `SAGEMAKER_INFERENCE_COMPONENT` from environment variables
-2. Creates a SageMaker Runtime client
-3. Sends a test prompt: "What is the capital of France?"
-4. Validates the endpoint responds correctly
-5. Displays the response
-
-### 4.3 Expected Output
-
-**✅ Success (with inference component):**
-```
-============================================================
-  SageMaker Model Endpoint Validation
-============================================================
-
-🔍 Validating SageMaker Model Endpoint: my-gpt-oss-20b-1-1768457329
-   Region: us-east-1
-   Inference Component: adapter-my-gpt-oss-20b-1-1768457329-1768457350
-------------------------------------------------------------
-
-📤 Sending test request...
-   Prompt: What is the capital of France?
-   Max tokens: 50
-
-✅ SUCCESS: Endpoint is responding correctly!
-
-📥 Response:
-   {
-     "generated_text": "The capital of France is Paris..."
-   }
-
-============================================================
-✅ SageMaker model endpoint validation PASSED
-============================================================
-```
-
-**✅ Success (without inference component):**
-```
-============================================================
-  SageMaker Model Endpoint Validation
-============================================================
-
-🔍 Validating SageMaker Model Endpoint: your-sagemaker-model-endpoint-name
-   Region: us-east-1
-------------------------------------------------------------
-
-📤 Sending test request...
-   Prompt: What is the capital of France?
-   Max tokens: 50
-
-✅ SUCCESS: Endpoint is responding correctly!
-
-📥 Response:
-   {
-     "generated_text": "The capital of France is Paris..."
-   }
-
-============================================================
-✅ SageMaker model endpoint validation PASSED
-============================================================
-```
-
-**❌ Failure:**
-```
-============================================================
-  Agent Model Endpoint Validation
-============================================================
-
-🔍 Validating Agent Model Endpoint: your-agent-model-endpoint-name
-   Region: us-east-1
-------------------------------------------------------------
-
-📤 Sending test request...
-   Prompt: What is the capital of France?
-   Max tokens: 50
-
-❌ FAILED: Error validating endpoint
-   Error type: ValidationException
-   Error message: Could not find endpoint "your-sagemaker-model-endpoint-name"
-
-============================================================
-❌ SageMaker model endpoint validation FAILED
-============================================================
-```
-
-### 4.4 Troubleshooting
-
-**Common Issues:**
-
-1. **Endpoint not found:**
-   - Verify the endpoint name is correct
-   - Check that the endpoint is deployed in the correct region
-   - Ensure the endpoint status is "InService"
-
-2. **Access denied:**
-   - Verify your AWS credentials are valid
-   - Check that your IAM role has `sagemaker:InvokeEndpoint` permission
-   - Ensure you're using the correct AWS account
-
-3. **Timeout errors:**
-   - Check that the endpoint is in "InService" status
-   - Verify the endpoint has sufficient capacity
-   - Try again after a few minutes
-
----
-
-## Step 5: Validate XGBoost Model Endpoint
-
-### 5.1 Run XGBoost Validation Script
-
-```bash
-uv run validate_xgboost_endpoint.py
-```
-
-**What this script does:**
-1. Reads `XGBOOST_ENDPOINT_NAME` from environment variables
-2. Creates a SageMaker Runtime client
-3. Sends sample customer data (59 features in CSV format)
-4. Validates the endpoint responds with a prediction
-5. Interprets the prediction (Accept/Reject)
-
-### 5.2 Expected Output
-
-**✅ Success:**
-```
-============================================================
-  XGBoost Model Endpoint Validation
-============================================================
-
-🔍 Validating XGBoost Model Endpoint: your-xgboost-endpoint-name
-   Region: us-east-1
-------------------------------------------------------------
-
-📤 Sending test request...
-   Sample customer data (59 features)
-   Format: CSV (text/csv)
-
-✅ SUCCESS: Endpoint is responding correctly!
-
-📥 Response:
-   Raw prediction: 0.234567
-   Prediction label: Reject
-   Confidence: 23.46%
-
-============================================================
-✅ XGBoost model endpoint validation PASSED
-============================================================
-```
-
-**❌ Failure:**
-```
-============================================================
-  XGBoost Model Endpoint Validation
-============================================================
-
-🔍 Validating XGBoost Model Endpoint: your-xgboost-endpoint-name
-   Region: us-east-1
-------------------------------------------------------------
-
-📤 Sending test request...
-   Sample customer data (59 features)
-   Format: CSV (text/csv)
-
-❌ FAILED: Error validating endpoint
-   Error type: ValidationException
-   Error message: Could not find endpoint "your-xgboost-endpoint-name"
-
-============================================================
-❌ XGBoost model endpoint validation FAILED
-============================================================
-```
-
-### 5.3 Understanding the Prediction
-
-The XGBoost model returns a probability score between 0 and 1:
-- **Score >= 0.5**: Customer will likely **Accept** the loan offer
-- **Score < 0.5**: Customer will likely **Reject** the loan offer
-
-The sample data used in validation represents a customer profile with specific attributes (age, job, marital status, etc.) that have been one-hot encoded into 59 features.
-
-### 5.4 Troubleshooting
-
-**Common Issues:**
-
-1. **Endpoint not found:**
-   - Verify the endpoint name is correct
-   - Check that the endpoint is deployed as a serverless endpoint
-   - Ensure the endpoint status is "InService"
-
-2. **Invalid payload format:**
-   - The XGBoost endpoint expects CSV format with exactly 59 features
-   - Verify the endpoint was trained with the correct feature set
-   - Check the endpoint configuration
-
-3. **Unexpected response format:**
-   - The endpoint should return a single float value
-   - If you see a different format, check the endpoint's output configuration
-
----
-
-## Step 6: Validation Complete! ✅
-
-### 6.1 What You've Accomplished
-
-Congratulations! You've successfully validated that:
-- ✅ Your SageMaker model endpoint is working
-- ✅ Your XGBoost model endpoint is working
-- ✅ Your AWS credentials have the correct permissions
-- ✅ You can invoke both endpoints programmatically
-
-### 6.2 Next Steps
-
-Now that your infrastructure is validated, you're ready to proceed with building the multi-agent application:
-
-1. **Create Configuration Module** - Centralize environment variable management
-2. **Build Model Wrappers** - Create Bedrock and SageMaker model modules
-3. **Add Model Selection UI** - Implement dropdown to switch between models
-4. **Implement Loan Assistant** - Build the loan prediction agent
-5. **Deploy to Production** - Package and deploy the complete application
-
-### 6.3 Save Your Configuration
-
-Add your endpoint names to your `.bashrc` file so they persist across sessions:
-
-```bash
-echo 'export SAGEMAKER_MODEL_ENDPOINT="your-sagemaker-model-endpoint-name"' >> ~/.bashrc
-echo 'export XGBOOST_ENDPOINT_NAME="your-xgboost-endpoint-name"' >> ~/.bashrc
-echo 'export AWS_REGION="us-east-1"' >> ~/.bashrc
-source ~/.bashrc
-```
-
----
-
-## Architecture Overview
-
-### Multi-Agent System with SageMaker
+The `deploy_multi_agent` directory contains the production-ready version of the application with:
+- **Docker Containerization**: Packaged for consistent deployment
+- **AWS CDK Infrastructure**: Automated infrastructure provisioning
+- **ECS Fargate Hosting**: Serverless container hosting
+- **Cognito Authentication**: Secure user authentication
+- **CloudFront Distribution**: Global content delivery
+- **Comprehensive Monitoring**: CloudWatch logs and metrics
+
+**Time Investment**: 3-4 hours
+**Prerequisites**: 
+- [Part 2: Multi-Agent](PART-2-MULTI-AGENT.md) completed and tested
+- AWS account with appropriate permissions
+- Docker installed locally
+
+## Architecture
+
+### Production Components
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    Streamlit Application                     │
-│                         (app.py)                             │
-└────────────────┬────────────────────────────────────────────┘
-                 │
-                 ├─────────────────────────────────────────────┐
-                 │                                             │
-        ┌────────▼────────┐                          ┌────────▼────────┐
-        │  Teacher Agent  │                          │  Config Module  │
-        │  (Orchestrator) │                          │   (config.py)   │
-        └────────┬────────┘                          └─────────────────┘
-                 │
-                 │ Routes to specialized agents
-                 │
-    ┌────────────┼────────────┬──────────────┬──────────────┐
-    │            │            │              │              │
-┌───▼───┐  ┌────▼────┐  ┌────▼────┐  ┌─────▼─────┐  ┌─────▼─────┐
-│ Math  │  │ English │  │Language │  │ Computer  │  │   Loan    │
-│ Agent │  │  Agent  │  │  Agent  │  │  Science  │  │ Assistant │
-└───────┘  └─────────┘  └─────────┘  └───────────┘  └─────┬─────┘
-                                                            │
-                                                            │
-                                                   ┌────────▼────────┐
-                                                   │  XGBoost Model  │
-                                                   │   (SageMaker    │
-                                                   │   Serverless)   │
-                                                   └─────────────────┘
-
-┌─────────────────────────────────────────────────────────────┐
-│              Reasoning LLM Layer                             │
-│  ┌──────────────────┐         �┌──────────────────┐         │
-│  │  Bedrock Models  │         │ SageMaker Models │         │
-│  │  ┌────────────┐  │         │  ┌────────────┐  │         │
-│  │  │ Nova Pro   │  │         │  │ Custom LLM │  │         │
-│  │  │ Nova Lite  │  │         │  │ Endpoint   │  │         │
-│  │  │ Claude 4.5 │  │         │  └────────────┘  │         │
-│  │  └────────────┘  │         │                  │         │
-│  └──────────────────┘         └──────────────────┘         │
+│                        CloudFront                            │
+│                    (Global CDN + HTTPS)                      │
+└────────────────────────┬────────────────────────────────────┘
+                         │
+┌────────────────────────▼────────────────────────────────────┐
+│                Application Load Balancer                     │
+│                  (Health Checks + Routing)                   │
+└────────────────────────┬────────────────────────────────────┘
+                         │
+┌────────────────────────▼────────────────────────────────────┐
+│                     ECS Fargate                              │
+│              (Serverless Container Hosting)                  │
+│                                                              │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │         Streamlit Multi-Agent Application            │  │
+│  │  - Teacher's Assistant + 5 Specialized Agents        │  │
+│  │  - Model Selection (Bedrock + SageMaker)             │  │
+│  │  - Knowledge Base Integration                        │  │
+│  └──────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
+                         │
+        ┌────────────────┼────────────────┐
+        │                │                │
+┌───────▼──────┐  ┌──────▼──────┐  ┌─────▼──────┐
+│   Cognito    │  │   Bedrock   │  │  SageMaker │
+│    (Auth)    │  │   (Models)  │  │  (Models)  │
+└──────────────┘  └─────────────┘  └────────────┘
 ```
 
-### Key Components
+### Key Differences from Local Development
 
-1. **Reasoning LLM Layer**: Supports both Bedrock and SageMaker models
-2. **Teacher Agent**: Orchestrates routing to specialized agents
-3. **Specialized Agents**: Math, English, Language, Computer Science, Loan Assistant
-4. **Predictive Model**: XGBoost model for loan acceptance prediction
-5. **Configuration Module**: Centralized environment variable management
+| Aspect | Local (`multi_agent`) | Production (`deploy_multi_agent`) |
+|--------|----------------------|-----------------------------------|
+| **Authentication** | None | Cognito user pool |
+| **Hosting** | Local Streamlit | ECS Fargate containers |
+| **HTTPS** | HTTP only | CloudFront + ACM certificate |
+| **Scaling** | Single instance | Auto-scaling containers |
+| **Monitoring** | Console logs | CloudWatch logs + metrics |
+| **Configuration** | SSM Parameter Store | SSM Parameter Store |
 
----
+## Prerequisites
 
-## IMPORTANT: SageMaker Model Compatibility
+### 1. Verify Local Application Works
 
-### ⚠️ OpenAI-Compatible Chat Completion API Required
+Ensure Part 2 testing completed successfully:
+```bash
+cd ~/workspace/ai-stack-2026Q2/workshop4/multi_agent
+streamlit run app.py
+# Test all features work correctly
+```
 
-**The Strands Agents SDK `SageMakerAIModel` class requires SageMaker AI models that support OpenAI-compatible chat completion APIs.**
+### 2. Install Docker
 
-#### What This Means
+**Windows**:
+- Download Docker Desktop from docker.com
+- Enable WSL 2 backend
+- Verify: `docker --version`
 
-Not all models deployed on SageMaker will work with Strands Agents. Your model must:
+**macOS**:
+```bash
+brew install --cask docker
+# Or download Docker Desktop from docker.com
+```
 
-1. **Support Chat Completion Format**: The model must accept and respond to chat-formatted requests (system messages, user messages, assistant messages)
-2. **Use OpenAI-Compatible API**: The model's inference endpoint must implement an OpenAI-compatible interface
+**Linux**:
+```bash
+sudo apt-get update
+sudo apt-get install docker.io docker-compose
+sudo usermod -aG docker $USER
+# Log out and back in
+```
 
-#### Validated Models
+### 3. Install AWS CDK
 
-During development and testing, the following models have been validated:
+```bash
+npm install -g aws-cdk
 
-- ✅ **Mistral-Small-24B-Instruct-2501**: Demonstrated reliable performance across various conversational AI tasks with tool calling support
+# Verify installation
+cdk --version
+```
 
-#### Models That Will NOT Work
+### 4. Bootstrap CDK (First Time Only)
 
-- ❌ **Base Language Models** (e.g., Open Llama 7b V2): Will fail with "Template error: template not found" because they lack chat completion API compatibility
-- ❌ **Models Without Chat Templates**: Any model that doesn't have a chat template configured
+```bash
+cdk bootstrap aws://ACCOUNT-ID/REGION
 
-#### Tool Calling Support
+# Example
+cdk bootstrap aws://123456789012/us-east-1
+```
 
-Tool calling support varies by model:
-- Models like **Mistral-Small-24B-Instruct-2501** have demonstrated reliable tool calling capabilities
-- Not all models deployed on SageMaker support this feature
-- **Verify your model's capabilities** before implementing tool-based workflows
+## Step 1: Review Deployment Structure
 
-#### How to Verify Compatibility
+### Directory Structure
 
-Before deploying your multi-agent application:
+```
+deploy_multi_agent/
+├── app.py                    # CDK application entry point
+├── cdk/
+│   ├── cdk_stack.py         # Infrastructure definition
+│   └── __init__.py
+├── docker_app/              # Application code (Docker container)
+│   ├── app.py              # Streamlit application
+│   ├── Dockerfile          # Container definition
+│   ├── docker-compose.yml  # Local Docker testing
+│   ├── requirements.txt    # Python dependencies
+│   ├── config_file.py      # Configuration module
+│   ├── *_assistant.py      # Specialized agents
+│   └── utils/              # Utility modules
+│       ├── auth.py         # Cognito authentication
+│       └── llm.py          # Model creation
+├── cdk.json                # CDK configuration
+└── README.md               # Deployment documentation
+```
 
-1. **Check Model Documentation**: Verify the model supports chat completion format
-2. **Test with Validation Script**: Use `validate_sagemaker_endpoint.py` to test your endpoint
-3. **Review Model Card**: Check if the model explicitly mentions OpenAI compatibility or chat templates
+### Key Files
 
-#### Reference
+**Infrastructure** (`cdk/cdk_stack.py`):
+- VPC and networking
+- ECS Fargate cluster and service
+- Application Load Balancer
+- Cognito user pool
+- CloudFront distribution
+- IAM roles and policies
 
-For more information, see the official Strands Agents documentation:
-- [SageMaker Model Provider Guide](https://strandsagents.com/latest/documentation/docs/user-guide/concepts/model-providers/sagemaker/)
+**Application** (`docker_app/app.py`):
+- Same multi-agent logic as local version
+- Added Cognito authentication
+- Environment-based configuration
+- Production logging
 
----
+## Step 2: Test Docker Locally
 
----
+Before deploying to AWS, test the Docker container locally:
 
-## Reference: Validation Scripts
+### Build Docker Image
 
-### SageMaker Agent Model Validation Script
+```bash
+cd ~/workspace/ai-stack-2026Q2/workshop4/deploy_multi_agent/docker_app
 
-**Location**: `workshop4/sagemaker/validate_sagemaker_endpoint.py`
+# Build the image
+docker build -t multi-agent-app .
+```
 
-**Purpose**: Validates that a SageMaker model endpoint is working correctly.
+### Run Container Locally
 
-**Environment Variables:**
-- `SAGEMAKER_MODEL_ENDPOINT`: Endpoint name (required)
-- `AWS_REGION`: AWS region (default: us-east-1)
+```bash
+# Run with environment variables
+docker run -p 8501:8501 \
+  -e TEACHERS_ASSISTANT_ENV=dev \
+  -e AWS_REGION=us-east-1 \
+  -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
+  -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
+  -e AWS_SESSION_TOKEN=$AWS_SESSION_TOKEN \
+  -e BYPASS_TOOL_CONSENT=true \
+  multi-agent-app
+```
 
-**Test Payload:**
+### Test in Browser
+
+Navigate to `http://localhost:8501` and verify:
+- ✅ Application loads
+- ✅ Model selection works
+- ✅ Agents respond correctly
+- ✅ Knowledge base operations work
+
+### Stop Container
+
+```bash
+# Find container ID
+docker ps
+
+# Stop container
+docker stop <container-id>
+```
+
+## Step 3: Configure Deployment
+
+### Update CDK Context
+
+Edit `deploy_multi_agent/cdk.json`:
+
 ```json
 {
-  "inputs": "What is the capital of France?",
-  "parameters": {
-    "max_new_tokens": 50
+  "context": {
+    "environment": "dev",
+    "vpc_cidr": "10.0.0.0/16",
+    "container_port": 8501,
+    "desired_count": 1,
+    "cpu": 512,
+    "memory": 1024
   }
 }
 ```
 
-### XGBoost Validation Script
+### Review IAM Permissions
 
-**Location**: `workshop4/sagemaker/validate_xgboost_endpoint.py`
+The CDK stack creates an ECS task role with permissions for:
+- SSM Parameter Store read access
+- Bedrock model invocation
+- SageMaker endpoint invocation
+- CloudWatch Logs write access
 
-**Purpose**: Validates that a SageMaker XGBoost serverless endpoint is working correctly.
+## Step 4: Deploy Infrastructure
 
-**Environment Variables:**
-- `XGBOOST_ENDPOINT_NAME`: Endpoint name (required)
-- `AWS_REGION`: AWS region (default: us-east-1)
+### Synthesize CloudFormation Template
 
-**Test Payload:**
-CSV format with 59 features representing a customer profile:
+```bash
+cd ~/workspace/ai-stack-2026Q2/workshop4/deploy_multi_agent
+
+# Generate CloudFormation template
+cdk synth
 ```
-29,2,999,0,1,0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0
+
+Review the generated template in `cdk.out/`.
+
+### Deploy to AWS
+
+```bash
+# Deploy the stack
+cdk deploy
+
+# Confirm changes when prompted
+# This will take 10-15 minutes
 ```
 
+**Expected Output:**
+```
+✅  DeployMultiAgentStack
+
+Outputs:
+DeployMultiAgentStack.LoadBalancerDNS = multi-agent-lb-123456789.us-east-1.elb.amazonaws.com
+DeployMultiAgentStack.CloudFrontURL = https://d1234567890abc.cloudfront.net
+DeployMultiAgentStack.CognitoUserPoolId = us-east-1_ABC123DEF
+DeployMultiAgentStack.CognitoClientId = 1234567890abcdefghijklmnop
+
+Stack ARN:
+arn:aws:cloudformation:us-east-1:123456789012:stack/DeployMultiAgentStack/...
+```
+
+### Save Outputs
+
+Save the CloudFront URL and Cognito details for later use.
+
+## Step 5: Create Cognito User
+
+### Create User via AWS Console
+
+1. Navigate to AWS Console → Cognito
+2. Select the user pool (from CDK output)
+3. Click "Create user"
+4. Enter username and temporary password
+5. Uncheck "Send email invitation"
+6. Click "Create user"
+
+### Create User via AWS CLI
+
+```bash
+aws cognito-idp admin-create-user \
+  --user-pool-id <USER_POOL_ID> \
+  --username testuser \
+  --temporary-password TempPass123! \
+  --message-action SUPPRESS
+```
+
+## Step 6: Test Deployed Application
+
+### Access Application
+
+Navigate to the CloudFront URL from CDK output:
+```
+https://d1234567890abc.cloudfront.net
+```
+
+### Login
+
+1. Enter username and temporary password
+2. Set new permanent password when prompted
+3. Verify you're redirected to application
+
+### Test Features
+
+Run the same tests from Part 2:
+1. ✅ Model selection
+2. ✅ Specialized agents
+3. ✅ Agent type selection
+4. ✅ Knowledge base operations
+5. ✅ Conversation history
+
+## Step 7: Monitor Application
+
+### CloudWatch Logs
+
+```bash
+# View ECS task logs
+aws logs tail /ecs/multi-agent-app --follow
+
+# Filter for errors
+aws logs filter-log-events \
+  --log-group-name /ecs/multi-agent-app \
+  --filter-pattern "ERROR"
+```
+
+### CloudWatch Metrics
+
+Navigate to AWS Console → CloudWatch → Metrics:
+- ECS service CPU utilization
+- ECS service memory utilization
+- ALB request count
+- ALB target response time
+
+### ECS Service Health
+
+```bash
+# Check service status
+aws ecs describe-services \
+  --cluster multi-agent-cluster \
+  --services multi-agent-service
+
+# Check task status
+aws ecs list-tasks \
+  --cluster multi-agent-cluster \
+  --service-name multi-agent-service
+```
+
+## Debugging Production Issues
+
+### Issue 1: Container Won't Start
+
+**Check ECS Task Logs**:
+```bash
+aws logs tail /ecs/multi-agent-app --follow
+```
+
+**Common Causes**:
+- Missing environment variables
+- SSM parameter access denied
+- Docker image build errors
+
+**Solutions**:
+1. Verify IAM task role has SSM permissions
+2. Check CloudFormation stack events for errors
+3. Rebuild Docker image and redeploy
+
+### Issue 2: Authentication Not Working
+
+**Check Cognito Configuration**:
+```bash
+aws cognito-idp describe-user-pool --user-pool-id <USER_POOL_ID>
+```
+
+**Common Causes**:
+- User not created
+- Incorrect client ID
+- Password policy not met
+
+**Solutions**:
+1. Create user via Console or CLI
+2. Verify client ID in application configuration
+3. Use strong password meeting policy requirements
+
+### Issue 3: Application Slow or Timing Out
+
+**Check ECS Service Scaling**:
+```bash
+aws ecs describe-services \
+  --cluster multi-agent-cluster \
+  --services multi-agent-service \
+  --query 'services[0].desiredCount'
+```
+
+**Solutions**:
+1. Increase desired task count in CDK
+2. Increase CPU/memory allocation
+3. Enable auto-scaling based on metrics
+
+### Issue 4: SSM Parameters Not Found
+
+**Verify Parameters Exist**:
+```bash
+aws ssm get-parameters-by-path \
+  --path "/teachers_assistant/dev" \
+  --recursive
+```
+
+**Solutions**:
+1. Ensure CloudFormation stack deployed successfully
+2. Verify TEACHERS_ASSISTANT_ENV environment variable set correctly
+3. Check IAM task role has `ssm:GetParameter*` permissions
+
+## Updating the Deployment
+
+### Update Application Code
+
+```bash
+cd ~/workspace/ai-stack-2026Q2/workshop4/deploy_multi_agent
+
+# Make code changes in docker_app/
+
+# Rebuild and deploy
+cdk deploy
+```
+
+CDK will:
+1. Build new Docker image
+2. Push to ECR
+3. Update ECS service with new image
+4. Perform rolling update (zero downtime)
+
+### Update Infrastructure
+
+```bash
+# Modify cdk/cdk_stack.py
+
+# Preview changes
+cdk diff
+
+# Deploy changes
+cdk deploy
+```
+
+### Update SSM Parameters
+
+```bash
+# Update parameter value
+aws ssm put-parameter \
+  --name "/teachers_assistant/dev/temperature" \
+  --value "0.5" \
+  --overwrite
+
+# Application picks up changes on next request (no restart needed)
+```
+
+## Cleanup
+
+### Destroy Infrastructure
+
+```bash
+cd ~/workspace/ai-stack-2026Q2/workshop4/deploy_multi_agent
+
+# Destroy all resources
+cdk destroy
+
+# Confirm when prompted
+```
+
+This will delete:
+- ECS cluster and services
+- Load balancer
+- CloudFront distribution
+- Cognito user pool
+- VPC and networking
+- IAM roles
+
+**Note**: SSM parameters are NOT deleted (managed separately).
+
+### Delete SSM Parameters
+
+```bash
+aws cloudformation delete-stack --stack-name teachers-assistant-params-dev
+```
+
+## Cost Optimization
+
+### Development Environment
+
+For development/testing, minimize costs:
+
+```json
+{
+  "context": {
+    "desired_count": 1,
+    "cpu": 256,
+    "memory": 512
+  }
+}
+```
+
+### Production Environment
+
+For production workloads:
+
+```json
+{
+  "context": {
+    "desired_count": 2,
+    "cpu": 1024,
+    "memory": 2048,
+    "enable_auto_scaling": true,
+    "min_capacity": 2,
+    "max_capacity": 10
+  }
+}
+```
+
+### Ephemeral SageMaker Endpoints
+
+Delete SageMaker endpoints when not in use:
+
+```bash
+# Delete endpoint
+aws sagemaker delete-endpoint --endpoint-name my-gpt-oss-20b-1-1768709790
+
+# Recreate when needed
+# Update SSM parameter with new endpoint name
+aws ssm put-parameter \
+  --name "/teachers_assistant/dev/sagemaker_model_endpoint" \
+  --value "new-endpoint-name" \
+  --overwrite
+```
+
+Application will use new endpoint automatically.
+
+## Key Learnings
+
+### Docker Containerization
+- Consistent deployment across environments
+- Isolated dependencies and runtime
+- Easy local testing before deployment
+
+### AWS CDK Infrastructure
+- Infrastructure as code with TypeScript/Python
+- Automated resource provisioning
+- Version controlled infrastructure
+
+### ECS Fargate Hosting
+- Serverless container hosting
+- No server management
+- Auto-scaling based on demand
+
+### Cognito Authentication
+- Managed user authentication
+- Secure password policies
+- Easy integration with applications
+
+### CloudWatch Monitoring
+- Centralized logging
+- Metrics and alarms
+- Troubleshooting and debugging
+
 ---
 
-## Coming Soon
+**Production Deployment Complete!** 🎉
 
-The following sections will be added as development progresses:
+You've successfully deployed the multi-agent application to production with full authentication, monitoring, and scalability. The application is now accessible globally via CloudFront with enterprise-grade security and reliability.
 
-- **Step 7**: Create Configuration Module
-- **Step 8**: Build Bedrock Model Module
-- **Step 9**: Build SageMaker Model Module
-- **Step 10**: Implement Model Selection UI
-- **Step 11**: Build Loan Assistant
-- **Step 12**: Integrate into Multi-Agent App
-- **Step 13**: Deploy to Production
+## Next Steps
 
----
+1. **Monitor**: Set up CloudWatch alarms for critical metrics
+2. **Optimize**: Tune CPU/memory allocation based on usage
+3. **Scale**: Enable auto-scaling for production workloads
+4. **Customize**: Add new agents, modify prompts, enhance features
+5. **Secure**: Implement additional security controls (WAF, Shield, etc.)
 
-## Getting Help
+## Additional Resources
 
-### Common Issues
-
-1. **"uv: command not found"**
-   - Install uv: `pip install uv`
-   - Or use: `python validate_sagemaker_endpoint.py`
-
-2. **"SAGEMAKER_MODEL_ENDPOINT environment variable is not set"**
-   - Set the environment variable: `export SAGEMAKER_MODEL_ENDPOINT="your-endpoint-name"`
-
-3. **"Could not find endpoint"**
-   - Verify the endpoint name is correct
-   - Check the endpoint is deployed in the correct region
-   - Ensure the endpoint status is "InService"
-
-### Additional Resources
-
-- [SageMaker Endpoints Documentation](https://docs.aws.amazon.com/sagemaker/latest/dg/deploy-model.html)
-- [SageMaker Serverless Inference](https://docs.aws.amazon.com/sagemaker/latest/dg/serverless-endpoints.html)
-- [Strands Agents Documentation](https://docs.strands.ai/)
-
----
-
-**Next Steps**: Once validation is complete, proceed to building the configuration module and model wrappers!
+- [AWS CDK Documentation](https://docs.aws.amazon.com/cdk/)
+- [ECS Fargate Documentation](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/AWS_Fargate.html)
+- [Cognito Documentation](https://docs.aws.amazon.com/cognito/)
+- [CloudWatch Documentation](https://docs.aws.amazon.com/cloudwatch/)
+- [Strands Agents Documentation](https://strandsagents.com/)

@@ -19,28 +19,31 @@ Master the building blocks through hands-on modules:
 - **Module 6**: Meta-Tooling Agent - Dynamic tool creation
 - **Module 8**: MCPify Lambda - Serverless MCP tools *(coming soon)*
 
-### 🎓 **Choose Your Advanced Track**
+### 🎓 **Build Multi-Agent Applications**
 
-After completing the foundations, choose your preferred AI model hosting approach:
+After completing the foundations, build production-ready multi-agent systems:
 
-#### 🔷 **Bedrock Track** → [Part 2: Multi-Agent with Amazon Bedrock](PART-2-BEDROCK.md)
-Build sophisticated multi-agent systems using Amazon Bedrock foundation models:
-- **Step 1**: CLI Multi-Agent System with Teacher's Assistant pattern
-- **Step 2**: Streamlit Web Interface with conversation management
-- **Step 3**: Knowledge Base Integration for personal information storage
-- **Step 4**: Enhanced UI with model selection and agent customization
-- **Step 5**: Production Deployment with Docker + AWS CDK + ECS Fargate
-- **Step 6**: Workshop Materials and documentation
+#### 🔷 **Part 2: Multi-Agent Application** → [PART-2-MULTI-AGENT.md](PART-2-MULTI-AGENT.md)
+Run the multi-agent system locally with model selection:
+- **Streamlit Web Interface** with conversation management
+- **Model Selection**: Choose between Bedrock and SageMaker models
+- **5 Specialized Agents**: Math, English, Language, Computer Science, General
+- **Knowledge Base Integration**: Personal information storage and retrieval
+- **Agent Type Selection**: Auto-Route, Teacher Agent, or Knowledge Base
+- **Testing and Debugging**: Validate all features work correctly
 
-**Implementation**: [`multi_agent_bedrock/`](multi_agent_bedrock/) → [`deploy_multi_agent_bedrock/`](deploy_multi_agent_bedrock/)
+**Implementation**: [`multi_agent/`](multi_agent/)
 
-#### 🔶 **SageMaker Track** → [Part 3: Multi-Agent with Amazon SageMaker AI](PART-3-SAGEMAKER.md) *(coming soon)*
-Build the same multi-agent system using Amazon SageMaker AI (JumpStart) models:
-- **Same 6-step progression** as Bedrock track
-- **SageMaker JumpStart models** instead of Bedrock foundation models
-- **Side-by-side comparison** to understand different hosting approaches
+#### 🔶 **Part 3: Production Deployment** → [PART-3-DEPLOY-MULTI-AGENT.md](PART-3-DEPLOY-MULTI-AGENT.md)
+Deploy the multi-agent system to production:
+- **Docker Containerization**: Package application for deployment
+- **AWS CDK Infrastructure**: Automated infrastructure provisioning
+- **ECS Fargate Hosting**: Serverless container hosting
+- **Cognito Authentication**: Secure user authentication
+- **CloudFront Distribution**: Global content delivery
+- **Comprehensive Monitoring**: CloudWatch logs and metrics
 
-**Implementation**: `multi_agent_sagemaker_ai/` → `deploy_multi_agent_sagemaker_ai/` *(coming soon)*
+**Implementation**: [`deploy_multi_agent/`](deploy_multi_agent/)
 
 ### 🔧 **Need Help?** → [Reference Guide](REFERENCE.md)
 Comprehensive troubleshooting, cross-platform compatibility, authentication details, and technical reference.
@@ -48,16 +51,17 @@ Comprehensive troubleshooting, cross-platform compatibility, authentication deta
 ## 🏗️ Workshop Architecture
 
 ### Multi-Agent System Pattern
-Both tracks implement the **Teacher's Assistant Pattern**:
+The application implements the **Teacher's Assistant Pattern**:
 - **Central Orchestrator**: Routes queries using natural language understanding
 - **5 Specialized Agents**: Math, English, Language, Computer Science, General
 - **Tool-Agent Pattern**: Agents wrapped as tools using `@tool` decorator
 - **Knowledge Base Integration**: Personal information storage and retrieval
+- **Model Flexibility**: Supports both Amazon Bedrock and Amazon SageMaker AI models
 - **Production Ready**: Full deployment pipeline with authentication
 
 ### Progressive Complexity
 ```
-Foundations (Modules 1-6, 8) → Multi-Agent CLI → Web Interface → Knowledge Base → Enhanced UI → Production
+Foundations (Modules 1-6) → Local Multi-Agent App → Production Deployment
 ```
 
 ## 📁 Repository Structure
@@ -67,27 +71,27 @@ workshop4/
 ├── README.md                         # This file - workshop overview
 ├── GETTING-STARTED.md               # Environment setup and prerequisites
 ├── PART-1-FOUNDATIONS.md            # Foundational modules guide
-├── PART-2-BEDROCK.md                # Complete Bedrock multi-agent guide
-├── PART-3-SAGEMAKER.md              # Complete SageMaker multi-agent guide
+├── PART-2-MULTI-AGENT.md            # Local multi-agent application guide
+├── PART-3-DEPLOY-MULTI-AGENT.md     # Production deployment guide
 ├── REFERENCE.md                      # Technical reference and troubleshooting
-├── modules/                          # Foundational modules 1-6, 8 source code
-├── multi_agent_bedrock/             # Bedrock implementation source code
-├── deploy_multi_agent_bedrock/      # Bedrock production deployment
-├── multi_agent_sagemaker_ai/        # SageMaker implementation (coming soon)
-└── deploy_multi_agent_sagemaker_ai/ # SageMaker production deployment (coming soon)
+├── modules/                          # Foundational modules 1-6 source code
+├── multi_agent/                     # Multi-agent application (local development)
+├── deploy_multi_agent/              # Production deployment (Docker + AWS CDK)
+├── validation/                      # Validation scripts (SSM + endpoints)
+└── ssm/                             # SSM Parameter Store CloudFormation
 ```
 
 ## ⚡ Quick Start Options
 
 ### Option 1: Complete Workshop Journey (Recommended)
-1. [Getting Started](GETTING-STARTED.md) → Environment setup
+1. [Getting Started](GETTING-STARTED.md) → Environment setup + validation
 2. [Part 1: Foundations](PART-1-FOUNDATIONS.md) → Complete modules 1-6
-3. Choose [Bedrock](PART-2-BEDROCK.md) or [SageMaker](PART-3-SAGEMAKER.md) track
-4. Build and deploy your multi-agent system
+3. [Part 2: Multi-Agent](PART-2-MULTI-AGENT.md) → Run application locally
+4. [Part 3: Deploy](PART-3-DEPLOY-MULTI-AGENT.md) → Deploy to production
 
 ### Option 2: Jump to Multi-Agent (If Experienced)
-1. [Getting Started](GETTING-STARTED.md) → Quick environment setup
-2. Skip to [Bedrock](PART-2-BEDROCK.md) or [SageMaker](PART-3-SAGEMAKER.md) track
+1. [Getting Started](GETTING-STARTED.md) → Quick environment setup + validation
+2. Skip to [Part 2: Multi-Agent](PART-2-MULTI-AGENT.md)
 3. Reference [Foundations](PART-1-FOUNDATIONS.md) as needed
 
 ### Option 3: Specific Module Focus
@@ -113,9 +117,10 @@ By completing this workshop, you will:
 - ✅ Deploy production-ready applications
 
 ### Model Integration Expertise
-- ✅ **Bedrock Track**: Foundation model hosting and inference
-- ✅ **SageMaker Track**: Custom model training and JumpStart deployment
-- ✅ **Comparison**: Understand trade-offs between hosting approaches
+- ✅ **Bedrock Models**: Foundation model hosting and inference
+- ✅ **SageMaker Models**: Custom model training and deployment
+- ✅ **Model Selection**: Dynamic switching between model providers
+- ✅ **Unified Architecture**: Single codebase supporting multiple providers
 
 ## 🚀 Ready to Begin?
 
