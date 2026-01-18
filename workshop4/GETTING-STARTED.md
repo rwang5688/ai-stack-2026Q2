@@ -128,31 +128,40 @@ aws ssm get-parameters-by-path \
   --recursive
 ```
 
-#### Set Environment Variable
+#### Set Environment Variables
 
-After deploying the SSM parameters, you only need to set ONE environment variable:
+After deploying the SSM parameters, you need to set TWO environment variables:
 
 ```bash
 # Linux/macOS/Git Bash
 export TEACHERS_ASSISTANT_ENV=dev
+export AWS_REGION=us-east-1
 
 # Make persistent (optional)
 echo 'export TEACHERS_ASSISTANT_ENV=dev' >> ~/.bashrc
+echo 'export AWS_REGION=us-east-1' >> ~/.bashrc
 source ~/.bashrc
 ```
 
 **Windows PowerShell:**
 ```powershell
 $Env:TEACHERS_ASSISTANT_ENV="dev"
+$Env:AWS_REGION="us-east-1"
 ```
 
-#### Configuration Parameters
+#### Configuration Overview
 
-The CloudFormation template creates the following SSM parameters:
+The application uses two types of configuration:
 
+**Environment Variables** (2 total):
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `TEACHERS_ASSISTANT_ENV` | `dev` | Environment name (dev, staging, prod) - determines which SSM parameter path to use |
+| `AWS_REGION` | `us-east-1` | AWS region for all services (standard AWS SDK variable) |
+
+**SSM Parameter Store** (8 parameters created by CloudFormation):
 | Parameter | SSM Path | Default | Description |
 |-----------|----------|---------|-------------|
-| AWS Region | `/teachers_assistant/dev/aws_region` | `us-east-1` | AWS region for all services |
 | Default Model ID | `/teachers_assistant/dev/default_model_id` | `us.amazon.nova-2-lite-v1:0` | Default model ID (typically Bedrock cross-region profile) |
 | Max Results | `/teachers_assistant/dev/max_results` | `9` | Maximum knowledge base search results |
 | Min Score | `/teachers_assistant/dev/min_score` | `0.000001` | Minimum relevance score threshold |
@@ -163,11 +172,14 @@ The CloudFormation template creates the following SSM parameters:
 | XGBoost Model Endpoint | `/teachers_assistant/dev/xgboost_model_endpoint` | `my-xgboost-model-endpoint` | XGBoost model endpoint name |
 
 **Important Notes:**
+- **Environment Variables**: `TEACHERS_ASSISTANT_ENV` and `AWS_REGION` must be set as environment variables (not in SSM)
+- **SSM Parameters**: All other configuration is stored in SSM Parameter Store
 - Values with `my-*` prefixes are placeholders. Deploy the CloudFormation template "as is" with these defaults, then update them via AWS Console or CLI with your actual AWS resource names.
 - `sagemaker_model_inference_component` is only needed if your SageMaker endpoint uses inference components (multi-model endpoints).
 - To find your inference component name: `aws sagemaker list-inference-components --endpoint-name-equals <endpoint-name>`
 - Model provider (Bedrock vs SageMaker) is determined dynamically from the UI model selection, not stored as configuration.
 - `strands_knowledge_base_id` must keep this exact naming as it's a Strands Agents framework requirement for Bedrock Knowledge Base integration.
+- `AWS_REGION` is a standard AWS SDK environment variable - in EC2/ECS deployments, this is automatically detected from instance metadata.
 
 #### Update Configuration Parameters
 

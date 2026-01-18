@@ -18,7 +18,97 @@ This document consolidates work from January 13-16, 2026 on the workshop4-multi-
 # January 17, 2026 - Testing and debugging multi_agent app and deploy_multi_agent docker app
 
 ## Session Overview
-TBD
+Ready to validate SageMaker and XGBoost endpoints, then test and debug the multi_agent application with SSM Parameter Store integration. All infrastructure and code changes from previous sessions are complete.
+
+## Current Status
+
+### Completed Infrastructure ✅
+- ✅ CloudFormation template with 8 SSM parameters (teachers-assistant-params.yaml)
+- ✅ Configuration module using SSM Parameter Store (config.py)
+- ✅ Validation scripts for both endpoints (validate_sagemaker_endpoint.py, validate_xgboost_endpoint.py)
+- ✅ Model modules (bedrock_model.py, sagemaker_model.py)
+- ✅ Model factory pattern (model_factory.py)
+- ✅ Multi-agent application with model selection (app.py)
+- ✅ All sub-assistants updated to use SSM config
+
+### Environment Variables Required
+```bash
+export TEACHERS_ASSISTANT_ENV=dev
+export AWS_REGION=us-east-1
+```
+
+### SSM Parameters (8 total)
+1. `/teachers_assistant/dev/default_model_id` - Default model ID
+2. `/teachers_assistant/dev/max_results` - Max KB query results
+3. `/teachers_assistant/dev/min_score` - Min KB query score
+4. `/teachers_assistant/dev/sagemaker_model_endpoint` - SageMaker model endpoint name
+5. `/teachers_assistant/dev/sagemaker_model_inference_component` - SageMaker inference component
+6. `/teachers_assistant/dev/strands_knowledge_base_id` - Strands knowledge base ID
+7. `/teachers_assistant/dev/temperature` - Model temperature setting
+8. `/teachers_assistant/dev/xgboost_model_endpoint` - XGBoost model endpoint name
+
+## Testing Plan
+
+### Phase 1: Validate SageMaker Endpoints ✅
+1. Run `validate_sagemaker_endpoint.py` to verify agent model endpoint
+2. Run `validate_xgboost_endpoint.py` to verify XGBoost endpoint
+3. Confirm both endpoints are operational
+
+### Phase 2: Test Multi-Agent Application
+1. Run `streamlit run app.py` in workshop4/multi_agent
+2. Test model selection dropdown (5 models)
+3. Test each agent type (Auto-Route, Teacher Agent, Knowledge Base)
+4. Test specialized assistants (Math, English, Language, CS, General)
+5. Verify SSM parameter integration
+
+### Phase 3: Debug Deploy Multi-Agent Docker App
+1. Review deploy_multi_agent/docker_app structure
+2. Identify differences from multi_agent
+3. Test docker_app locally
+4. Debug any issues
+
+## Ready to Begin Testing
+
+---
+
+## Documentation Fix: GETTING-STARTED.md Configuration Table ✅
+
+**Issue Identified**: The configuration table in `workshop4/GETTING-STARTED.md` incorrectly listed `AWS_REGION` as an SSM parameter when it should be an environment variable.
+
+**Root Cause**: During the January 17, 2026 refactoring, `AWS_REGION` was migrated from SSM Parameter Store to an environment variable to solve the chicken-and-egg problem (need region to connect to SSM). The GETTING-STARTED.md documentation wasn't updated to reflect this change.
+
+**Fix Applied**:
+- Updated configuration section to clearly separate **Environment Variables** (2) from **SSM Parameters** (8)
+- Added explicit table showing the 2 environment variables:
+  1. `TEACHERS_ASSISTANT_ENV` - Environment name (dev, staging, prod)
+  2. `AWS_REGION` - AWS region for all services
+- Updated SSM parameters table to show only the 8 parameters stored in SSM
+- Added note explaining that `AWS_REGION` is a standard AWS SDK variable
+- Clarified that both environment variables must be set
+
+**Files Modified**:
+- `workshop4/GETTING-STARTED.md` - Updated configuration section with correct environment variables vs SSM parameters
+
+**Current Configuration Structure**:
+```bash
+# Environment Variables (2)
+export TEACHERS_ASSISTANT_ENV=dev
+export AWS_REGION=us-east-1
+
+# SSM Parameters (8) - stored in Parameter Store
+/teachers_assistant/dev/default_model_id
+/teachers_assistant/dev/max_results
+/teachers_assistant/dev/min_score
+/teachers_assistant/dev/sagemaker_model_endpoint
+/teachers_assistant/dev/sagemaker_model_inference_component
+/teachers_assistant/dev/strands_knowledge_base_id
+/teachers_assistant/dev/temperature
+/teachers_assistant/dev/xgboost_model_endpoint
+```
+
+---
+
+## Ready to Begin Testing
 
 ---
 
