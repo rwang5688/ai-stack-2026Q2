@@ -100,7 +100,7 @@ This implementation plan follows a local-first development approach: build and t
   - Test model switching between providers
   - _Requirements: 6.3, 6.4, 6.5_
 
-- [ ] 7. Refactor naming conventions and deploy SSM parameters
+- [x] 7. Refactor naming conventions and deploy SSM parameters
   - **Naming Refactoring**:
     - Rename CloudFormation template: `ssm/teachassist-params.yaml` → `ssm/teachers-assistant-params.yaml`
     - Update all parameter names to use functionality-based naming (not service-based)
