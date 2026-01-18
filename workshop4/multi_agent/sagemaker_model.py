@@ -8,14 +8,14 @@ that can be used with Strands Agents.
 IMPORTANT MODEL COMPATIBILITY NOTE:
 ===================================
 The Strands Agents SDK SageMakerAIModel class requires SageMaker AI models 
-that support OpenAI-compatible chat completion APIs.
+that support OpenAI chat completion API.
 
 During development and testing, the provider has been validated with 
 Mistral-Small-24B-Instruct-2501, which demonstrated reliable performance 
 across various conversational AI tasks.
 
 Base language models (like Open Llama 7b V2) will fail with "Template error: 
-template not found" because they lack the required chat completion API 
+template not found" because they lack the required OpenAI chat completion API 
 compatibility.
 
 Reference: 
@@ -23,8 +23,8 @@ https://strandsagents.com/latest/documentation/docs/user-guide/concepts/model-pr
 
 Note: Tool calling support varies by model. Models like Mistral-Small-24B-Instruct-2501 
 have demonstrated reliable tool calling capabilities, but not all models deployed on 
-SageMaker support this feature. Verify your model's capabilities before implementing 
-tool-based workflows.
+SageMaker support this feature. Another potentially compatible and trainable model is Meta Llama 3.1 8B Instruct.
+Verify your model's capabilities before implementing tool-based workflows.
 """
 
 import warnings

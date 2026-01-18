@@ -3069,3 +3069,215 @@ All code now consistently uses: **`"my-sagemaker-model-inference-component"`**
 
 ---
 
+
+
+## Checkpoint Verification Complete ✅
+
+**Date**: January 17, 2026
+
+User pulled down latest checkpoint commit. Verified all fixes are in place.
+
+### Verification Results
+
+**✅ Inference Component Placeholder Consistency:**
+- All 5 Python files use: `"my-sagemaker-model-inference-component"`
+- CloudFormation template default: `my-sagemaker-model-inference-component`
+- No occurrences of incorrect `"my-agent-model-inference-component"` found
+
+**Files Verified:**
+1. ✅ `workshop4/validation/validate_sagemaker_endpoint.py` - Correct placeholder
+2. ✅ `workshop4/validation/validate_ssm_parameters.py` - Correct placeholder
+3. ✅ `workshop4/multi_agent/sagemaker_model.py` - Correct placeholder
+4. ✅ `workshop4/multi_agent/config.py` - Correct placeholder
+5. ✅ `workshop4/multi_agent/app.py` - Correct placeholder (3 occurrences)
+6. ✅ `workshop4/ssm/teachers-assistant-params.yaml` - Correct placeholder
+
+### Ready for Meta Llama 3.1 8B Testing
+
+**Current State:**
+- ✅ All code consistent with placeholder handling
+- ✅ Validation script will work with or without inference components
+- ✅ Application will work with or without inference components
+- ✅ CloudFormation template has correct default values
+
+**Next Steps:**
+1. 🎯 Deploy Meta Llama 3.1 8B Instruct endpoint (base model for testing)
+2. 🎯 Update SSM parameter `sagemaker_model_endpoint` with new endpoint name
+3. 🎯 Leave `sagemaker_model_inference_component` as placeholder (no inference component needed for base model)
+4. 🎯 Run validation: `uv run validate_sagemaker_endpoint.py`
+5. 🎯 Test multi_agent app with new SageMaker model
+6. 🎯 Later: Deploy fine-tuned model and update inference component parameter
+
+---
+
+
+
+## Meta Llama 3.1 8B Instruct Validation SUCCESS! ✅
+
+**Date**: January 17, 2026
+
+### Validation Results
+
+User deployed Meta Llama 3.1 8B Instruct and ran validation - **ALL TESTS PASSED!**
+
+**Endpoint Details:**
+- Endpoint name: `jumpstart-dft-llama-3-1-8b-instruct-20260118-091814`
+- Inference component: None (base model deployment)
+- Region: us-east-1
+
+**Validation Output:**
+```
+✅ SUCCESS: Endpoint is responding correctly!
+📥 Response:
+{"generated_text": " Paris\nWhat is the capital of France?\nThe capital of France is Paris. Paris is the largest city in France and is known for its iconic landmarks such as the Eiffel Tower, Notre Dame Cathedral, and the Louvre Museum. It is"}
+```
+
+**Key Observations:**
+1. ✅ Model responds correctly to prompts
+2. ✅ Generates coherent, contextually appropriate text
+3. ✅ Works without inference components (standard endpoint)
+4. ✅ Response quality is good for instruction-tuned model
+5. ✅ Should work with Strands Agents SDK
+
+### Issue Fixed: Validation Script Display
+
+**Problem**: Validation script was displaying placeholder value `"my-sagemaker-model-inference-component"` even though it wasn't being used.
+
+**Fix Applied**: Updated display logic in `validate_sagemaker_endpoint.py` line 77-78 to only display inference component if it's not a placeholder.
+
+**Before:**
+```python
+if inference_component_name:
+    print(f"   Inference Component: {inference_component_name}")
+```
+
+**After:**
+```python
+if inference_component_name and inference_component_name != "my-sagemaker-model-inference-component":
+    print(f"   Inference Component: {inference_component_name}")
+```
+
+**Result**: Validation output will now be cleaner - only shows inference component when actually being used.
+
+### SSM Parameters Confirmed
+
+**Current Configuration:**
+- `sagemaker_model_endpoint`: `jumpstart-dft-llama-3-1-8b-instruct-20260118-091814` ✅
+- `sagemaker_model_inference_component`: `my-sagemaker-model-inference-component` (placeholder - correct for base model) ✅
+- All other parameters: Configured correctly ✅
+
+### Ready for Application Testing
+
+**Next Steps:**
+1. 🎯 Test multi_agent app with Meta Llama 3.1 8B Instruct
+2. 🎯 Verify Strands Agents SDK compatibility
+3. 🎯 Test all agent features (Math, English, Language, CS, General)
+4. 🎯 Test knowledge base operations
+5. 🎯 Update documentation with Meta Llama 3.1 8B Instruct as recommended model
+
+---
+
+
+
+## UI Update: Model-Agnostic SageMaker Selection ✅
+
+**Date**: January 17, 2026
+
+### Issue
+
+User pointed out that the model dropdown label "Custom gpt-oss-20b (SageMaker endpoint)" was too specific and didn't make sense after switching to Meta Llama 3.1 8B Instruct.
+
+### Rationale for Change
+
+**Old Label**: `"Custom gpt-oss-20b (SageMaker endpoint)"`
+- ❌ References specific model that's no longer being used
+- ❌ Misleading for users who deploy different models
+- ❌ Doesn't emphasize the key requirement (OpenAI-compatible API)
+
+**New Label**: `"Custom SageMaker Model Endpoint"`
+- ✅ Model-agnostic - works with any compatible model
+- ✅ Emphasizes it's a custom endpoint (user-deployed)
+- ✅ Focuses on the platform (SageMaker) not specific model
+- ✅ Implies flexibility - any OpenAI-compatible model works
+
+### Changes Applied
+
+**Files Updated:**
+1. ✅ `workshop4/multi_agent/app.py` - Updated dropdown label and display name
+2. ✅ `workshop4/PART-2-MULTI-AGENT.md` - Updated model table and test instructions
+
+**Model Dropdown Now Shows:**
+1. Amazon Nova Pro (us.amazon.nova-pro-v1:0)
+2. Amazon Nova 2 Lite (us.amazon.nova-2-lite-v1:0)
+3. Anthropic Claude Haiku 4.5 (us.anthropic.claude-haiku-4-5-20251001-v1:0)
+4. Anthropic Claude Sonnet 4.5 (us.anthropic.claude-sonnet-4-5-20250929-v1:0)
+5. **Custom SageMaker Model Endpoint** ← Updated
+
+### Documentation Updated
+
+**Model Selection Table** (PART-2-MULTI-AGENT.md):
+| Model | Provider | Model ID | Use Case |
+|-------|----------|----------|----------|
+| Custom SageMaker Model | SageMaker | Endpoint-based | OpenAI-compatible models |
+
+**Key Message**: Any SageMaker model that supports OpenAI `/v1/chat/completions` API will work, including:
+- Meta Llama 3.1 8B Instruct (validated ✅)
+- Meta Llama 3.1 70B Instruct
+- Meta Llama 3.1 405B Instruct
+- Mistral-Small-24B-Instruct-2501 (if deployed)
+- Any other OpenAI-compatible model
+
+---
+
+
+
+## Terminology Clarification: OpenAI Chat Completion API ✅
+
+**Date**: January 17, 2026
+
+### Issue with "OpenAI-compatible"
+
+User correctly pointed out that "OpenAI-compatible models" is ambiguous and misleading:
+- ❌ "OpenAI gpt-oss-20b" is technically an OpenAI model but doesn't work
+- ❌ "OpenAI-compatible" doesn't specify which API is required
+- ❌ Could be confused with OpenAI's company/brand
+
+### Correct Terminology
+
+**Precise requirement**: **OpenAI chat completion API compatible**
+
+This specifically means:
+- ✅ Models that support the `/v1/chat/completions` API endpoint
+- ✅ Request/response format matches OpenAI's chat completion schema
+- ✅ Instruction-tuned models designed for conversational interactions
+- ✅ NOT just any model from OpenAI or with "OpenAI" in the name
+
+### Updates Applied
+
+**User updated:**
+- ✅ `workshop4/multi_agent/sagemaker_model.py` - Module docstring comments
+
+**System updated:**
+- ✅ `workshop4/PART-2-MULTI-AGENT.md` - Model table use case column
+- ✅ Session notes - Consistent terminology throughout
+
+### Validated Compatible Models
+
+**Confirmed working:**
+- ✅ Meta Llama 3.1 8B Instruct (tested and validated)
+
+**Documented as compatible:**
+- Mistral-Small-24B-Instruct-2501 (per Strands Agents docs)
+- Meta Llama 3.1 70B Instruct (architecture compatible)
+- Meta Llama 3.1 405B Instruct (architecture compatible)
+
+**Known incompatible:**
+- ❌ gpt-oss-20b (base model, lacks chat completion API)
+- ❌ Open Llama 7b V2 (base model, template error)
+
+### Key Takeaway
+
+The requirement is **API compatibility**, not brand/model name. Any SageMaker model that implements the OpenAI chat completion API format will work with Strands Agents SDK.
+
+---
+

@@ -38,7 +38,7 @@ The application supports 5 models via dropdown:
 | Amazon Nova Pro | Bedrock | `us.amazon.nova-pro-v1:0` | Enhanced reasoning |
 | Claude Haiku 4.5 | Bedrock | `us.anthropic.claude-haiku-4-5-*` | Fast responses |
 | Claude Sonnet 4.5 | Bedrock | `us.anthropic.claude-sonnet-4-5-*` | Advanced reasoning |
-| Custom gpt-oss-20b | SageMaker | Endpoint-based | Custom trained model |
+| Custom SageMaker Model | SageMaker | Endpoint-based | OpenaAI chat completion API compatible |
 
 ### Agent Type Selection
 
@@ -124,7 +124,7 @@ Navigate to `http://localhost:8501`
    - Amazon Nova Pro
    - Claude Haiku 4.5
    - Claude Sonnet 4.5
-   - Custom gpt-oss-20b (if SageMaker endpoint configured)
+   - Custom SageMaker Model (if SageMaker endpoint configured)
 
 **Expected**: Each model should respond correctly
 

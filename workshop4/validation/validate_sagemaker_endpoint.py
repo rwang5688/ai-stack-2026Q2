@@ -74,7 +74,7 @@ def validate_sagemaker_endpoint(endpoint_name: str, region: str, inference_compo
     """
     print(f"\n🔍 Validating SageMaker Model Endpoint: {endpoint_name}")
     print(f"   Region: {region}")
-    if inference_component_name:
+    if inference_component_name and inference_component_name != "my-sagemaker-model-inference-component":
         print(f"   Inference Component: {inference_component_name}")
     print("-" * 60)
     

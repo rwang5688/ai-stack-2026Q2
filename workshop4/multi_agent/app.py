@@ -189,10 +189,10 @@ with st.sidebar:
             "model_id": "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
             "display_name": "Anthropic Claude Sonnet 4.5"
         },
-        "Custom gpt-oss-20b (SageMaker endpoint)": {
+        "Custom SageMaker Model Endpoint": {
             "provider": "sagemaker",
             "model_id": "sagemaker-endpoint",
-            "display_name": "Custom gpt-oss-20b (SageMaker endpoint)"
+            "display_name": "Custom SageMaker Model Endpoint"
         }
     }
     
