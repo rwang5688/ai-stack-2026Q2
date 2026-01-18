@@ -11,7 +11,14 @@ This document consolidates work from January 13-16, 2026 on the workshop4-multi-
 6. **Jan 15 (Late Evening)**: SSM Parameter Store migration
 7. **Jan 15 (Late Evening - Part 2)**: Model provider and temperature fixes
 8. **Jan 16**: Naming convention refactoring and STRANDS_KNOWLEDGE_BASE_ID correction
-9. **Jan 17**: Testing and debugging multi_agent app
+9. **Jan 17**: Testing and debugging multi_agent app and deploy_multi_agent docker app
+
+---
+
+# January 17, 2026 - Testing and debugging multi_agent app and deploy_multi_agent docker app
+
+## Session Overview
+TBD
 
 ---
 
