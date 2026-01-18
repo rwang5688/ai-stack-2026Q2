@@ -189,10 +189,10 @@ with st.sidebar:
             "model_id": "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
             "display_name": "Anthropic Claude Sonnet 4.5"
         },
-        "Custom SageMaker Model Endpoint": {
+        "Custom SageMaker Model": {
             "provider": "sagemaker",
             "model_id": "sagemaker-endpoint",
-            "display_name": "Custom SageMaker Model Endpoint"
+            "display_name": "Custom SageMaker Model"
         }
     }
     
@@ -218,15 +218,34 @@ with st.sidebar:
     # Get selected model info
     selected_model_info = model_options[selected_model_key]
     
+    # Format provider name with proper capitalization
+    def format_provider_name(provider: str) -> str:
+        """Format provider name with proper capitalization."""
+        if provider == 'sagemaker':
+            return 'SageMaker'
+        elif provider == 'bedrock':
+            return 'Bedrock'
+        else:
+            return provider.title()
+    
+    provider_display = format_provider_name(selected_model_info['provider'])
+    
     # Display active model information
-    st.info(f"**Active Model**: {selected_model_info['display_name']}\n\n**Provider**: {selected_model_info['provider'].title()}")
+    st.info(f"**Active Model**: {selected_model_info['display_name']}\n\n**Provider**: {provider_display}")
     
     st.header("🔧 AI Service Details")
     aws_region = get_aws_region()
     
+    # For SageMaker models, show the actual endpoint name instead of generic model_id
+    if selected_model_info['provider'] == 'sagemaker':
+        sagemaker_endpoint = get_sagemaker_model_endpoint()
+        display_model_id = sagemaker_endpoint
+    else:
+        display_model_id = selected_model_info['model_id']
+    
     st.markdown(f"""
-    **Model Provider**: {selected_model_info['provider'].title()}  
-    **Model ID**: `{selected_model_info['model_id']}`  
+    **Model Provider**: {provider_display}  
+    **Model ID**: `{display_model_id}`  
     **Temperature**: {TEMPERATURE}  
     **Knowledge Base**: {STRANDS_KNOWLEDGE_BASE_ID}  
     **AWS Region**: {aws_region}
