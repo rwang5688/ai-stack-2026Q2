@@ -394,6 +394,41 @@ File "bedrock_model.py", line 82, in <module>
 
 **Status**: Fixed, ready to retry `streamlit run app.py`
 
+### Issue 2: Missing SageMaker dependencies ❌
+
+**Error**:
+```
+ModuleNotFoundError: No module named 'mypy_boto3_sagemaker_runtime'
+Traceback:
+File "sagemaker_model.py", line 31, in <module>
+    from strands.models.sagemaker import SageMakerAIModel
+File "strands/models/sagemaker.py", line 11, in <module>
+    from mypy_boto3_sagemaker_runtime import SageMakerRuntimeClient
+```
+
+**Root Cause**: 
+- `requirements.txt` installed `strands-agents` without the `[sagemaker]` extra
+- According to [Strands Agents documentation](https://strandsagents.com/latest/documentation/docs/user-guide/concepts/model-providers/sagemaker/), SageMaker support requires: `pip install 'strands-agents[sagemaker]'`
+- The `[sagemaker]` extra includes necessary dependencies like `mypy-boto3-sagemaker-runtime`
+
+**Fix Applied**: ✅
+- Changed `strands-agents` to `strands-agents[sagemaker]` in `workshop4/requirements.txt`
+- Follows official Strands Agents SDK installation instructions
+- The `[sagemaker]` extra automatically includes all required SageMaker dependencies
+
+**Files Modified**:
+- ✅ `workshop4/requirements.txt` - Added [sagemaker] extra to strands-agents
+
+**Installation Required**:
+```bash
+cd ~/workspace/ai-stack-2026Q2/workshop4
+uv pip install -r requirements.txt
+```
+
+**Reference**: [Strands Agents SageMaker Documentation](https://strandsagents.com/latest/documentation/docs/user-guide/concepts/model-providers/sagemaker/)
+
+**Status**: Fixed, install dependency then retry `streamlit run app.py`
+
 ---
 
 # January 16, 2026 - Naming Convention Refactoring & Knowledge Base ID Correction
