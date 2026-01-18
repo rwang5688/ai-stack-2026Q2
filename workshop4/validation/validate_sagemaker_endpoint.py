@@ -105,8 +105,8 @@ def validate_sagemaker_endpoint(endpoint_name: str, region: str, inference_compo
             'ContentType': 'application/json'
         }
         
-        # Add inference component name if provided
-        if inference_component_name:
+        # Add inference component name if provided and not a placeholder
+        if inference_component_name and inference_component_name != "my-sagemaker-model-inference-component":
             invoke_params['InferenceComponentName'] = inference_component_name
         
         # Invoke endpoint

@@ -2691,3 +2691,381 @@ streamlit run app.py
 ---
 
 **Excellent progress! CloudFormation template is now cleaner and more readable, and AWS_REGION migration aligns with AWS best practices.** 🎉
+
+
+---
+
+## SageMaker Model Compatibility Research ✅
+
+**Date**: January 17, 2026
+
+### Issue: gpt-oss-20b Model Failing with InternalFailure
+
+**Error**:
+```
+InternalFailure: An exception occurred while sending request to model
+(reached max retries: 4)
+```
+
+**Root Cause Investigation**: User researched SageMaker JumpStart models compatible with Strands Agents SDK on Perplexity.ai.
+
+### Key Findings from Research
+
+**Strands-Compatible Models**:
+1. **Mistral-Small-24B-Instruct-2501** ✅
+   - Explicitly validated by Strands Agents documentation
+   - Supports OpenAI-compatible chat completion API
+   - Reliable tool-calling support
+
+2. **Meta Llama 3.1 Instruct Models** (Strong Candidates)
+   - Available in 8B, 70B, 405B variants
+   - Instruction-tuned and dialogue-optimized
+   - Explicitly described as suitable for multilingual conversational agents and tool use
+   - **Caveat**: May require API adapter to expose OpenAI `/v1/chat/completions` schema
+
+3. **Earlier Llama 3 / Llama 2 Instruct Variants**
+   - Instruction-tuned chat models
+   - Commonly fine-tuned via JumpStart or SageMaker training jobs
+   - Same caveat about OpenAI API compatibility
+
+### Critical Requirement: OpenAI API Compatibility
+
+**What Strands Agents Needs**:
+- SageMaker endpoint must expose OpenAI-compatible `/v1/chat/completions` schema
+- Not all JumpStart models provide this out-of-the-box
+- Options for non-compatible models:
+  1. Serving container/config that maps inference interface to OpenAI schema
+  2. Thin adapter service in front of endpoint that reshapes requests/responses
+
+### User Decision: Switch to Meta Llama 3.1 Instruct
+
+**Rationale**:
+- gpt-oss-20b appears to be a base model without OpenAI API compatibility
+- Meta Llama 3.1 Instruct is instruction-tuned and dialogue-optimized
+- Better architectural fit for chat + tools use cases
+- May still require API adapter configuration
+
+### Next Steps
+
+1. **Verify Current Endpoint Model**:
+   ```bash
+   aws sagemaker describe-endpoint --endpoint-name my-gpt-oss-20b-1-1768709790
+   ```
+
+2. **Check Inference Component Configuration**:
+   ```bash
+   aws sagemaker describe-inference-component \
+     --inference-component-name adapter-my-gpt-oss-20b-1-1768709790-1768709796
+   ```
+
+3. **Options**:
+   - **Option A**: Deploy new Meta Llama 3.1 Instruct endpoint via JumpStart
+   - **Option B**: Check if current endpoint can be reconfigured with OpenAI-compatible serving container
+   - **Option C**: Add adapter service in front of current endpoint
+
+4. **Test with Bedrock Models First**:
+   - Verify app works correctly with Bedrock models (Amazon Nova, Claude)
+   - Isolate SageMaker-specific issues
+
+### Documentation Updates Needed
+
+**Files to Update**:
+- `workshop4/multi_agent/sagemaker_model.py` - Update compatibility documentation
+- `workshop4/PART-2-MULTI-AGENT.md` - Add troubleshooting section for model compatibility
+- `workshop4/PART-3-DEPLOY-MULTI-AGENT.md` - Update SageMaker model recommendations
+
+**New Content**:
+- List of validated JumpStart models (Mistral-Small-24B, Llama 3.1 Instruct)
+- Explanation of OpenAI API compatibility requirement
+- How to verify endpoint compatibility
+- Steps to deploy compatible models via JumpStart
+
+### References
+
+- [Strands Agents SageMaker Documentation](https://strandsagents.com/latest/documentation/docs/user-guide/concepts/model-providers/sagemaker/)
+- Research source: Perplexity.ai
+- SageMaker JumpStart: Meta Llama 3.1 Instruct models
+
+---
+
+## Testing Plan Update
+
+### Phase 1: Validate Bedrock Models ✅ (Priority)
+1. Test app with Amazon Nova 2 Lite (default)
+2. Test app with Amazon Nova Pro
+3. Test app with Claude Haiku 4.5
+4. Test app with Claude Sonnet 4.5
+5. Verify all specialized agents work correctly
+
+**Goal**: Confirm app works correctly with known-good models before debugging SageMaker issues.
+
+### Phase 2: Debug SageMaker Model (After Bedrock validation)
+1. Verify current endpoint model type and configuration
+2. Check if endpoint exposes OpenAI-compatible API
+3. Consider deploying Meta Llama 3.1 Instruct endpoint
+4. Test with new endpoint
+
+**Goal**: Isolate SageMaker-specific compatibility issues.
+
+### Phase 3: Update Documentation
+1. Document validated SageMaker JumpStart models
+2. Add troubleshooting guide for model compatibility
+3. Update deployment instructions with model recommendations
+
+---
+
+
+
+---
+
+## Fine-Tuning Research: Mistral vs Llama 3.1 ✅
+
+**Date**: January 17, 2026
+
+### Research Findings from AWS Documentation
+
+**Meta Llama 3.1 Instruct (8B, 70B, 405B)** ✅:
+- **Fine-tuning support**: CONFIRMED - Fully supported via SageMaker JumpStart
+- **Methods**: QLoRA (8-bit for 70B/405B) and LoRA (for 8B)
+- **Fine-tuning types**: 
+  - Domain adaptation fine-tuning
+  - Instruction fine-tuning
+  - Chat fine-tuning
+- **Instance types**: 
+  - 8B: `ml.g5.12xlarge`
+  - 70B: `ml.g5.48xlarge`
+  - 405B: `ml.p5.48xlarge`
+- **UI support**: Yes - no-code fine-tuning via SageMaker Studio
+- **SDK support**: Yes - programmatic fine-tuning via SageMaker Python SDK
+- **Documentation**: https://aws.amazon.com/blogs/machine-learning/fine-tune-meta-llama-3-1-models-for-generative-ai-inference-using-amazon-sagemaker-jumpstart/
+
+**Mistral-Small-24B-Instruct-2501** ⚠️:
+- **Deployment support**: YES - Available on SageMaker JumpStart and Bedrock Marketplace
+- **Fine-tuning support**: NOT MENTIONED in the blog post (only deployment/inference covered)
+- **Note**: Mistral 7B has fine-tuning support, but Mistral-Small-24B-Instruct-2501 blog doesn't mention fine-tuning
+- **Documentation**: https://aws.amazon.com/blogs/machine-learning/mistral-small-24b-instruct-2501-is-now-available-on-sagemaker-jumpstart-and-amazon-bedrock-marketplace/
+
+### Preliminary Recommendation: Meta Llama 3.1 8B Instruct
+
+**Rationale**:
+1. Confirmed fine-tuning support in SageMaker JumpStart
+2. Most cost-effective for workshops (uses `ml.g5.12xlarge`)
+3. LoRA fine-tuning (more efficient than QLoRA)
+4. Instruction-tuned and dialogue-optimized
+5. Tool use capabilities
+6. Well-documented process with both UI and SDK methods
+
+### User Action: Verification in SageMaker Studio
+
+User is checking both models in SageMaker AI JumpStart to verify:
+1. Fine-tuning availability for Mistral-Small-24B-Instruct-2501
+2. Fine-tuning availability for Meta Llama 3.1 Instruct (8B, 70B)
+3. Comparing options before making final decision
+
+### Decision: Delete gpt-oss-20b Model
+
+**Reason**: Base model without OpenAI-compatible chat completion API - not compatible with Strands Agents SDK requirements.
+
+**Action**: User will delete the custom gpt-oss-20b endpoint to avoid confusion and costs.
+
+---
+
+## Pending: SageMaker Studio Verification
+
+Waiting for user to verify fine-tuning support in SageMaker AI Studio before:
+1. Updating documentation with recommended model
+2. Updating SSM parameters with new endpoint name
+3. Testing multi_agent app with new SageMaker model
+
+---
+
+
+
+## SageMaker Studio Verification Complete ✅
+
+**Date**: January 17, 2026
+
+### Verification Results from SageMaker AI Studio
+
+**Mistral Models** ❌:
+- **Mistral-3.2-Small-24B-Instruct 2506**: Train button greyed out - NO fine-tuning support
+- **Mistral-Small-24B-Instruct 2501**: Train button greyed out - NO fine-tuning support
+- **Conclusion**: Despite being mentioned in Strands Agents docs, Mistral models do NOT support fine-tuning in SageMaker JumpStart
+
+**Meta Llama 3.1 Instruct Models** ✅:
+- Fine-tuning support confirmed via AWS documentation
+- Available in 8B, 70B, and 405B variants
+- All variants support fine-tuning with LoRA/QLoRA
+
+### Final Decision: Meta Llama 3.1 Instruct
+
+**Selected Model**: Meta Llama 3.1 8B Instruct
+- **Reason**: Only option with confirmed fine-tuning support
+- **Instance**: `ml.g5.12xlarge` for fine-tuning
+- **Method**: LoRA fine-tuning
+- **Cost**: Most cost-effective option for workshops
+- **Capabilities**: Instruction-tuned, dialogue-optimized, tool use support
+
+### Next Steps
+
+1. ✅ Delete gpt-oss-20b endpoint (user action)
+2. 🎯 Deploy/fine-tune Meta Llama 3.1 8B Instruct endpoint
+3. 🎯 Update SSM parameter `sagemaker_model_endpoint` with new endpoint name
+4. 🎯 Update SSM parameter `sagemaker_model_inference_component` if needed
+5. 🎯 Update documentation to recommend Meta Llama 3.1 8B Instruct
+6. 🎯 Test multi_agent app with new SageMaker model
+
+---
+
+
+
+## IMPORTANT: SageMaker Studio Fine-Tuning Availability Update ⚠️
+
+**Date**: January 17, 2026
+
+### Discrepancy Between Documentation and SageMaker Studio UI
+
+**AWS Documentation Claims** (from blog post):
+- Meta Llama 3.1 8B Instruct: Fine-tuning supported ✓
+- Meta Llama 3.1 70B Instruct: Fine-tuning supported ✓
+- Meta Llama 3.1 405B Instruct: Fine-tuning supported ✓
+
+**Actual SageMaker Studio UI** (verified by user):
+- **Meta Llama 3.1 8B Instruct**: Train button ENABLED ✅ (ONLY trainable variant)
+- **Meta Llama 3.1 70B Instruct**: Train button GREYED OUT ❌
+- **Meta Llama 3.1 405B Instruct**: Train button GREYED OUT ❌
+
+### Possible Reasons for Discrepancy
+
+1. **Regional Availability**: Fine-tuning may only be available in specific AWS regions
+2. **Account Limits**: May require service quota increases for larger models
+3. **Instance Availability**: ml.g5.48xlarge and ml.p5.48xlarge may not be available in user's region
+4. **Documentation Lag**: Blog post from August 2024 may not reflect current availability
+5. **Gradual Rollout**: Larger models may still be in limited availability
+
+### Confirmed: Meta Llama 3.1 8B Instruct is THE Choice
+
+**Final Selection**: Meta Llama 3.1 8B Instruct
+- **Only trainable option** verified in SageMaker Studio UI
+- **Instance**: `ml.g5.12xlarge` for fine-tuning
+- **Method**: LoRA fine-tuning
+- **Deployment**: Standard SageMaker endpoint
+- **Compatibility**: Should work with Strands Agents SDK (instruction-tuned, dialogue-optimized)
+
+### Action Items
+
+1. ✅ Verified fine-tuning availability in SageMaker Studio
+2. ✅ Confirmed Meta Llama 3.1 8B Instruct is the only trainable option
+3. 🎯 Delete gpt-oss-20b endpoint
+4. 🎯 Deploy/fine-tune Meta Llama 3.1 8B Instruct
+5. 🎯 Update documentation to reflect actual availability (not just blog claims)
+6. 🎯 Test with Strands Agents SDK to verify OpenAI API compatibility
+
+---
+
+
+
+## Fixed: Inference Component Handling Consistency ✅
+
+**Date**: January 17, 2026
+
+### Issue Identified
+
+User asked about inference component handling in `validate_sagemaker_endpoint.py` - discovered inconsistency with `sagemaker_model.py`.
+
+**Problem**: Validation script would incorrectly try to use placeholder value `"my-sagemaker-model-inference-component"` as a real inference component name, causing validation failures.
+
+### Fix Applied
+
+**Updated `validate_sagemaker_endpoint.py` line 103-105:**
+
+**Before:**
+```python
+# Add inference component name if provided
+if inference_component_name:
+    invoke_params['InferenceComponentName'] = inference_component_name
+```
+
+**After:**
+```python
+# Add inference component name if provided and not a placeholder
+if inference_component_name and inference_component_name != "my-sagemaker-model-inference-component":
+    invoke_params['InferenceComponentName'] = inference_component_name
+```
+
+### Consistent Behavior Across All Code
+
+**Now both `sagemaker_model.py` and `validate_sagemaker_endpoint.py` handle inference components identically:**
+
+1. If `inference_component` is `None` → **NOT added** ✅
+2. If `inference_component` is empty string `""` → **NOT added** ✅
+3. If `inference_component` is placeholder `"my-sagemaker-model-inference-component"` → **NOT added** ✅
+4. If `inference_component` has a real value → **ADDED** ✅
+
+### Use Cases Supported
+
+**Scenario 1: Standard endpoint (no inference components)**
+- Set `sagemaker_model_endpoint` to endpoint name
+- Leave `sagemaker_model_inference_component` as placeholder
+- Both validation and app will work without inference component ✅
+
+**Scenario 2: Multi-model endpoint with inference components**
+- Set `sagemaker_model_endpoint` to endpoint name
+- Set `sagemaker_model_inference_component` to adapter name
+- Both validation and app will use the specified component ✅
+
+### Files Modified
+
+- ✅ `workshop4/validation/validate_sagemaker_endpoint.py` - Fixed inference component check
+
+---
+
+
+
+## Fixed: Inference Component Placeholder Consistency ✅
+
+**Date**: January 17, 2026
+
+### Issue Identified
+
+User asked if we're consistently treating the inference component placeholder. Discovered **two different placeholder values** being used:
+
+1. ✅ `"my-sagemaker-model-inference-component"` - Official placeholder (from CloudFormation)
+2. ❌ `"my-agent-model-inference-component"` - Incorrect variant used in some files
+
+### Root Cause
+
+During the January 16 naming convention refactoring, some files were updated to use `"my-agent-model-inference-component"` but this was inconsistent with:
+- CloudFormation template default value
+- SSM parameter validation script
+- Most of the application code
+
+### Fix Applied
+
+**Updated to use consistent placeholder everywhere: `"my-sagemaker-model-inference-component"`**
+
+**Files Fixed:**
+1. ✅ `workshop4/multi_agent/sagemaker_model.py` - Changed from `my-agent-model-inference-component`
+2. ✅ `workshop4/multi_agent/app.py` - Changed from `my-agent-model-inference-component`
+
+**Files Already Correct:**
+- ✅ `workshop4/ssm/teachers-assistant-params.yaml` - Uses `my-sagemaker-model-inference-component`
+- ✅ `workshop4/validation/validate_sagemaker_endpoint.py` - Uses `my-sagemaker-model-inference-component`
+- ✅ `workshop4/validation/validate_ssm_parameters.py` - Uses `my-sagemaker-model-inference-component`
+- ✅ `workshop4/multi_agent/config.py` - Uses `my-sagemaker-model-inference-component`
+- ✅ `workshop4/multi_agent/app.py` (other occurrences) - Uses `my-sagemaker-model-inference-component`
+
+### Verification
+
+Searched entire codebase - **NO occurrences** of `"my-agent-model-inference-component"` remain.
+
+All code now consistently uses: **`"my-sagemaker-model-inference-component"`**
+
+### Consistent Behavior Confirmed
+
+**All files now treat the placeholder identically:**
+- If value is `None`, empty string, or `"my-sagemaker-model-inference-component"` → NOT used
+- If value is anything else → Used as inference component name
+
+---
+

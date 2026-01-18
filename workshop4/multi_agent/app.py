@@ -432,7 +432,7 @@ def run_kb_agent(query, model, model_info):
                     'temperature': TEMPERATURE
                 }
                 # Add inference component if it's set and not the default placeholder
-                if inference_component and inference_component != "my-agent-model-inference-component":
+                if inference_component and inference_component != "my-sagemaker-model-inference-component":
                     model_settings['inference_component_name'] = inference_component
             
             # Generate a clear, conversational answer using the retrieved information

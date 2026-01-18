@@ -112,8 +112,8 @@ def create_sagemaker_model(
         "region_name": region,
     }
     
-    # Add inference component if specified and not empty
-    if inference_component and inference_component != "my-agent-model-inference-component":
+    # Add inference component if specified and not a placeholder
+    if inference_component and inference_component != "my-sagemaker-model-inference-component":
         endpoint_config["inference_component_name"] = inference_component
     
     # Create the SageMaker AI Model object
