@@ -198,25 +198,6 @@ aws ssm put-parameter \
 
 For detailed SSM deployment instructions, see `workshop4/ssm/README.md`.
 
-**Windows PowerShell:**
-```powershell
-$Env:AWS_ACCESS_KEY_ID="your-access-key"
-$Env:AWS_SECRET_ACCESS_KEY="your-secret-key"
-$Env:AWS_SESSION_TOKEN="your-session-token"
-$Env:AWS_REGION="us-east-1"
-```
-
-#### Option 2: AWS CLI Configuration
-
-```bash
-# Install AWS CLI if not already installed
-pip install awscli
-
-# Configure credentials
-aws configure
-# Enter your access key, secret key, region, and output format
-```
-
 ### Step 6: Verify Setup
 
 #### Test Python and Dependencies
@@ -233,21 +214,95 @@ which python
 # Should show path to .venv/bin/python or .venv/Scripts/python
 ```
 
-#### Test AWS Connectivity and SSM Parameters
+#### Test AWS Connectivity
 ```bash
 # Test AWS credentials
 aws sts get-caller-identity
 
 # Test Bedrock access
 aws bedrock list-foundation-models --region $AWS_REGION
-
-# Verify SSM parameters were created
-aws ssm get-parameters-by-path \
-  --path "/teachers_assistant/dev" \
-  --recursive \
-  --query "Parameters[*].[Name,Value]" \
-  --output table
 ```
+
+#### Validate SSM Parameters (REQUIRED)
+
+Before running the multi-agent application, validate that all SSM parameters are accessible:
+
+```bash
+# Navigate to validation directory
+cd workshop4/validation
+
+# Run SSM parameter validation
+python validate_ssm_parameters.py
+```
+
+**Expected Output:**
+```
+======================================================================
+  SSM Parameter Store Validation
+======================================================================
+
+📋 Configuration:
+   Environment: dev
+   AWS Region: us-east-1
+   Parameter Path: /teachers_assistant/dev/
+----------------------------------------------------------------------
+
+🔍 Fetching parameters from SSM Parameter Store...
+
+📊 Validation Results:
+   Expected parameters: 8
+   Found parameters: 8
+   Missing parameters: 0
+
+✅ ALL PARAMETERS FOUND:
+----------------------------------------------------------------------
+   default_model_id                         = us.amazon.nova-2-lite-v1:0
+   max_results                              = 9
+   min_score                                = 0.000001
+   sagemaker_model_endpoint                 = my-sagemaker-model-endpoint ⚠️  (placeholder - needs update)
+   sagemaker_model_inference_component      = my-sagemaker-model-inference-component ⚠️  (placeholder - needs update)
+   strands_knowledge_base_id                = my-strands-knowledge-base-id ⚠️  (placeholder - needs update)
+   temperature                              = 0.3
+   xgboost_model_endpoint                   = my-xgboost-model-endpoint ⚠️  (placeholder - needs update)
+----------------------------------------------------------------------
+
+⚠️  WARNING: 4 parameter(s) still have placeholder values:
+   - sagemaker_model_endpoint
+   - sagemaker_model_inference_component
+   - strands_knowledge_base_id
+   - xgboost_model_endpoint
+
+💡 Update these parameters with your actual AWS resource names:
+   1. Via AWS Console: Systems Manager → Parameter Store
+   2. Via AWS CLI: aws ssm put-parameter --name <path> --value <value> --overwrite
+
+======================================================================
+✅ SSM Parameter Store validation PASSED
+======================================================================
+```
+
+**Note**: Parameters with placeholder values (starting with `my-`) should be updated with your actual AWS resource names before running the application.
+
+#### Validate SageMaker Endpoints (Optional)
+
+If you're using SageMaker models, validate that your endpoints are operational:
+
+```bash
+# Still in workshop4/validation directory
+
+# Validate SageMaker model endpoint
+python validate_sagemaker_endpoint.py
+
+# Validate XGBoost model endpoint
+python validate_xgboost_endpoint.py
+```
+
+These validation scripts will:
+- Read endpoint names from SSM Parameter Store
+- Send test inference requests
+- Verify endpoints are responding correctly
+
+**Skip these if you're only using Bedrock models.**
 
 #### Test Basic Strands Functionality
 ```bash

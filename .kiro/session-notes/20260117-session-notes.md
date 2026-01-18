@@ -108,6 +108,69 @@ export AWS_REGION=us-east-1
 
 ---
 
+## SSM Parameter Validation Script Created ✅
+
+**Issue**: Git Bash on Windows has path conversion issues with AWS CLI commands containing forward slashes, making it difficult to verify SSM parameters via CLI.
+
+**Solution**: Created Python validation script that uses boto3 to fetch and validate SSM parameters.
+
+**New File**: `workshop4/validation/validate_ssm_parameters.py`
+
+**Features**:
+- Validates all 8 required SSM parameters exist
+- Displays current parameter values
+- Identifies placeholder values that need updating (exact match, not prefix)
+- Provides clear error messages and remediation steps
+- Handles IAM permission errors gracefully
+- Works consistently across all platforms (Windows, macOS, Linux)
+
+**Placeholder Detection Fix**:
+- Changed from prefix matching (`value.startswith('my-')`) to exact matching
+- Now only flags exact placeholder values: `my-sagemaker-model-endpoint`, `my-sagemaker-model-inference-component`, `my-strands-knowledge-base-id`, `my-xgboost-model-endpoint`
+- Real endpoint names like `my-gpt-oss-20b-1-1768709790` are no longer flagged as placeholders
+
+**Usage**:
+```bash
+cd workshop4/validation
+python validate_ssm_parameters.py
+```
+
+**Output**:
+- ✅ Lists all 8 parameters with their current values
+- ⚠️ Warns about placeholder values (starting with `my-`)
+- ❌ Reports missing parameters with remediation steps
+- 💡 Provides IAM permission guidance if access denied
+
+**Documentation Updates**:
+- Updated `workshop4/GETTING-STARTED.md` Step 6
+- Added "Validate SSM Parameters (REQUIRED)" section
+- Added "Validate SageMaker Endpoints (Optional)" section
+- Positioned validation as prerequisite before running multi-agent app
+- Included expected output example
+- Clarified that endpoint validation is optional (only for SageMaker users)
+
+**Benefits**:
+1. **Cross-Platform**: Works on Windows Git Bash without path conversion issues
+2. **User-Friendly**: Clear output with color-coded status indicators
+3. **Comprehensive**: Validates all parameters in one command
+4. **Actionable**: Provides specific remediation steps for each error type
+5. **Prerequisite Check**: Catches configuration issues before app startup
+
+**Validation Workflow**:
+1. Deploy CloudFormation stack (creates 8 SSM parameters with placeholders)
+2. Run `validate_ssm_parameters.py` (verifies parameters exist)
+3. Update placeholder values via AWS Console or CLI
+4. Run `validate_ssm_parameters.py` again (confirms updates)
+5. Optionally run `validate_sagemaker_endpoint.py` and `validate_xgboost_endpoint.py`
+6. Proceed to run multi-agent application
+
+**Directory Rename**: `workshop4/sagemaker/` → `workshop4/validation/`
+- Reflects broader purpose: validating SSM parameters AND endpoints
+- All validation scripts now in one logical location
+- Updated all documentation references
+
+---
+
 ## Ready to Begin Testing
 
 ---
