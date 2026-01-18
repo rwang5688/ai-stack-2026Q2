@@ -289,6 +289,82 @@ All documentation is now aligned with the unified architecture. Ready to proceed
 
 ---
 
+## Validation Script Enhancement ✅
+
+**Date**: January 17, 2026
+
+### User Feedback
+User reviewed GETTING-STARTED.md and noted:
+- Both `multi_agent` and `deploy_multi_agent` apps support **both** Bedrock and SageMaker models
+- Therefore, all THREE validation scripts should be run as prerequisites
+- Suggested creating `validate_all.py` to run all three validations in sequence
+- Requested sample output showing all three validations passing
+
+### Implementation
+
+**Created `validate_all.py`** ✅:
+- Runs all three validation scripts in sequence
+- Provides comprehensive summary of results
+- Clear pass/fail status for each validation
+- Helpful next steps and troubleshooting guidance
+- Exit codes: 0 if all pass, 1 if any fail
+
+**Updated GETTING-STARTED.md** ✅:
+- Renamed section to "Run All Validations (REQUIRED)"
+- Added Option 1: Run `validate_all.py` (recommended)
+- Added Option 2: Run individual scripts
+- Included comprehensive sample output showing all three validations
+- Added "Why All Three Validations?" section explaining the rationale
+- Clarified that both apps support both model providers
+
+### Key Points
+- **Unified Architecture**: Both apps support Bedrock + SageMaker models
+- **Complete Validation**: All three scripts verify different aspects:
+  1. SSM Parameter Store configuration
+  2. SageMaker model endpoint operational
+  3. XGBoost model endpoint operational
+- **Better UX**: Single command runs all validations with clear summary
+- **Clear Documentation**: Sample output shows what success looks like
+
+### Files Modified
+- ✅ `workshop4/validation/validate_all.py` - NEW comprehensive validation script
+- ✅ `workshop4/GETTING-STARTED.md` - Updated validation section with all three scripts
+- ✅ `.kiro/session-notes/20260117-session-notes.md` - This update
+
+### Validation Results ✅
+
+User tested the new `validate_all.py` script successfully:
+
+```bash
+cd workshop4/validation
+uv run validate_all.py
+```
+
+**Results**: ✅ ALL VALIDATIONS PASSED
+- ✅ SSM Parameter Store validation PASSED
+- ✅ SageMaker Model Endpoint validation PASSED  
+- ✅ XGBoost Model Endpoint validation PASSED
+
+All three endpoints are operational and ready for testing the multi-agent applications.
+
+**Sample output updated in GETTING-STARTED.md** to match actual execution results.
+
+---
+
+## Ready to Test Multi-Agent Applications 🚀
+
+All prerequisites complete:
+- ✅ Environment setup verified
+- ✅ SSM Parameter Store configured
+- ✅ All three validation scripts passing
+- ✅ Documentation aligned with unified architecture
+
+**Next Steps**:
+1. Follow PART-2-MULTI-AGENT.md to test local `multi_agent` app
+2. Follow PART-3-DEPLOY-MULTI-AGENT.md to deploy production app
+
+---
+
 # January 16, 2026 - Naming Convention Refactoring & Knowledge Base ID Correction
 
 ## Session Overview

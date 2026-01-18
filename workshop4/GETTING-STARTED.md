@@ -223,20 +223,62 @@ aws sts get-caller-identity
 aws bedrock list-foundation-models --region $AWS_REGION
 ```
 
-#### Validate SSM Parameters (REQUIRED)
+#### Run All Validations (REQUIRED)
 
-Before running the multi-agent application, validate that all SSM parameters are accessible:
+Before running the multi-agent application, validate that your environment is properly configured. Since both the `multi_agent` and `deploy_multi_agent` applications support **both Bedrock and SageMaker models**, you should run **all three validation scripts**.
+
+**Option 1: Run All Validations at Once (Recommended)**
 
 ```bash
 # Navigate to validation directory
 cd workshop4/validation
 
-# Run SSM parameter validation
-python validate_ssm_parameters.py
+# Run comprehensive validation
+uv run validate_all.py
 ```
 
-**Expected Output:**
+This will run all three validations in sequence and provide a summary.
+
+**Option 2: Run Individual Validations**
+
+If you prefer to run validations individually:
+
+```bash
+# Navigate to validation directory
+cd workshop4/validation
+
+# 1. Validate SSM Parameter Store (REQUIRED)
+uv run validate_ssm_parameters.py
+
+# 2. Validate SageMaker Model Endpoint (REQUIRED)
+uv run validate_sagemaker_endpoint.py
+
+# 3. Validate XGBoost Model Endpoint (REQUIRED)
+uv run validate_xgboost_endpoint.py
 ```
+
+#### Expected Output
+
+When running `validate_all.py`, you should see output similar to this:
+
+```
+======================================================================
+  Comprehensive Validation - Multi-Agent Application
+======================================================================
+
+📋 Configuration:
+   Environment: dev
+   AWS Region: us-east-1
+   Python: D:\Users\wangrob\workspace\ai-stack-2026Q2\workshop4\venv\Scripts\python.exe
+
+----------------------------------------------------------------------
+
+🔍 Running Validation 1 of 3...
+
+======================================================================
+  Validation 1: SSM Parameter Store
+======================================================================
+
 ======================================================================
   SSM Parameter Store Validation
 ======================================================================
@@ -259,50 +301,132 @@ python validate_ssm_parameters.py
    default_model_id                         = us.amazon.nova-2-lite-v1:0
    max_results                              = 9
    min_score                                = 0.000001
-   sagemaker_model_endpoint                 = my-sagemaker-model-endpoint ⚠️  (placeholder - needs update)
-   sagemaker_model_inference_component      = my-sagemaker-model-inference-component ⚠️  (placeholder - needs update)
-   strands_knowledge_base_id                = my-strands-knowledge-base-id ⚠️  (placeholder - needs update)
+   sagemaker_model_endpoint                 = my-gpt-oss-20b-1-1768709790
+   sagemaker_model_inference_component      = adapter-my-gpt-oss-20b-1-1768709790-1768709796
+   strands_knowledge_base_id                = IMW46CITZE
    temperature                              = 0.3
-   xgboost_model_endpoint                   = my-xgboost-model-endpoint ⚠️  (placeholder - needs update)
+   xgboost_model_endpoint                   = xgboost-serverless-ep2026-01-12-05-31-16
 ----------------------------------------------------------------------
-
-⚠️  WARNING: 4 parameter(s) still have placeholder values:
-   - sagemaker_model_endpoint
-   - sagemaker_model_inference_component
-   - strands_knowledge_base_id
-   - xgboost_model_endpoint
-
-💡 Update these parameters with your actual AWS resource names:
-   1. Via AWS Console: Systems Manager → Parameter Store
-   2. Via AWS CLI: aws ssm put-parameter --name <path> --value <value> --overwrite
 
 ======================================================================
 ✅ SSM Parameter Store validation PASSED
 ======================================================================
+
+----------------------------------------------------------------------
+
+🔍 Running Validation 2 of 3...
+
+======================================================================
+  Validation 2: SageMaker Model Endpoint
+======================================================================
+
+======================================================================
+  SageMaker Model Endpoint Validation
+======================================================================
+
+📋 Environment: dev
+   AWS Region: us-east-1
+   Reading configuration from SSM Parameter Store...
+   Parameter path: /teachers_assistant/dev/
+
+🔍 Validating SageMaker Model Endpoint: my-gpt-oss-20b-1-1768709790
+   Region: us-east-1
+   Inference Component: adapter-my-gpt-oss-20b-1-1768709790-1768709796
+------------------------------------------------------------
+
+📤 Sending test request...
+   Prompt: What is the capital of France?
+   Max tokens: 50
+
+✅ SUCCESS: Endpoint is responding correctly!
+
+📥 Response:
+   {"generated_text": "..."}
+
+� Note: The response quality depends on the model type:
+   - Base models may generate less coherent text
+   - Instruction-tuned models will follow prompts better
+   - The validation confirms the endpoint is operational
+
+============================================================
+✅ SageMaker model endpoint validation PASSED
+============================================================
+
+----------------------------------------------------------------------
+
+🔍 Running Validation 3 of 3...
+
+======================================================================
+  Validation 3: XGBoost Model Endpoint
+======================================================================
+
+======================================================================
+  XGBoost Model Endpoint Validation
+======================================================================
+
+� Environment: dev
+   AWS Region: us-east-1
+   Reading configuration from SSM Parameter Store...
+   Parameter path: /teachers_assistant/dev/
+
+🔍 Validating XGBoost Model Endpoint: xgboost-serverless-ep2026-01-12-05-31-16
+   Region: us-east-1
+------------------------------------------------------------
+
+📤 Sending test request...
+   Sample customer data (59 features)
+   Format: CSV (text/csv)
+
+   Feature values:
+   29,2,999,0,1,0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,...
+
+   First 10 features: 29, 2, 999, 0, 1, 0, 0.0, 1.0, 0.0, 0.0
+   Last 10 features: 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0
+
+✅ SUCCESS: Endpoint is responding correctly!
+
+📥 Response:
+   Raw prediction: 0.04957985132932663
+   Prediction label: Reject
+   Confidence: 4.96%
+
+============================================================
+✅ XGBoost model endpoint validation PASSED
+============================================================
+
+======================================================================
+  Validation Summary
+======================================================================
+
+   SSM Parameter Store            ✅ PASSED
+   SageMaker Model Endpoint       ✅ PASSED
+   XGBoost Model Endpoint         ✅ PASSED
+
+======================================================================
+✅ ALL VALIDATIONS PASSED
+======================================================================
+
+🎉 Your environment is ready for the multi-agent application!
+
+Next Steps:
+   1. Review PART-2-MULTI-AGENT.md for local development
+   2. Run: cd ../multi_agent && streamlit run app.py
+   3. Test model selection and agent features
 ```
 
-**Note**: Parameters with placeholder values (starting with `my-`) should be updated with your actual AWS resource names before running the application.
+#### Why All Three Validations?
 
-#### Validate SageMaker Endpoints (Optional)
+Both the `multi_agent` (local) and `deploy_multi_agent` (production) applications support:
+- ✅ **Bedrock Models**: 4 models via cross-region inference profiles
+- ✅ **SageMaker Models**: Custom trained models via endpoints
+- ✅ **XGBoost Models**: Loan prediction assistant feature
 
-If you're using SageMaker models, validate that your endpoints are operational:
+Running all three validations ensures:
+1. **SSM Parameter Store** is accessible and configured
+2. **SageMaker endpoint** is operational for custom model selection
+3. **XGBoost endpoint** is operational for loan prediction features
 
-```bash
-# Still in workshop4/validation directory
-
-# Validate SageMaker model endpoint
-python validate_sagemaker_endpoint.py
-
-# Validate XGBoost model endpoint
-python validate_xgboost_endpoint.py
-```
-
-These validation scripts will:
-- Read endpoint names from SSM Parameter Store
-- Send test inference requests
-- Verify endpoints are responding correctly
-
-**Skip these if you're only using Bedrock models.**
+**Note**: If you only plan to use Bedrock models and skip the loan prediction feature, you can skip validations 2 and 3. However, running all three is recommended to verify your complete environment.
 
 #### Test Basic Strands Functionality
 ```bash
