@@ -79,7 +79,7 @@ def create_bedrock_model(
 
 
 
-def create_model_from_config(model_config: Dict[str, Any]) -> BedrockModel:
+def create_model_from_config(model_config: dict) -> BedrockModel:
     """
     Create a Bedrock model instance from a configuration dictionary.
     

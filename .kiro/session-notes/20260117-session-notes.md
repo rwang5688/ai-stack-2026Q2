@@ -365,6 +365,37 @@ All prerequisites complete:
 
 ---
 
+## Part 2 Testing: Multi-Agent Local App 🚀
+
+**Date**: January 17, 2026
+
+### Issue 1: Inconsistent type annotations in bedrock_model.py ❌
+
+**Error**:
+```
+NameError: name 'Dict' is not defined
+Traceback:
+File "bedrock_model.py", line 82, in <module>
+    def create_model_from_config(model_config: Dict[str, Any]) -> BedrockModel:
+```
+
+**Root Cause**: 
+- `bedrock_model.py` used `Dict[str, Any]` (requires `from typing import Dict, Any`)
+- `sagemaker_model.py` used `dict` (built-in type, no import needed)
+- Inconsistent type annotations between the two files
+
+**Fix Applied**: ✅
+- Changed `Dict[str, Any]` to `dict` in `bedrock_model.py` to match `sagemaker_model.py`
+- Removed unnecessary `from typing import Dict, Any` import
+- Both files now use consistent built-in `dict` type (Python 3.9+ style)
+
+**Files Modified**:
+- ✅ `workshop4/multi_agent/bedrock_model.py` - Changed to built-in `dict` type
+
+**Status**: Fixed, ready to retry `streamlit run app.py`
+
+---
+
 # January 16, 2026 - Naming Convention Refactoring & Knowledge Base ID Correction
 
 ## Session Overview
