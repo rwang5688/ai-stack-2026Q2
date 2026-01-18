@@ -9,7 +9,11 @@ This workshop is designed as a progressive learning experience. **Follow the pat
 ### 🚀 **Start Here** → [Getting Started Guide](GETTING-STARTED.md)
 Set up your development environment, install prerequisites, and verify your setup works correctly.
 
-### 📚 **Learn Foundations** → [Part 1: Foundational Modules](PART-1-FOUNDATIONS.md)
+### 📚 **Learn Foundations**
+
+Learn the the foundations of building agents with Strands Agents SDK.
+
+#### 📚 **Part 1: Foundational Modules** → [PART-1-FOUNDATIONS.md](PART-1-FOUNDATIONS.md)
 Master the building blocks through hands-on modules:
 - **Module 1**: MCP Calculator - Basic tool creation and usage
 - **Module 2**: Weather Agent - External API integration  
@@ -17,7 +21,8 @@ Master the building blocks through hands-on modules:
 - **Module 4**: Agent Workflows - Orchestration patterns
 - **Module 5**: Memory Agent - Persistent state management
 - **Module 6**: Meta-Tooling Agent - Dynamic tool creation
-- **Module 8**: MCPify Lambda - Serverless MCP tools *(coming soon)*
+
+**Implementation**: [`modules/`](modules/)
 
 ### 🎓 **Build Multi-Agent Applications**
 
