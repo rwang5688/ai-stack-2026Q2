@@ -1,5 +1,7 @@
 from strands import Agent, tool
 from cross_platform_tools import get_general_tools
+from config import get_default_model_config
+from model_factory import create_model_from_config
 import json
 
 GENERAL_ASSISTANT_SYSTEM_PROMPT = """
@@ -47,7 +49,15 @@ def general_assistant(query: str) -> str:
     
     try:
         print("Routed to General Assistant")
+        
+        # Get default model config from SSM Parameter Store
+        model_config = get_default_model_config()
+        
+        # Create model from config
+        model = create_model_from_config(model_config)
+        
         general_agent = Agent(
+            model=model,
             system_prompt=GENERAL_ASSISTANT_SYSTEM_PROMPT,
             tools=get_general_tools(),  # No specialized tools needed for general knowledge
         )

@@ -170,7 +170,7 @@ This implementation plan follows a local-first development approach: build and t
   - Ask the user if questions arise
   - _Requirements: 7.1, 7.2, 7.5, 7.6, 7.7, 7.8, 7.9, 8.5, 8.6_
 
-- [ ] 11. Copy all multi_agent modules to deploy_multi_agent/docker_app
+- [x] 11. Copy all multi_agent modules to deploy_multi_agent/docker_app
   - Copy ALL Python modules from `multi_agent/` to `deploy_multi_agent/docker_app/`
   - This includes all assistant modules, config, model modules, and utilities
   - Verify no conflicts with existing files
@@ -178,7 +178,7 @@ This implementation plan follows a local-first development approach: build and t
   - **Note**: This task demonstrates how Kiro can automate deployment runbooks by reading documentation
   - _Requirements: 9.1_
 
-- [ ] 12. Integrate multi_agent/app.py logic into deploy_multi_agent/docker_app/app.py
+- [x] 12. Integrate multi_agent/app.py logic into deploy_multi_agent/docker_app/app.py
   - Merge application logic from `multi_agent/app.py` into `deploy_multi_agent/docker_app/app.py`
   - Preserve Cognito authentication and authorization sections
   - Keep authentication UI elements intact (logout button, user info display)

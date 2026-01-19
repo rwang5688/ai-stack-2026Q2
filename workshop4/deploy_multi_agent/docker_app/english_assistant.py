@@ -1,5 +1,7 @@
 from strands import Agent, tool
 from cross_platform_tools import get_english_tools
+from config import get_default_model_config
+from model_factory import create_model_from_config
 import json
 
 ENGLISH_ASSISTANT_SYSTEM_PROMPT = """
@@ -44,8 +46,15 @@ def english_assistant(query: str) -> str:
     
     try:
         print("Routed to English Assistant")
+        
+        # Get default model config from SSM Parameter Store
+        model_config = get_default_model_config()
+        
+        # Create model from config
+        model = create_model_from_config(model_config)
 
         english_agent = Agent(
+            model=model,
             system_prompt=ENGLISH_ASSISTANT_SYSTEM_PROMPT,
             tools=get_english_tools(),
         )

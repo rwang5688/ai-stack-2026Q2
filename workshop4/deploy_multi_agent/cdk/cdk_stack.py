@@ -132,7 +132,7 @@ class CdkStack(Stack):
                 subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS),
         )
 
-        # Grant access to Bedrock and Knowledge Base
+        # Grant access to Bedrock, Knowledge Base, SageMaker, and SSM Parameter Store
         bedrock_policy = iam.Policy(self, f"{prefix}BedrockPolicy",
                                     statements=[
                                         iam.PolicyStatement(
@@ -159,9 +159,20 @@ class CdkStack(Stack):
                                                 "bedrock:GetIngestionJob",
                                                 "bedrock:ListIngestionJobs",
                                                 
+                                                # SageMaker Model Invocation
+                                                "sagemaker:InvokeEndpoint",
+                                                "sagemaker:InvokeEndpointWithResponseStream",
+                                                
+                                                # SageMaker Endpoint Management (for validation)
+                                                "sagemaker:DescribeEndpoint",
+                                                "sagemaker:ListEndpoints",
+                                                "sagemaker:DescribeInferenceComponent",
+                                                "sagemaker:ListInferenceComponents",
+                                                
                                                 # Systems Manager Parameter Store
                                                 "ssm:GetParameter",
-                                                "ssm:GetParameters"
+                                                "ssm:GetParameters",
+                                                "ssm:GetParametersByPath"
                                             ],
                                             resources=["*"]
                                         ),

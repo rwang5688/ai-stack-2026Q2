@@ -3827,3 +3827,403 @@ Should document this comparison in workshop materials to help students understan
 
 
 
+
+
+---
+
+# January 19, 2026 (Continued) - Deployment Preparation
+
+## Task 10 Completion ✅
+
+Successfully tested all multi-agent assistants locally:
+- ✅ **Loan Offering Assistant** - XGBoost predictions working correctly
+  - Tested with 59-feature CSV payload
+  - Prediction: Reject with 95.04% confidence
+  - Raw score: 0.0496
+- ✅ **Knowledge Base Assistant** - Retrieving k-pop groups info
+- ✅ **Language Assistant** - Translating "hasta la vista baby"
+- ✅ **Math Assistant** - Solving quadratic equations
+
+All assistants functioning correctly with SSM Parameter Store configuration and model selection.
+
+## Amazon Nova 2 Lite Customization Data Format Issue 🔧
+
+**Problem**: Amazon Nova 2 Lite customization training job failed with data format error:
+```
+ClientError: Data download failed: Failed to download data. 
+Unable to parse S3 file due to invalid data schema/format at line 1. 
+'content' field is of string format. Required 'content' field must be an array.
+```
+
+**Root Cause**: Training data in `workshop2/input/train_sft_1k.jsonl` uses OpenAI-style format:
+```json
+{"messages": [{"content": "text here", "role": "user"}, {"content": "text here", "role": "assistant"}]}
+```
+
+Amazon Nova customization requires Bedrock conversation format:
+```json
+{
+  "schemaVersion": "bedrock-conversation-2024",
+  "messages": [
+    {
+      "role": "user",
+      "content": [{"text": "text here"}]
+    },
+    {
+      "role": "assistant",
+      "content": [{"text": "text here"}]
+    }
+  ]
+}
+```
+
+**Solution**: Created conversion script in `workshop2/transform2/`
+
+### Conversion Script Implementation ✅
+
+**Files Created**:
+- `workshop2/transform2/converter.py` - Conversion logic
+- `workshop2/transform2/main.py` - Main execution script
+- `workshop2/transform2/__init__.py` - Package initialization
+
+**Key Functions**:
+- `convert_message_to_bedrock_format()` - Converts single message
+- `convert_record_to_bedrock_format()` - Converts complete record with schemaVersion
+- `convert_jsonl_file()` - Processes entire JSONL file
+- `format_output_filename()` - Generates output filename with `_transform2ed.jsonl` suffix
+
+**Conversion Results**:
+- ✅ `train_sft_1k.jsonl` → `train_sft_1k_transform2ed.jsonl` (1000 records)
+- ❌ `train_dpo_1k.jsonl` - Different format (DPO with positive/negative conversations)
+- ❌ `train_rlaif_1k.jsonl` - Different format
+- ❌ `train_rlvr_1k.jsonl` - Different format
+
+Only SFT (Supervised Fine-Tuning) file needed for Nova customization.
+
+**Reference**: [Amazon Nova Fine-Tuning Data Format](https://docs.aws.amazon.com/nova/latest/userguide/fine-tune-prepare-data-understanding.html)
+
+## Deployment Merge Complete ✅
+
+### Task 11: Copy Modules to deploy_multi_agent/docker_app ✅
+
+Copied all new modules from `multi_agent/` to `deploy_multi_agent/docker_app/`:
+- ✅ `config.py` - SSM Parameter Store configuration
+- ✅ `bedrock_model.py` - Bedrock model factory
+- ✅ `sagemaker_model.py` - SageMaker model factory
+- ✅ `model_factory.py` - Unified model creation
+- ✅ `loan_offering_assistant.py` - XGBoost loan predictions
+
+### Task 12: Merge app.py Logic ✅
+
+Successfully merged `multi_agent/app.py` into `deploy_multi_agent/docker_app/app.py`:
+
+**Preserved**:
+- ✅ Cognito authentication section (lines 1-25)
+- ✅ Authentication UI (user info + logout button)
+- ✅ Authentication enforcement (`st.stop()` if not logged in)
+
+**Added**:
+- ✅ Model selection dropdown (5 models: 4 Bedrock + 1 SageMaker)
+- ✅ Loan offering assistant integration
+- ✅ Updated configuration using `config.py` instead of `config_file.py`
+- ✅ Model factory pattern for dynamic model creation
+- ✅ Debug section with full configuration details
+- ✅ Updated knowledge base functions to use selected model
+- ✅ Updated teacher agent to use selected model
+- ✅ Loan prediction example in sidebar
+
+**Model Selection Options**:
+1. Amazon Nova Pro (us.amazon.nova-pro-v1:0)
+2. Amazon Nova 2 Lite (us.amazon.nova-2-lite-v1:0) - DEFAULT
+3. Anthropic Claude Haiku 4.5 (us.anthropic.claude-haiku-4-5-20251001-v1:0)
+4. Anthropic Claude Sonnet 4.5 (us.anthropic.claude-sonnet-4-5-20250929-v1:0)
+5. Custom SageMaker Model
+
+### CDK Stack IAM Permissions Update ✅
+
+Updated `workshop4/deploy_multi_agent/cdk/cdk_stack.py` to include all necessary permissions:
+
+**Added SageMaker Permissions**:
+- `sagemaker:InvokeEndpoint` - Invoke SageMaker endpoints
+- `sagemaker:InvokeEndpointWithResponseStream` - Streaming responses
+- `sagemaker:DescribeEndpoint` - Validate endpoint exists
+- `sagemaker:ListEndpoints` - List available endpoints
+- `sagemaker:DescribeInferenceComponent` - Check inference components
+- `sagemaker:ListInferenceComponents` - List inference components
+
+**Added SSM Permission**:
+- `ssm:GetParametersByPath` - Get all parameters under a path (used by config.py)
+
+**Existing Permissions** (already present):
+- ✅ `bedrock:InvokeModel` - Bedrock model invocation
+- ✅ `bedrock:InvokeModelWithResponseStream` - Streaming
+- ✅ All Knowledge Base permissions (retrieve, ingest, manage)
+- ✅ `ssm:GetParameter` - Individual parameter reads
+- ✅ `ssm:GetParameters` - Multiple parameter reads
+
+**Complete IAM Coverage**:
+1. ✅ SSM Parameter Store reads (for config.py)
+2. ✅ Bedrock model invocation (for teacher agent and assistants)
+3. ✅ SageMaker endpoint invocation (for custom reasoning model)
+4. ✅ SageMaker Runtime invocation (for XGBoost loan predictions)
+5. ✅ Knowledge Base operations (for memory tool)
+
+## Current Status
+
+### Completed Tasks ✅
+- ✅ Task 1-10: All local development and testing complete
+- ✅ Task 11: Modules copied to deploy_multi_agent/docker_app
+- ✅ Task 12: app.py logic merged with authentication preserved
+- ✅ CDK stack IAM permissions updated
+
+### Ready for Deployment 🚀
+- ✅ All modules in place
+- ✅ Authentication preserved
+- ✅ Model selection integrated
+- ✅ Loan assistant integrated
+- ✅ IAM permissions configured
+- ✅ Amazon Nova 2 Lite customization training job running
+
+### Next Steps
+1. 🎯 Task 13: Deploy to ECS Fargate using CDK (on Ubuntu)
+2. 🎯 Task 14: Test deployed application with Cognito authentication
+
+## Key Learnings
+
+### Data Format Requirements
+- Amazon Nova customization requires specific Bedrock conversation format
+- OpenAI-style format must be converted before training
+- Only SFT (Supervised Fine-Tuning) data needed for basic customization
+
+### Deployment Architecture
+- Local development (`multi_agent/`) and production (`deploy_multi_agent/`) share same features
+- Authentication is the key difference (none vs. Cognito)
+- Both support dynamic model selection (Bedrock + SageMaker)
+- IAM permissions must cover all model providers and services
+
+### Configuration Management
+- SSM Parameter Store provides centralized configuration
+- Environment variables for framework requirements (STRANDS_KNOWLEDGE_BASE_ID)
+- Model selection happens at runtime, not configuration time
+- Debug panel helps troubleshoot configuration issues
+
+---
+
+**Session Status**: Ready for Ubuntu deployment (Task 13)
+
+
+## Documentation Update: Merge Instructions Added ✅
+
+**Date**: January 19, 2026
+
+### Issue
+
+User correctly pointed out that `PART-3-DEPLOY-MULTI-AGENT.md` didn't explain the merge process from `multi_agent/` to `deploy_multi_agent/docker_app/`.
+
+### Solution
+
+Added comprehensive "Step 1: Merge Local Code to Deployment Directory" section to `PART-3-DEPLOY-MULTI-AGENT.md`.
+
+### New Documentation Section
+
+**Step 1: Merge Local Code to Deployment Directory**
+
+**Why Merge?**
+- `deploy_multi_agent/docker_app/` contains production version with Cognito authentication
+- `multi_agent/` contains latest implementations with model factory pattern and bug fixes
+- Need to merge tested local code into deployment directory before deploying
+
+**Merge Strategy: Bulk Copy + Careful app.py Merge**
+
+**Step 1.1: Bulk Copy All Files (Except app.py)**
+
+Copy ALL Python files from `multi_agent/` to `deploy_multi_agent/docker_app/` EXCEPT `app.py`:
+- `config.py`
+- `bedrock_model.py`
+- `sagemaker_model.py`
+- `model_factory.py`
+- `teachers_assistant.py`
+- `math_assistant.py`
+- `english_assistant.py`
+- `computer_science_assistant.py`
+- `language_assistant.py`
+- `loan_offering_assistant.py`
+- `no_expertise.py`
+- `cross_platform_tools.py`
+
+**Why bulk copy?** All assistant files changed to use the model_factory pattern instead of hardcoded models. Copying everything ensures you don't miss any changes.
+
+**Step 1.2: Carefully Merge app.py**
+
+The `app.py` file requires special handling to preserve Cognito authentication.
+
+**Preserve from deploy_multi_agent/docker_app/app.py**:
+- Lines 1-25: Cognito authentication imports and setup
+- Authentication UI section (login form, session state)
+
+**Merge from multi_agent/app.py**:
+- Model selection logic
+- Agent initialization with model_factory
+- Conversation handling
+- All functional improvements
+
+**Key Sections to Preserve**:
+```python
+# From deploy_multi_agent/docker_app/app.py (KEEP THIS)
+from utils.auth import check_authentication
+
+# Authentication check
+if not check_authentication():
+    st.stop()
+```
+
+**Key Sections to Merge**:
+```python
+# From multi_agent/app.py (MERGE THIS)
+from model_factory import create_model
+
+# Model selection
+selected_model = st.selectbox(...)
+model = create_model(selected_model, config)
+
+# Agent initialization with model
+agent = TeachersAssistant(model=model, ...)
+```
+
+### Verification Checklist
+
+After merging, verify:
+- ✅ All 12 Python files copied from `multi_agent/` to `deploy_multi_agent/docker_app/`
+- ✅ `app.py` has Cognito authentication preserved
+- ✅ `app.py` uses model_factory for agent initialization
+- ✅ All assistants use the model parameter (not hardcoded models)
+- ✅ SSM Parameter Store configuration intact
+
+### Updated Directory Structure
+
+Added notes to directory structure showing which files came from `multi_agent/`:
+- `config.py` (from multi_agent)
+- `bedrock_model.py` (from multi_agent)
+- `sagemaker_model.py` (from multi_agent)
+- `model_factory.py` (from multi_agent)
+- `*_assistant.py` (from multi_agent)
+- `cross_platform_tools.py` (from multi_agent)
+
+### Step Numbering Updated
+
+Renumbered all subsequent steps:
+- Old Step 2 → New Step 3 (Test Docker Locally)
+- Old Step 3 → New Step 4 (Configure Deployment)
+- Old Step 4 → New Step 5 (Deploy Infrastructure)
+- Old Step 5 → New Step 6 (Create Cognito User)
+- Old Step 6 → New Step 7 (Test Deployed Application)
+- Old Step 7 → New Step 8 (Monitor Application)
+
+### Files Modified
+
+- ✅ `workshop4/PART-3-DEPLOY-MULTI-AGENT.md` - Added merge instructions as Step 1
+- ✅ `.kiro/session-notes/20260119-session-notes.md` - This update
+
+### Key Benefits
+
+**For Students**:
+1. **Clear Process**: Step-by-step merge instructions
+2. **Bulk Copy Approach**: Simpler and foolproof (copy everything except app.py)
+3. **Preservation Guidance**: Clear instructions on what to preserve in app.py
+4. **Verification Checklist**: Ensures nothing is missed
+
+**For Instructors**:
+1. **Pedagogical Value**: Shows how to merge local development into production
+2. **Best Practices**: Demonstrates careful handling of authentication code
+3. **Automation Potential**: Students can use Kiro to automate this process
+
+### User Feedback Incorporated
+
+User's frustration with piecemeal file-by-file approach led to this improvement:
+- ✅ Bulk copy approach is simpler
+- ✅ Foolproof - won't miss any changes
+- ✅ Only app.py requires careful merge
+- ✅ Clear documentation prevents confusion
+
+---
+
+**Documentation Complete**: Students now have clear merge instructions before deployment.
+
+
+## Documentation Streamlined: Removed Local Docker Testing ✅
+
+**Date**: January 19, 2026
+
+### User Feedback
+
+User correctly pointed out that local Docker testing is unnecessary:
+- ✅ Already tested the app locally in PART-2-MULTI-AGENT.md
+- ❌ Local Docker testing is "major league pain in the ass"
+- ✅ Better to deploy directly to ECS Fargate and test the actual container
+
+### Changes Applied
+
+**Removed Step 3: Test Docker Locally**
+- Deleted entire section about building Docker image locally
+- Deleted instructions for running container locally
+- Deleted local testing verification steps
+
+**Updated Prerequisites**:
+- Removed Docker installation requirement
+- Added note explaining why local Docker testing is skipped
+- Emphasized that Part 2 testing is sufficient
+
+**Renumbered Steps**:
+- Old Step 3 (Test Docker Locally) → REMOVED
+- Old Step 4 (Configure Deployment) → New Step 3
+- Old Step 5 (Deploy Infrastructure) → New Step 4
+- Old Step 6 (Create Cognito User) → New Step 5
+- Old Step 7 (Test Deployed Application) → New Step 6
+- Old Step 8 (Monitor Application) → New Step 7
+
+**Updated Time Investment**:
+- Changed from: 3-4 hours
+- Changed to: 2-3 hours (saved 1 hour by skipping local Docker testing)
+
+### Streamlined Workflow
+
+**New Deployment Flow**:
+1. ✅ Verify local app works (Part 2)
+2. ✅ Merge code to deploy_multi_agent/docker_app
+3. ✅ Configure deployment (CDK context)
+4. ✅ Deploy infrastructure (CDK deploy)
+5. ✅ Create Cognito user
+6. ✅ Test deployed application on ECS Fargate
+7. ✅ Monitor application
+
+**Benefits**:
+- ✅ Faster deployment process
+- ✅ Less complexity for students
+- ✅ Test in actual production environment
+- ✅ No Docker Desktop installation required
+- ✅ No local Docker troubleshooting
+
+### Rationale
+
+**Why Skip Local Docker Testing?**
+1. **Already Tested**: Application tested thoroughly in Part 2
+2. **Same Code**: deploy_multi_agent/docker_app has same logic as multi_agent
+3. **Only Difference**: Cognito authentication (doesn't affect core functionality)
+4. **Production Environment**: Better to test in actual ECS Fargate environment
+5. **Time Savings**: Eliminates Docker Desktop setup and troubleshooting
+
+**What Could Go Wrong?**
+- Docker build issues → CDK deployment will catch them
+- Environment variable issues → ECS logs will show them
+- Authentication issues → Test in Step 6 (deployed app)
+
+All issues are caught during actual deployment, making local Docker testing redundant.
+
+### Files Modified
+
+- ✅ `workshop4/PART-3-DEPLOY-MULTI-AGENT.md` - Removed Step 3, renumbered all steps
+- ✅ `.kiro/session-notes/20260119-session-notes.md` - This update
+
+---
+
+**Documentation Streamlined**: Students can now deploy directly to ECS Fargate without local Docker testing.

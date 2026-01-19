@@ -12,11 +12,11 @@ The `deploy_multi_agent` directory contains the production-ready version of the 
 - **CloudFront Distribution**: Global content delivery
 - **Comprehensive Monitoring**: CloudWatch logs and metrics
 
-**Time Investment**: 3-4 hours
+**Time Investment**: 2-3 hours
 **Prerequisites**: 
 - [Part 2: Multi-Agent](PART-2-MULTI-AGENT.md) completed and tested
 - AWS account with appropriate permissions
-- Docker installed locally
+- AWS CDK installed
 
 ## Architecture
 
@@ -75,28 +75,9 @@ streamlit run app.py
 # Test all features work correctly
 ```
 
-### 2. Install Docker
+**Note**: Since you've already tested the application locally in Part 2, there's no need to test Docker locally. We'll deploy directly to ECS Fargate and test the actual container in production.
 
-**Windows**:
-- Download Docker Desktop from docker.com
-- Enable WSL 2 backend
-- Verify: `docker --version`
-
-**macOS**:
-```bash
-brew install --cask docker
-# Or download Docker Desktop from docker.com
-```
-
-**Linux**:
-```bash
-sudo apt-get update
-sudo apt-get install docker.io docker-compose
-sudo usermod -aG docker $USER
-# Log out and back in
-```
-
-### 3. Install AWS CDK
+### 2. Install AWS CDK
 
 ```bash
 npm install -g aws-cdk
@@ -105,7 +86,7 @@ npm install -g aws-cdk
 cdk --version
 ```
 
-### 4. Bootstrap CDK (First Time Only)
+### 3. Bootstrap CDK (First Time Only)
 
 ```bash
 cdk bootstrap aws://ACCOUNT-ID/REGION
@@ -114,7 +95,104 @@ cdk bootstrap aws://ACCOUNT-ID/REGION
 cdk bootstrap aws://123456789012/us-east-1
 ```
 
-## Step 1: Review Deployment Structure
+## Step 1: Merge Local Code to Deployment Directory
+
+Before deploying, you need to merge your tested local code from `multi_agent/` into `deploy_multi_agent/docker_app/`.
+
+### Why Merge?
+
+The `deploy_multi_agent/docker_app/` directory contains the production version with:
+- Cognito authentication (lines 1-25 in app.py)
+- Docker configuration
+- Production environment settings
+
+Your `multi_agent/` directory contains:
+- Latest agent implementations
+- Model factory pattern
+- SSM Parameter Store integration
+- All bug fixes and improvements
+
+### Merge Strategy: Bulk Copy + Careful app.py Merge
+
+**IMPORTANT**: Copy ALL Python files from `multi_agent/` to `deploy_multi_agent/docker_app/` EXCEPT `app.py`.
+
+#### Step 1.1: Bulk Copy All Files (Except app.py)
+
+```bash
+cd ~/workspace/ai-stack-2026Q2/workshop4
+
+# Copy all Python files except app.py
+cp multi_agent/config.py deploy_multi_agent/docker_app/
+cp multi_agent/bedrock_model.py deploy_multi_agent/docker_app/
+cp multi_agent/sagemaker_model.py deploy_multi_agent/docker_app/
+cp multi_agent/model_factory.py deploy_multi_agent/docker_app/
+cp multi_agent/teachers_assistant.py deploy_multi_agent/docker_app/
+cp multi_agent/math_assistant.py deploy_multi_agent/docker_app/
+cp multi_agent/english_assistant.py deploy_multi_agent/docker_app/
+cp multi_agent/computer_science_assistant.py deploy_multi_agent/docker_app/
+cp multi_agent/language_assistant.py deploy_multi_agent/docker_app/
+cp multi_agent/loan_offering_assistant.py deploy_multi_agent/docker_app/
+cp multi_agent/no_expertise.py deploy_multi_agent/docker_app/
+cp multi_agent/cross_platform_tools.py deploy_multi_agent/docker_app/
+```
+
+**Why bulk copy?** All assistant files changed to use the model_factory pattern instead of hardcoded models. Copying everything ensures you don't miss any changes.
+
+#### Step 1.2: Carefully Merge app.py
+
+The `app.py` file requires special handling to preserve Cognito authentication.
+
+**Preserve from deploy_multi_agent/docker_app/app.py**:
+- Lines 1-25: Cognito authentication imports and setup
+- Authentication UI section (login form, session state)
+
+**Merge from multi_agent/app.py**:
+- Model selection logic
+- Agent initialization with model_factory
+- Conversation handling
+- All functional improvements
+
+**Manual Merge Steps**:
+
+1. Open both files side-by-side
+2. Keep the Cognito authentication section (lines 1-25) from `deploy_multi_agent/docker_app/app.py`
+3. Copy the model selection and agent logic from `multi_agent/app.py`
+4. Ensure model_factory is used for all agent initializations
+5. Verify authentication UI remains intact
+
+**Key Sections to Preserve**:
+```python
+# From deploy_multi_agent/docker_app/app.py (KEEP THIS)
+from utils.auth import check_authentication
+
+# Authentication check
+if not check_authentication():
+    st.stop()
+```
+
+**Key Sections to Merge**:
+```python
+# From multi_agent/app.py (MERGE THIS)
+from model_factory import create_model
+
+# Model selection
+selected_model = st.selectbox(...)
+model = create_model(selected_model, config)
+
+# Agent initialization with model
+agent = TeachersAssistant(model=model, ...)
+```
+
+### Verification Checklist
+
+After merging, verify:
+- ✅ All 12 Python files copied from `multi_agent/` to `deploy_multi_agent/docker_app/`
+- ✅ `app.py` has Cognito authentication preserved
+- ✅ `app.py` uses model_factory for agent initialization
+- ✅ All assistants use the model parameter (not hardcoded models)
+- ✅ SSM Parameter Store configuration intact
+
+## Step 2: Review Deployment Structure
 
 ### Directory Structure
 
@@ -122,15 +200,19 @@ cdk bootstrap aws://123456789012/us-east-1
 deploy_multi_agent/
 ├── app.py                    # CDK application entry point
 ├── cdk/
-│   ├── cdk_stack.py         # Infrastructure definition
+│   ├── cdk_stack.py         # Infrastructure definition (IAM permissions updated)
 │   └── __init__.py
 ├── docker_app/              # Application code (Docker container)
-│   ├── app.py              # Streamlit application
+│   ├── app.py              # Streamlit application (merged with Cognito auth)
 │   ├── Dockerfile          # Container definition
 │   ├── docker-compose.yml  # Local Docker testing
 │   ├── requirements.txt    # Python dependencies
-│   ├── config_file.py      # Configuration module
-│   ├── *_assistant.py      # Specialized agents
+│   ├── config.py           # Configuration module (from multi_agent)
+│   ├── bedrock_model.py    # Bedrock model wrapper (from multi_agent)
+│   ├── sagemaker_model.py  # SageMaker model wrapper (from multi_agent)
+│   ├── model_factory.py    # Model factory pattern (from multi_agent)
+│   ├── *_assistant.py      # Specialized agents (from multi_agent)
+│   ├── cross_platform_tools.py  # Cross-platform utilities (from multi_agent)
 │   └── utils/              # Utility modules
 │       ├── auth.py         # Cognito authentication
 │       └── llm.py          # Model creation
@@ -153,51 +235,6 @@ deploy_multi_agent/
 - Added Cognito authentication
 - Environment-based configuration
 - Production logging
-
-## Step 2: Test Docker Locally
-
-Before deploying to AWS, test the Docker container locally:
-
-### Build Docker Image
-
-```bash
-cd ~/workspace/ai-stack-2026Q2/workshop4/deploy_multi_agent/docker_app
-
-# Build the image
-docker build -t multi-agent-app .
-```
-
-### Run Container Locally
-
-```bash
-# Run with environment variables
-docker run -p 8501:8501 \
-  -e TEACHERS_ASSISTANT_ENV=dev \
-  -e AWS_REGION=us-east-1 \
-  -e AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID \
-  -e AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY \
-  -e AWS_SESSION_TOKEN=$AWS_SESSION_TOKEN \
-  -e BYPASS_TOOL_CONSENT=true \
-  multi-agent-app
-```
-
-### Test in Browser
-
-Navigate to `http://localhost:8501` and verify:
-- ✅ Application loads
-- ✅ Model selection works
-- ✅ Agents respond correctly
-- ✅ Knowledge base operations work
-
-### Stop Container
-
-```bash
-# Find container ID
-docker ps
-
-# Stop container
-docker stop <container-id>
-```
 
 ## Step 3: Configure Deployment
 
