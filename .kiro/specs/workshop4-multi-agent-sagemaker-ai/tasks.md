@@ -186,7 +186,7 @@ This implementation plan follows a local-first development approach: build and t
   - **Note**: This task demonstrates how Kiro can follow documentation to perform complex merge operations
   - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 8.1, 8.2, 8.6_
 
-- [ ] 13. Deploy to ECS Fargate using CDK
+- [x] 13. Deploy to ECS Fargate using CDK
   - Navigate to `deploy_multi_agent/` directory
   - Execute `cdk deploy` on Ubuntu Linux
   - CDK will trigger Docker build of the Streamlit application
@@ -197,7 +197,7 @@ This implementation plan follows a local-first development approach: build and t
   - **Note**: This task demonstrates the full CDK deployment workflow
   - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 8.1, 8.2, 8.6_
 
-- [ ] 14. Test deployed application and final checkpoint
+- [x] 14. Test deployed application and final checkpoint
   - Access the deployed Streamlit app via ALB URL
   - Test Cognito authentication (login)
   - Test model selection dropdown with each model option
