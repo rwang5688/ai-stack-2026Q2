@@ -4227,3 +4227,68 @@ All issues are caught during actual deployment, making local Docker testing redu
 ---
 
 **Documentation Streamlined**: Students can now deploy directly to ECS Fargate without local Docker testing.
+
+
+## Deployment Issue: Missing SageMaker Dependencies ❌
+
+**Date**: January 19, 2026
+
+### Issue
+
+Deployment succeeded but container crashed on startup with:
+```
+ModuleNotFoundError: No module named 'mypy_boto3_sagemaker_runtime'
+Traceback:
+File "/app/app.py", line 55, in <module>
+    from sagemaker_model import create_sagemaker_model
+File "/app/sagemaker_model.py", line 31, in <module>
+    from strands.models.sagemaker import SageMakerAIModel
+File "/usr/local/lib/python3.12/site-packages/strands/models/sagemaker.py", line 11, in <module>
+    from mypy_boto3_sagemaker_runtime import SageMakerRuntimeClient
+```
+
+### Root Cause
+
+**Missed updating `deploy_multi_agent/docker_app/requirements.txt`**:
+- ✅ Fixed `workshop4/requirements.txt` with `strands-agents[sagemaker]` on January 17
+- ❌ Forgot to update `deploy_multi_agent/docker_app/requirements.txt`
+- The Docker container uses its own requirements.txt file
+- Without `[sagemaker]` extra, the `mypy_boto3_sagemaker_runtime` dependency is missing
+
+### Fix Applied
+
+**Updated `deploy_multi_agent/docker_app/requirements.txt`**:
+```python
+# Before
+strands-agents
+
+# After
+strands-agents[sagemaker]
+```
+
+### Files Modified
+
+- ✅ `workshop4/deploy_multi_agent/docker_app/requirements.txt` - Added [sagemaker] extra
+
+### Next Steps
+
+1. 🎯 Redeploy with updated requirements.txt:
+   ```bash
+   cd ~/workspace/ai-stack-2026Q2/workshop4/deploy_multi_agent
+   cdk deploy
+   ```
+
+2. 🎯 Verify container starts successfully
+3. 🎯 Test deployed application
+
+### Lesson Learned
+
+**Multiple requirements.txt files in the project**:
+- `workshop4/requirements.txt` - For local development
+- `workshop4/deploy_multi_agent/docker_app/requirements.txt` - For Docker container
+
+When fixing dependency issues, must update BOTH files!
+
+---
+
+**Status**: Fix applied, ready to redeploy.

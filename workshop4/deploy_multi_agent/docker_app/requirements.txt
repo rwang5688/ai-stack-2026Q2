@@ -29,8 +29,8 @@ pandas
 # Retry utilities for robust operations
 retrying
 
-# Core Strands Agents SDK
-strands-agents
+# Core Strands Agents SDK with SageMaker support
+strands-agents[sagemaker]
 
 # Strands Agents tools with memory capabilities
 strands-agents-tools[mem0_memory]
