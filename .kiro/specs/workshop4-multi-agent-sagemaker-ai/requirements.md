@@ -129,51 +129,43 @@ This feature expands the workshop4 multi-agent application to support multiple r
 6. THE selected model SHALL persist in session state during the user's session
 7. WHEN the model selection changes, THE teacher agent SHALL be recreated with the new model
 
-### Requirement 7: Loan Prediction Assistant
+### Requirement 7: Loan Offering Assistant
 
-**User Story:** As a user, I want a loan assistant that predicts loan acceptance, so that I can evaluate whether a customer will accept a loan offer based on their attributes.
+**User Story:** As a user, I want a loan offering assistant that predicts loan acceptance, so that I can evaluate whether a customer will accept a loan offer based on their feature payload.
 
 #### Acceptance Criteria
 
-1. THE Loan_Assistant SHALL accept customer attributes as input parameters
-2. WHEN customer attributes are provided, THE Loan_Assistant SHALL invoke the XGBoost_Model via Serverless_Endpoint
-3. THE Loan_Assistant SHALL format customer attributes as CSV payload for the XGBoost_Model
-4. WHEN the XGBoost_Model returns a prediction, THE Loan_Assistant SHALL interpret the result as accept or reject
-5. THE Loan_Assistant SHALL return a human-readable prediction with confidence score
-6. WHEN the Serverless_Endpoint is unavailable, THE Loan_Assistant SHALL return an error message
-7. THE XGBoost_Model integration SHALL use SageMaker Serverless Inference Endpoint
-8. WHEN invoking the endpoint, THE integration SHALL send CSV-formatted customer data
-9. THE integration SHALL handle the following customer attributes:
-   - age, job type, marital status, education level
-   - credit default status, housing loan status, personal loan status
-   - contact type, campaign information
-   - previous contact history
-10. WHEN the endpoint returns a prediction, THE integration SHALL parse the CSV response
-11. THE integration SHALL convert numeric predictions (0-1) to binary outcomes (accept/reject)
+1. THE Loan_Offering_Assistant SHALL be implemented similar to math_assistant
+2. THE Loan_Offering_Assistant SHALL use a loan_offering_prediction tool (similar to calculator tool in math_assistant)
+3. WHEN a user provides a CSV feature payload, THE loan_offering_prediction tool SHALL invoke the XGBoost endpoint
+4. THE loan_offering_prediction tool SHALL work similarly to validate_xgboost_endpoint function
+5. THE tool SHALL accept a CSV string payload with 59 features
+6. WHEN the XGBoost endpoint returns a prediction, THE tool SHALL parse the numeric result
+7. THE tool SHALL return raw prediction, prediction label (Accept/Reject), and confidence percentage
+8. THE prediction label SHALL be "Accept" if prediction >= 0.5, otherwise "Reject"
+9. THE confidence SHALL be formatted as prediction * 100 with 2 decimal places
+10. WHEN the endpoint is unavailable, THE tool SHALL return an error message
 
 ### Requirement 8: Multi-Agent Application Integration
 
-**User Story:** As a user, I want the loan assistant integrated into the multi-agent application, so that I can access loan predictions through the same interface as other assistants.
+**User Story:** As a user, I want the loan offering assistant integrated into the multi-agent application, so that I can access loan predictions through the same interface as other assistants.
 
 #### Acceptance Criteria
 
-1. THE Multi_Agent_App SHALL include Loan_Assistant in the list of available specialists
-2. WHEN a user query relates to loan prediction, THE teacher agent SHALL route to Loan_Assistant
-3. THE Multi_Agent_App SHALL display loan predictions in the chat interface
-4. THE Multi_Agent_App SHALL handle errors from Loan_Assistant gracefully
-5. THE sidebar SHALL list Loan_Assistant with an appropriate icon and description
+1. THE Multi_Agent_App (app.py) SHALL import loan_offering_assistant
+2. THE Multi_Agent_App SHALL add loan_offering_assistant to teacher agent's tools list
+3. THE CLI App (teachers_assistant.py) SHALL import loan_offering_assistant  
+4. THE CLI App SHALL add loan_offering_assistant to teacher agent's tools list
+5. WHEN a user query relates to loan prediction, THE teacher agent SHALL route to loan_offering_assistant
+6. THE sidebar SHALL list Loan Offering Assistant with an appropriate icon and description
 
-### Requirement 9: Code Refactoring and Deployment Strategy
+### Requirement 9: Code Organization
 
-**User Story:** As a developer, I want the codebase refactored to follow the consolidated architecture with a local-first development approach, so that the code is maintainable, testable, and ready for cloud deployment.
+**User Story:** As a developer, I want the loan offering assistant code organized consistently with other assistants, so that the codebase is maintainable.
 
 #### Acceptance Criteria
 
-1. THE multi_agent directory SHALL contain config.py, bedrock_model.py, sagemaker_model.py, and loan_assistant.py modules
-2. THE multi_agent/app.py SHALL import and use the new modules
-3. WHEN implementing new features, THE developer SHALL build and test locally in multi_agent first
-4. WHEN local implementation is complete and tested, THE developer SHALL merge new application logic into deploy_multi_agent/docker_app
-5. WHEN merging to deploy_multi_agent/docker_app, THE developer SHALL preserve the Cognito authentication and authorization logic
-6. THE deploy_multi_agent/docker_app directory SHALL contain the same modules as multi_agent
-7. THE deploy_multi_agent/docker_app/app.py SHALL maintain the authentication section at the top of the file
-8. WHEN refactoring is complete, THE application SHALL maintain all existing functionality in both local and deployed versions
+1. THE loan_offering_assistant.py file SHALL be created in multi_agent directory
+2. THE file SHALL follow the same structure as math_assistant.py
+3. THE file SHALL use config module for XGBoost endpoint configuration
+4. THE file SHALL use model_factory for model creation (consistent with other assistants)

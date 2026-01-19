@@ -124,120 +124,97 @@ This implementation plan follows a local-first development approach: build and t
     - Ask the user if questions arise
   - _Requirements: 3.1, 3.2, 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7_
 
-- [ ] 8. Implement loan assistant data transformation logic
-  - Create `multi_agent/loan_assistant.py` with CustomerAttributes handling
-  - Implement one-hot encoding for all categorical features
-  - Implement CSV payload generation function
-  - Add validation for customer attribute values
-  - Create mapping dictionaries for all categorical features
-  - _Requirements: 7.2, 7.3, 7.8, 7.9_
-
-- [ ]* 8.1 Write property test for CSV payload format
-  - **Property 4: CSV Payload Format Correctness**
-  - **Validates: Requirements 7.8, 7.9**
-
-- [ ]* 8.2 Write property test for one-hot encoding
-  - **Property 5: One-Hot Encoding Completeness**
-  - **Validates: Requirements 7.9**
-
-- [ ]* 8.3 Write unit tests for data transformation
-  - Test one-hot encoding for each categorical feature
-  - Test CSV payload generation with sample customer profiles
-  - Test edge cases (unknown values, boundary numeric values)
-  - _Requirements: 7.8, 7.9_
-
-- [ ] 9. Implement loan assistant XGBoost invocation logic
-  - Add SageMaker runtime client creation in loan_assistant.py
-  - Implement endpoint invocation with CSV payload
-  - Implement response parsing and prediction extraction
-  - Implement binary classification mapping (threshold at 0.5)
+- [ ] 8. Implement loan_offering_assistant.py
+  - Create `multi_agent/loan_offering_assistant.py` following math_assistant.py structure
+  - Implement `loan_offering_prediction` tool (similar to calculator tool)
+  - Tool accepts CSV payload string with 59 features
+  - Tool invokes XGBoost endpoint using boto3 sagemaker-runtime (like validate_xgboost_endpoint)
+  - Tool parses prediction and returns formatted response with:
+    - Feature payload
+    - Raw prediction
+    - Prediction label ("Accept" if >= 0.5, else "Reject")
+    - Confidence (prediction * 100 formatted to 2 decimals)
+  - Implement `loan_offering_assistant` tool that wraps the prediction tool
+  - Use config module to get XGBoost endpoint name
+  - Use model_factory to create agent model
+  - Add system prompt for loan offering assistant agent
   - Add error handling for endpoint failures
-  - _Requirements: 7.2, 7.3, 7.4, 7.5, 7.6, 7.10, 7.11_
+  - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5, 7.6, 7.7, 7.8, 7.9, 7.10, 9.1, 9.2, 9.3, 9.4_
 
-- [ ]* 9.1 Write property test for prediction output range
-  - **Property 6: Prediction Output Range**
-  - **Validates: Requirements 7.11**
+- [ ]* 8.1 Write unit tests for loan_offering_prediction tool
+  - Test endpoint invocation with sample payload
+  - Test prediction parsing
+  - Test label mapping (Accept/Reject)
+  - Test confidence formatting
+  - Test error handling
+  - _Requirements: 7.6, 7.7, 7.8, 7.9_
 
-- [ ]* 9.2 Write property test for binary classification mapping
-  - **Property 7: Binary Classification Mapping**
-  - **Validates: Requirements 7.4**
+- [ ] 9. Integrate loan_offering_assistant into applications
+  - Import loan_offering_assistant in `multi_agent/app.py`
+  - Add loan_offering_assistant to teacher agent's tools list in app.py
+  - Update sidebar to list "💰 Loan Offering Assistant" with description
+  - Import loan_offering_assistant in `multi_agent/teachers_assistant.py`
+  - Add loan_offering_assistant to teacher agent's tools list in CLI app
+  - Update TEACHER_SYSTEM_PROMPT to include loan offering routing
+  - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6_
 
-- [ ]* 9.3 Write unit tests for XGBoost invocation
-  - Test endpoint invocation with mocked SageMaker client
-  - Test response parsing for various prediction scores
-  - Test error handling for endpoint failures
-  - _Requirements: 7.6, 7.10, 7.11_
-
-- [ ] 10. Complete loan assistant as Strands tool
-  - Wrap loan prediction logic in @tool decorator
-  - Define function signature with all customer attribute parameters
-  - Add comprehensive docstring with parameter descriptions
-  - Implement human-readable response formatting
-  - Add confidence score to response
-  - _Requirements: 7.1, 7.2, 7.5_
-
-- [ ]* 10.1 Write integration test for loan assistant tool
-  - Test loan assistant with sample customer data
-  - Test error propagation through tool interface
-  - _Requirements: 7.1, 7.2, 7.5, 7.6_
-
-- [ ] 11. Integrate loan assistant into multi_agent/app.py
-  - Import loan_assistant tool
-  - Add loan_assistant to teacher agent's tools list
-  - Update sidebar to list loan assistant with icon and description
-  - _Requirements: 7.1, 8.1, 8.2_
-
-- [ ]* 11.1 Write integration test for app with loan assistant
-  - Test teacher agent routing to loan assistant
-  - Test loan prediction through full agent hierarchy
-  - _Requirements: 8.1, 8.2_
-
-- [ ] 12. Test loan assistant end-to-end
+- [ ] 10. Test loan_offering_assistant locally and checkpoint
   - Run multi_agent/app.py locally
-  - Test loan assistant with various customer profiles
-  - Test error handling for missing XGBoost model endpoint
-  - Verify sidebar displays loan assistant
-  - _Requirements: 7.1, 7.2, 7.5, 7.6, 8.3, 8.4, 8.5_
-
-- [ ] 13. Checkpoint - Loan assistant complete
-  - Ensure loan assistant works correctly
-  - Ensure all tests pass
+  - Test with sample query: "will a person with the following demographics accept the loan: 29,2,999,0,1,0,0.0,1.0,..."
+  - Verify prediction response includes payload, raw score, label, and confidence
+  - Test error handling when XGBoost endpoint unavailable
+  - Test CLI app (teachers_assistant.py) with same query
+  - Verify sidebar displays loan offering assistant
+  - Verify loan offering assistant works in both app.py and teachers_assistant.py
+  - Verify all tests pass (if written)
   - Ask the user if questions arise
+  - _Requirements: 7.1, 7.2, 7.5, 7.6, 7.7, 7.8, 7.9, 8.5, 8.6_
 
-- [ ] 14. Merge new modules to deploy_multi_agent/docker_app
-  - Copy `config.py` to `deploy_multi_agent/docker_app/config.py`
-  - Copy `bedrock_model.py` to `deploy_multi_agent/docker_app/bedrock_model.py`
-  - Copy `sagemaker_model.py` to `deploy_multi_agent/docker_app/sagemaker_model.py`
-  - Copy `loan_assistant.py` to `deploy_multi_agent/docker_app/loan_assistant.py`
+- [ ] 11. Copy all multi_agent modules to deploy_multi_agent/docker_app
+  - Copy ALL Python modules from `multi_agent/` to `deploy_multi_agent/docker_app/`
+  - This includes all assistant modules, config, model modules, and utilities
   - Verify no conflicts with existing files
-  - _Requirements: 9.1, 9.3, 9.6_
+  - Follow the merge process documented in workshop4/PART-3-DEPLOY-MULTI-AGENT.md
+  - **Note**: This task demonstrates how Kiro can automate deployment runbooks by reading documentation
+  - _Requirements: 9.1_
 
-- [ ] 15. Merge application logic to deploy_multi_agent/docker_app/app.py
-  - Preserve authentication section (lines 1-25) at the top
-  - Preserve authentication UI in sidebar
-  - Import new modules (config, bedrock_model, sagemaker_model, loan_assistant)
-  - Replace `os.getenv()` calls with config module functions
-  - Add model provider selection logic
-  - Update teacher agent creation to use selected model
-  - Add loan_assistant to teacher agent's tools list
-  - Update sidebar to display active model provider and model
-  - Update sidebar to list loan assistant
-  - Preserve logout button and user info display
-  - _Requirements: 9.2, 9.3, 9.4, 9.5, 9.7, 9.8_
+- [ ] 12. Integrate multi_agent/app.py logic into deploy_multi_agent/docker_app/app.py
+  - Merge application logic from `multi_agent/app.py` into `deploy_multi_agent/docker_app/app.py`
+  - Preserve Cognito authentication and authorization sections
+  - Keep authentication UI elements intact (logout button, user info display)
+  - Follow the merge process documented in workshop4/PART-3-DEPLOY-MULTI-AGENT.md
+  - **Note**: This task demonstrates how Kiro can follow documentation to perform complex merge operations
+  - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 8.1, 8.2, 8.6_
 
-- [ ] 16. Test deployed application logic
-  - Review merged code for correctness
-  - Verify authentication section is preserved
-  - Verify all new features are included
-  - Verify no duplicate code or conflicts
-  - _Requirements: 9.5, 9.7, 9.8_
+- [ ] 13. Deploy to ECS Fargate using CDK
+  - Navigate to `deploy_multi_agent/` directory
+  - Execute `cdk deploy` on Ubuntu Linux
+  - CDK will trigger Docker build of the Streamlit application
+  - CDK will push Docker image to Amazon ECR
+  - CDK will deploy updated image to ECS Fargate task
+  - Wait for deployment to complete
+  - Follow the deployment process documented in workshop4/PART-3-DEPLOY-MULTI-AGENT.md
+  - **Note**: This task demonstrates the full CDK deployment workflow
+  - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 8.1, 8.2, 8.6_
 
-- [ ] 17. Final checkpoint - Implementation complete
-  - Verify both local and deployed versions have all features
-  - Verify all tests pass
-  - Verify validation scripts work
-  - Confirm ready for workshop4-architecture-refactoring completion
+- [ ] 14. Test deployed application and final checkpoint
+  - Access the deployed Streamlit app via ALB URL
+  - Test Cognito authentication (login)
+  - Test model selection dropdown with each model option
+  - Test loan offering assistant with sample query
+  - Verify sidebar displays correct model information
+  - Verify sidebar lists all 6 specialists (including loan offering)
+  - Test logout functionality
+  - Verify deployed application has all features working:
+    - Cognito authentication
+    - Model selection dropdown
+    - All 5 model options
+    - Loan offering assistant
+    - All 6 specialists listed
+  - Verify all tests pass (if written)
+  - Deployment to ECS Fargate complete
   - Ask the user if questions arise
+  - _Requirements: 6.3, 6.4, 6.5, 8.1, 8.2_
 
 ## Notes
 

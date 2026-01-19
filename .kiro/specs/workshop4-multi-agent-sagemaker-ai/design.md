@@ -284,107 +284,70 @@ def create_sagemaker_model(
     """
 ```
 
-### 6. Loan Assistant Module (loan_assistant.py)
+### 6. Loan Offering Assistant Module (loan_offering_assistant.py)
 
-**Purpose**: Provide loan acceptance prediction using XGBoost model on SageMaker.
+**Purpose**: Provide loan acceptance prediction using XGBoost model on SageMaker, similar to how math_assistant uses calculator tools.
 
 **Interface**:
 ```python
 @tool
-def loan_assistant(
-    age: int,
-    job: str,
-    marital: str,
-    education: str,
-    default: str,
-    housing: str,
-    loan: str,
-    contact: str,
-    month: str,
-    day_of_week: str,
-    campaign: int,
-    pdays: int,
-    previous: int,
-    poutcome: str
-) -> str:
+def loan_offering_assistant(query: str) -> str:
     """
-    Predict whether a customer will accept a loan offer.
+    Process and respond to loan offering prediction queries using XGBoost model.
     
     Args:
-        age: Customer age
-        job: Job type (admin, services, technician, etc.)
-        marital: Marital status (married, single, divorced)
-        education: Education level (basic.4y, high.school, university.degree, etc.)
-        default: Has credit in default? (yes, no, unknown)
-        housing: Has housing loan? (yes, no, unknown)
-        loan: Has personal loan? (yes, no, unknown)
-        contact: Contact communication type (cellular, telephone)
-        month: Last contact month (jan, feb, mar, etc.)
-        day_of_week: Last contact day (mon, tue, wed, etc.)
-        campaign: Number of contacts during this campaign
-        pdays: Days since last contact from previous campaign (999 = not contacted)
-        previous: Number of contacts before this campaign
-        poutcome: Outcome of previous campaign (nonexistent, failure, success)
+        query: A loan prediction question with CSV feature payload from the user
         
     Returns:
-        Prediction result with confidence score
+        A detailed prediction with raw score, label, and confidence
+    """
+
+@tool  
+def loan_offering_prediction(payload: str) -> str:
+    """
+    Predict loan acceptance using XGBoost model endpoint.
+    
+    Args:
+        payload: CSV string with 59 features (same format as validate_xgboost_endpoint)
+        
+    Returns:
+        Prediction result with raw score, label (Accept/Reject), and confidence percentage
     """
 ```
 
 **Implementation Details**:
-- Converts input parameters to one-hot encoded CSV format
-- Invokes SageMaker serverless inference endpoint
+- Similar structure to math_assistant.py
+- Uses loan_offering_prediction tool (similar to calculator in math_assistant)
+- loan_offering_prediction works like validate_xgboost_endpoint function
+- Accepts CSV payload string with 59 comma-separated features
+- Invokes SageMaker XGBoost endpoint using boto3 sagemaker-runtime client
 - Parses numeric prediction (0-1 range)
-- Returns human-readable result with confidence
+- Returns formatted response with:
+  - Feature payload
+  - Raw prediction score
+  - Prediction label: "Accept" if >= 0.5, else "Reject"  
+  - Confidence: prediction * 100 formatted to 2 decimal places
 
 ## Data Models
 
-### Customer Attributes (for Loan Prediction)
+### Loan Prediction Request
 
 ```python
-@dataclass
-class CustomerAttributes:
-    """Customer attributes for loan prediction."""
-    age: int
-    job: str  # Categorical: admin, services, technician, etc.
-    marital: str  # Categorical: married, single, divorced
-    education: str  # Categorical: basic.4y, high.school, university.degree, etc.
-    default: str  # Categorical: yes, no, unknown
-    housing: str  # Categorical: yes, no, unknown
-    loan: str  # Categorical: yes, no, unknown
-    contact: str  # Categorical: cellular, telephone
-    month: str  # Categorical: jan, feb, mar, etc.
-    day_of_week: str  # Categorical: mon, tue, wed, etc.
-    campaign: int  # Numeric: number of contacts
-    pdays: int  # Numeric: days since last contact (999 = not contacted)
-    previous: int  # Numeric: number of previous contacts
-    poutcome: str  # Categorical: nonexistent, failure, success
+# Simple CSV payload string (59 comma-separated features)
+# Example: "29,2,999,0,1,0,0.0,1.0,0.0,..."
+payload: str
 ```
 
-### One-Hot Encoding Mapping
-
-The XGBoost model expects one-hot encoded features. The loan assistant must transform categorical variables into binary indicators following the training data schema:
-
-- Job types: admin, blue-collar, entrepreneur, housemaid, management, retired, self-employed, services, student, technician, unemployed, unknown
-- Marital status: divorced, married, single, unknown
-- Education: basic.4y, basic.6y, basic.9y, high.school, illiterate, professional.course, university.degree, unknown
-- Default: no, yes, unknown
-- Housing: no, yes, unknown
-- Loan: no, yes, unknown
-- Contact: cellular, telephone
-- Month: jan, feb, mar, apr, may, jun, jul, aug, sep, oct, nov, dec
-- Day of week: mon, tue, wed, thu, fri
-- Poutcome: failure, nonexistent, success
-
-### Prediction Response
+### Loan Prediction Response
 
 ```python
 @dataclass
 class LoanPrediction:
     """Loan prediction result."""
-    prediction: str  # "accept" or "reject"
-    confidence: float  # 0.0 to 1.0
-    raw_score: float  # Raw model output
+    payload: str  # Original feature payload
+    raw_prediction: float  # Raw model output (0.0 to 1.0)
+    prediction_label: str  # "Accept" or "Reject"
+    confidence: str  # Formatted as "{prediction * 100:.2f}%"
 ```
 
 ## Correctness Properties
@@ -403,31 +366,23 @@ class LoanPrediction:
 *For any* Bedrock model ID provided, if it matches one of the supported cross-region profiles, the model creation should succeed; otherwise, it should raise a descriptive error.
 **Validates: Requirements 4.3**
 
-### Property 4: CSV Payload Format Correctness
-*For any* valid CustomerAttributes instance, the generated CSV payload should have exactly 59 comma-separated values (matching the XGBoost model's expected input format).
-**Validates: Requirements 7.2, 7.3**
-
-### Property 5: One-Hot Encoding Completeness
-*For any* categorical feature value in CustomerAttributes, exactly one corresponding one-hot encoded feature should be set to 1.0, and all others for that category should be 0.0.
-**Validates: Requirements 7.3**
-
-### Property 6: Prediction Output Range
+### Property 4: Prediction Output Range
 *For any* XGBoost model response, the parsed prediction value should be in the range [0.0, 1.0].
-**Validates: Requirements 7.5**
+**Validates: Requirements 7.6, 7.7**
 
-### Property 7: Binary Classification Mapping
-*For any* prediction score from the XGBoost model, scores >= 0.5 should map to "accept" and scores < 0.5 should map to "reject".
-**Validates: Requirements 7.4**
+### Property 5: Binary Classification Mapping
+*For any* prediction score from the XGBoost model, scores >= 0.5 should map to "Accept" and scores < 0.5 should map to "Reject".
+**Validates: Requirements 7.8**
 
-### Property 8: Error Handling Graceful Degradation
+### Property 6: Error Handling Graceful Degradation
 *For any* endpoint invocation failure, the assistant should return a descriptive error message rather than raising an unhandled exception.
-**Validates: Requirements 7.6**
+**Validates: Requirements 7.10**
 
-### Property 9: Model Selection Consistency
+### Property 7: Model Selection Consistency
 *For any* user model selection in the UI, the application should use exactly one model provider (Bedrock or SageMaker) based on the selected model, never both simultaneously.
 **Validates: Requirements 6.3, 6.4**
 
-### Property 10: Validation Script Independence
+### Property 8: Validation Script Independence
 *For any* validation script execution, the script should complete successfully without requiring the full application to be running.
 **Validates: Requirements 1.5, 2.5**
 

@@ -19,7 +19,94 @@ This document consolidates work from January 13-16, 2026 on the workshop4-multi-
 # January 18, 2026 - Add loan assistant; test and debug deploy_multi_agent Docker app
 
 ## Session Overview
-TBD
+Dramatically simplified the loan offering assistant specification to match the complexity level of `validate_xgboost_endpoint.py`. The goal is to create a simple assistant similar to `math_assistant.py` that uses a prediction tool to invoke the XGBoost endpoint.
+
+## Simplified Loan Offering Assistant Spec ✅
+
+### Key Decisions
+
+**1. Simplified Architecture**
+- Make loan_offering_assistant similar to math_assistant
+- math_assistant uses calculator tool → loan_offering_assistant uses loan_offering_prediction tool
+- Both follow same pattern: agent wraps a specialized tool
+- Keeps complexity at same level as validate_xgboost_endpoint.py
+
+**2. No Complex Data Transformation**
+- Accept CSV payload string directly (no one-hot encoding logic)
+- User provides pre-formatted CSV string with 59 features
+- Same format as validate_xgboost_endpoint.py sample_payload
+- Eliminates CustomerAttributes dataclass and one-hot encoding
+
+**3. Simple Tool Interface**
+```python
+@tool
+def loan_offering_prediction(payload: str) -> str:
+    """Predict loan acceptance using XGBoost endpoint."""
+```
+- Works exactly like validate_xgboost_endpoint function
+- Accepts CSV payload string → invokes endpoint → returns formatted response
+
+**4. Example User Query**
+```
+"will a person with the following demographics accept the loan: 29,2,999,0,1,0,0.0,1.0,..."
+```
+
+**Response**:
+```
+Feature Payload: 29,2,999,0,1,0,0.0,1.0,...
+Raw Prediction: 0.0496
+Prediction Label: Reject
+Confidence: 4.96%
+```
+
+### Spec Changes
+
+**Requirements** ✅:
+- Requirement 7: Simplified to CSV payload input (no customer attributes)
+- Requirement 8: Simplified integration (both apps)
+- Requirement 9: Changed to code organization (not deployment strategy)
+
+**Design** ✅:
+- Removed CustomerAttributes dataclass
+- Removed one-hot encoding mapping tables
+- Simplified to two functions: loan_offering_assistant + loan_offering_prediction
+- Removed properties 4 and 5 (CSV format and one-hot encoding)
+
+**Tasks** ✅:
+- Collapsed Tasks 8-10 into single Task 8 (implement loan_offering_assistant.py)
+- Merged Tasks 10-11 into single Task 10 (test locally and checkpoint)
+- Simplified Tasks 12-13 (copy all modules, merge app logic)
+- Added pedagogical notes to Tasks 12-13
+- Merged Tasks 15-16 into single Task 15 (test deployed app and checkpoint)
+- **Final structure**: 8 remaining tasks (Tasks 8-15)
+
+### Pedagogical Value
+
+Tasks 12-13 demonstrate how students can use Kiro to:
+1. **Read Documentation**: Kiro reads PART-3-DEPLOY-MULTI-AGENT.md
+2. **Understand Process**: Kiro understands the merge workflow
+3. **Automate Runbooks**: Kiro executes copy-merge-deploy process
+4. **Preserve Critical Code**: Kiro maintains Cognito authentication
+
+Shows students that AI can automate tedious operational tasks while being careful about critical sections.
+
+### Files Modified
+- ✅ `.kiro/specs/workshop4-multi-agent-sagemaker-ai/requirements.md` - Simplified requirements
+- ✅ `.kiro/specs/workshop4-multi-agent-sagemaker-ai/design.md` - Simplified design
+- ✅ `.kiro/specs/workshop4-multi-agent-sagemaker-ai/tasks.md` - Streamlined tasks
+- ✅ `.kiro/session-notes/20260118-session-notes.md` - This update
+
+### Status
+**Spec Simplification**: COMPLETE ✅
+- Requirements simplified
+- Design simplified  
+- Tasks streamlined (8 remaining: Tasks 8-15)
+- Ready for implementation
+
+**Next Steps**:
+1. ✅ Update session notes - COMPLETE
+2. 🎯 User checkpoint commit of updated specs
+3. 🎯 Proceed with Tasks 8, 9, 10 (implement and test loan_offering_assistant)
 
 ---
 
@@ -3673,4 +3760,7 @@ Should document this comparison in workshop materials to help students understan
 4. When to use which model
 
 ---
+
+
+
 
