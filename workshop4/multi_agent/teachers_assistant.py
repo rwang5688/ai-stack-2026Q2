@@ -17,6 +17,7 @@ from sagemaker_model import create_sagemaker_model
 from computer_science_assistant import computer_science_assistant
 from english_assistant import english_assistant
 from language_assistant import language_assistant
+from loan_offering_assistant import loan_offering_assistant
 from math_assistant import math_assistant
 from no_expertise import general_assistant
 
@@ -30,6 +31,7 @@ You are TeachAssist, a sophisticated educational orchestrator designed to coordi
    - English Agent: For writing, grammar, literature, and composition
    - Language Agent: For translation and language-related queries
    - Computer Science Agent: For programming, algorithms, data structures, and code execution
+   - Loan Offering Assistant: For loan acceptance predictions based on customer features
    - General Assistant: For all other topics outside these specialized domains
 
 2. Key Responsibilities:
@@ -43,6 +45,7 @@ You are TeachAssist, a sophisticated educational orchestrator designed to coordi
    - If query involves writing/literature/grammar → English Agent
    - If query involves translation → Language Agent
    - If query involves programming/coding/algorithms/computer science → Computer Science Agent
+   - If query involves loan predictions/acceptance → Loan Offering Assistant
    - If query is outside these specialized areas → General Assistant
    - For complex queries, coordinate multiple agents as needed
 
@@ -176,7 +179,7 @@ if __name__ == "__main__":
         model=model,
         system_prompt=TEACHER_SYSTEM_PROMPT,
         callback_handler=None,
-        tools=[math_assistant, language_assistant, english_assistant, computer_science_assistant, general_assistant],
+        tools=[math_assistant, language_assistant, english_assistant, computer_science_assistant, loan_offering_assistant, general_assistant],
     )
     
     print("=" * 60)

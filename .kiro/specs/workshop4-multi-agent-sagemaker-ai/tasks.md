@@ -124,7 +124,7 @@ This implementation plan follows a local-first development approach: build and t
     - Ask the user if questions arise
   - _Requirements: 3.1, 3.2, 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7_
 
-- [ ] 8. Implement loan_offering_assistant.py
+- [x] 8. Implement loan_offering_assistant.py
   - Create `multi_agent/loan_offering_assistant.py` following math_assistant.py structure
   - Implement `loan_offering_prediction` tool (similar to calculator tool)
   - Tool accepts CSV payload string with 59 features
@@ -149,7 +149,7 @@ This implementation plan follows a local-first development approach: build and t
   - Test error handling
   - _Requirements: 7.6, 7.7, 7.8, 7.9_
 
-- [ ] 9. Integrate loan_offering_assistant into applications
+- [x] 9. Integrate loan_offering_assistant into applications
   - Import loan_offering_assistant in `multi_agent/app.py`
   - Add loan_offering_assistant to teacher agent's tools list in app.py
   - Update sidebar to list "💰 Loan Offering Assistant" with description
@@ -158,7 +158,7 @@ This implementation plan follows a local-first development approach: build and t
   - Update TEACHER_SYSTEM_PROMPT to include loan offering routing
   - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.6_
 
-- [ ] 10. Test loan_offering_assistant locally and checkpoint
+- [x] 10. Test loan_offering_assistant locally and checkpoint
   - Run multi_agent/app.py locally
   - Test with sample query: "will a person with the following demographics accept the loan: 29,2,999,0,1,0,0.0,1.0,..."
   - Verify prediction response includes payload, raw score, label, and confidence

@@ -41,11 +41,6 @@ Parameters:
     Default: my-sagemaker-model-inference-component
     Description: SageMaker model inference component name (optional, for multi-model endpoints)
 
-  StrandsKnowledgeBaseId:
-    Type: String
-    Default: my-strands-knowledge-base-id
-    Description: Strands knowledge base ID (REQUIRED - Framework integration point with Bedrock Knowledge Base)
-
   Temperature:
     Type: String
     Default: "0.3"
@@ -122,22 +117,6 @@ Resources:
         Application: TeacherAssistant
         ManagedBy: CloudFormation
 
-  # Strands Knowledge Base ID Parameter
-  # IMPORTANT: This parameter name MUST be 'strands_knowledge_base_id' because
-  # the Strands Agents framework requires the STRANDS_KNOWLEDGE_BASE_ID environment
-  # variable to integrate with Bedrock Knowledge Base. This is a framework requirement.
-  ParamStrandsKnowledgeBaseId:
-    Type: AWS::SSM::Parameter
-    Properties:
-      Name: !Sub '/teachers_assistant/${Environment}/strands_knowledge_base_id'
-      Description: Strands knowledge base ID (REQUIRED - Framework integration point)
-      Type: String
-      Value: !Ref StrandsKnowledgeBaseId
-      Tags:
-        Environment: !Ref Environment
-        Application: TeacherAssistant
-        ManagedBy: CloudFormation
-
   # Temperature Parameter
   ParamTemperature:
     Type: AWS::SSM::Parameter
@@ -190,10 +169,6 @@ Outputs:
   SageMakerModelInferenceComponentParameter:
     Description: SSM Parameter name for SageMaker Model Inference Component
     Value: !Ref ParamSageMakerModelInferenceComponent
-
-  StrandsKnowledgeBaseIdParameter:
-    Description: SSM Parameter name for Strands Knowledge Base ID (Framework integration point)
-    Value: !Ref ParamStrandsKnowledgeBaseId
 
   TemperatureParameter:
     Description: SSM Parameter name for Model Temperature

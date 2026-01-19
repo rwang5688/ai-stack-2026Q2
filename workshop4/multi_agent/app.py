@@ -27,6 +27,7 @@ os.environ["BYPASS_TOOL_CONSENT"] = "true"
 from computer_science_assistant import computer_science_assistant
 from english_assistant import english_assistant
 from language_assistant import language_assistant
+from loan_offering_assistant import loan_offering_assistant
 from math_assistant import math_assistant
 from no_expertise import general_assistant
 
@@ -39,6 +40,7 @@ You are TeachAssist, a sophisticated educational orchestrator designed to coordi
    - English Agent: For writing, grammar, literature, and composition
    - Language Agent: For translation and language-related queries
    - Computer Science Agent: For programming, algorithms, data structures, and code execution
+   - Loan Offering Assistant: For loan acceptance predictions based on customer features
    - General Assistant: For all other topics outside these specialized domains
 
 2. Key Responsibilities:
@@ -52,6 +54,7 @@ You are TeachAssist, a sophisticated educational orchestrator designed to coordi
    - If query involves writing/literature/grammar → English Agent
    - If query involves translation → Language Agent
    - If query involves programming/coding/algorithms/computer science → Computer Science Agent
+   - If query involves loan predictions/acceptance → Loan Offering Assistant
    - If query is outside these specialized areas → General Assistant
    - For complex queries, coordinate multiple agents as needed
 
@@ -70,6 +73,9 @@ Examples:
 - "Solve this math equation" -> "teacher"
 - "Help me with Python programming" -> "teacher" 
 - "Translate this to Spanish" -> "teacher"
+- "Will a person accept a loan" -> "teacher"
+- "Predict loan acceptance" -> "teacher"
+- "Will a person with these features accept the loan: 29,2,999,0,1,0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0" -> "teacher"
 - "Remember that my birthday is July 4" -> "knowledge"
 - "What's my birthday?" -> "knowledge"
 - "Store this information: I live in Seattle" -> "knowledge"
@@ -151,6 +157,11 @@ STRANDS_KNOWLEDGE_BASE_ID = get_strands_knowledge_base_id()
 MIN_SCORE = get_min_score()
 MAX_RESULTS = get_max_results()
 TEMPERATURE = get_temperature()
+
+# NOTE: STRANDS_KNOWLEDGE_BASE_ID must be set as an environment variable BEFORE starting the app
+# The Strands Agents framework checks for this during initialization
+# Set it with: export STRANDS_KNOWLEDGE_BASE_ID=<your-kb-id>
+# Or add it to your .bashrc or shell profile
 
 # Set up the page
 st.set_page_config(
@@ -277,6 +288,7 @@ with st.sidebar:
     - **📝 English Assistant**: Writing, grammar, literature, composition
     - **🌍 Language Assistant**: Translation and language queries
     - **💻 Computer Science Assistant**: Programming, algorithms, code execution
+    - **💰 Loan Offering Assistant**: Loan acceptance predictions
     - **🎯 General Assistant**: All other topics
     - **🧠 Knowledge Base**: Store and retrieve personal information
     """)
@@ -289,7 +301,17 @@ with st.sidebar:
     - "Translate 'Hello, how are you?' to Spanish"
     - "Help me improve this essay paragraph"
     - "What is the capital of France?"
+    """)
     
+    st.markdown("**Loan Predictions:**")
+    st.text_area(
+        "Copy this example:",
+        value='Will a person with these features accept the loan: 29,2,999,0,1,0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0',
+        height=100,
+        key="loan_example"
+    )
+    
+    st.markdown("""
     **Knowledge Base:**
     - "Remember that my birthday is July 25"
     - "What's my birthday?"
@@ -301,6 +323,44 @@ with st.sidebar:
     if st.button("🗑️ Clear Conversation"):
         st.session_state.messages = []
         st.rerun()
+    
+    # Debugging section - show all configuration
+    st.header("🔍 Debug Info")
+    with st.expander("Configuration Details", expanded=False):
+        st.markdown("**Environment:**")
+        st.code(f"TEACHERS_ASSISTANT_ENV: {os.getenv('TEACHERS_ASSISTANT_ENV', 'dev')}")
+        st.code(f"AWS_REGION: {aws_region}")
+        
+        st.markdown("**Active Model Configuration:**")
+        st.code(f"Provider: {selected_model_info['provider']}")
+        st.code(f"Model ID: {selected_model_info['model_id']}")
+        st.code(f"Display Name: {selected_model_info['display_name']}")
+        st.code(f"Temperature: {TEMPERATURE}")
+        
+        st.markdown("**SageMaker Configuration (from SSM):**")
+        sagemaker_endpoint = get_sagemaker_model_endpoint()
+        sagemaker_inference_component = get_sagemaker_model_inference_component()
+        st.code(f"Endpoint Name: {sagemaker_endpoint}")
+        st.code(f"Inference Component: {sagemaker_inference_component}")
+        
+        # Show if inference component will be used when SageMaker is selected
+        if selected_model_info['provider'] == 'sagemaker':
+            if sagemaker_inference_component and sagemaker_inference_component != "my-sagemaker-model-inference-component":
+                st.success("✅ SageMaker model WILL use inference component")
+            else:
+                st.warning("⚠️ SageMaker model will use endpoint only (NO inference component)")
+        else:
+            st.info("ℹ️ SageMaker not selected (using Bedrock)")
+        
+        st.markdown("**Knowledge Base:**")
+        st.code(f"KB ID: {STRANDS_KNOWLEDGE_BASE_ID}")
+        st.code(f"Min Score: {MIN_SCORE}")
+        st.code(f"Max Results: {MAX_RESULTS}")
+        
+        st.markdown("**XGBoost Endpoint (Loan Assistant):**")
+        from config import get_xgboost_model_endpoint
+        xgboost_endpoint = get_xgboost_model_endpoint()
+        st.code(f"Endpoint: {xgboost_endpoint}")
 
 # Initialize session state for conversation history
 if "messages" not in st.session_state:
@@ -505,7 +565,7 @@ def get_teacher_agent(_model):
         model=_model,
         system_prompt=TEACHER_SYSTEM_PROMPT,
         callback_handler=None,
-        tools=[math_assistant, language_assistant, english_assistant, computer_science_assistant, general_assistant],
+        tools=[math_assistant, language_assistant, english_assistant, computer_science_assistant, loan_offering_assistant, general_assistant],
     )
 
 

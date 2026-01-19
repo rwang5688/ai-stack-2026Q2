@@ -242,15 +242,18 @@ def get_sagemaker_model_inference_component() -> Optional[str]:
 
 def get_strands_knowledge_base_id() -> str:
     """
-    Get Strands knowledge base ID from SSM Parameter Store.
+    Get Strands knowledge base ID from environment variable.
     
-    Parameter: /teachers_assistant/{env}/strands_knowledge_base_id
-    Default: my-strands-knowledge-base-id
+    Environment Variable: STRANDS_KNOWLEDGE_BASE_ID
+    Default: my-bedrock-knowledge-base-id
     
-    IMPORTANT: This parameter MUST be named 'strands_knowledge_base_id' because
+    IMPORTANT: This parameter MUST be set as an environment variable because
     the Strands Agents framework requires the STRANDS_KNOWLEDGE_BASE_ID environment
     variable to integrate with Bedrock Knowledge Base. This is a framework requirement
-    and cannot be renamed.
+    and must be set BEFORE starting the application.
+    
+    The framework checks for this environment variable during initialization, so it
+    cannot be set programmatically within the application code.
     
     Reference: https://strandsagents.com/latest/documentation/docs/examples/python/knowledge_base_agent/
     
@@ -258,11 +261,18 @@ def get_strands_knowledge_base_id() -> str:
         Knowledge base ID for memory operations
     
     Example:
+        >>> # Set environment variable before starting app
+        >>> # export STRANDS_KNOWLEDGE_BASE_ID=IMW46CITZE
         >>> kb_id = get_strands_knowledge_base_id()
         >>> print(kb_id)
         'IMW46CITZE'
+    
+    Note:
+        If you see "my-bedrock-knowledge-base-id" in the application, you need to
+        set the STRANDS_KNOWLEDGE_BASE_ID environment variable with your actual
+        Bedrock Knowledge Base ID.
     """
-    return _get_parameter('strands_knowledge_base_id', default='my-strands-knowledge-base-id')
+    return os.getenv('STRANDS_KNOWLEDGE_BASE_ID', 'my-bedrock-knowledge-base-id')
 
 
 def get_temperature() -> float:

@@ -1,8 +1,8 @@
-# Session Notes - January 13-18, 2026
+# Session Notes - January 13-19, 2026
 
 ## Multi-Day Session Overview
 
-This document consolidates work from January 13-16, 2026 on the workshop4-multi-agent-sagemaker-ai spec. The work progressed through multiple phases:
+This document consolidates work from January 13-19, 2026 on the workshop4-multi-agent-sagemaker-ai spec. The work progressed through multiple phases:
 1. **Jan 13**: Spec reorganization and configuration module
 2. **Jan 14**: Validation script creation and documentation
 3. **Jan 15 (Morning)**: Debugging and inference component support
@@ -13,6 +13,69 @@ This document consolidates work from January 13-16, 2026 on the workshop4-multi-
 8. **Jan 16**: Naming convention refactoring and STRANDS_KNOWLEDGE_BASE_ID correction
 9. **Jan 17**: Test and debug multi_agent app
 10. **Jan 18**: Add loan assistant; test and debug deploy_multi_agent Docker app
+11. **Jan 19**: Debug SageMaker model integration with Strands Agents
+
+---
+
+# January 19, 2026 - Debug SageMaker Model Integration
+
+## SageMaker Endpoint Validation ✅
+
+**Endpoint Status**: Working correctly
+- Endpoint: `my-meta-llama-3-1-8b-Instruct-1-1768791104`
+- Inference Component: `adapter-my-meta-llama-3-1-8b-Instruct-1-1768791104-1768791112`
+- Model: Meta Llama 3.1 8B Instruct
+- Validation script passes successfully
+- Endpoint responds correctly to direct boto3 calls
+
+## Critical Finding: Strands Agents SageMaker Limitation ⚠️
+
+**Issue**: Strands Agents SDK SageMakerAIModel requires OpenAI chat completion API format
+
+**Root Cause**:
+- Meta Llama 3.1 8B endpoint uses HuggingFace text generation format:
+  ```python
+  payload = {
+      "inputs": "prompt text",
+      "parameters": {"max_new_tokens": 50}
+  }
+  ```
+- Strands SDK expects OpenAI chat completion format:
+  ```python
+  payload = {
+      "messages": [{"role": "user", "content": "prompt"}],
+      "max_tokens": 50
+  }
+  ```
+- When Strands SDK sends OpenAI format to HuggingFace endpoint → `InternalFailure` error
+
+**Validated Models** (per Strands documentation):
+- Mistral-Small-24B-Instruct-2501 (OpenAI compatible, but not customizable)
+- Meta Llama 3.1 8B Instruct (mentioned as "potentially compatible" but NOT actually compatible)
+
+**Workaround**:
+- Use Bedrock models for multi-agent app (Amazon Nova, Claude, etc.)
+- Bedrock models work perfectly with Strands Agents
+- SageMaker integration has significant limitations for custom models
+
+**Documentation Update Needed**:
+- Update sagemaker_model.py comments to clarify Meta Llama 3.1 8B is NOT compatible
+- Note that only Mistral models with OpenAI API support work with Strands SDK
+- Recommend Bedrock for production use
+
+## Debug Info Section Added ✅
+
+Added comprehensive debug panel to Streamlit sidebar:
+- Shows all configuration values (environment, region, temperature)
+- Displays SageMaker endpoint and inference component (always visible)
+- Shows Knowledge Base ID and settings
+- Shows XGBoost endpoint for loan assistant
+- Indicates whether inference component will be used
+- Helps troubleshoot configuration issues
+
+## Sample Questions Updated ✅
+
+Fixed loan prediction example in sidebar to show complete 59-feature CSV payload instead of truncated version.
 
 ---
 
