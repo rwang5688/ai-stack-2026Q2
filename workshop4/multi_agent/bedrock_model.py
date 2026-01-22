@@ -6,8 +6,8 @@ This module provides a factory function for creating Bedrock models
 with support for multiple cross-region inference profiles.
 
 Supported Models:
-    - us.amazon.nova-pro-v1:0 (default)
-    - us.amazon.nova-2-lite-v1:0
+    - us.amazon.nova-2-lite-v1:0 (default)
+    - us.amazon.nova-pro-v1:0
     - us.anthropic.claude-haiku-4-5-20251001-v1:0
     - us.anthropic.claude-sonnet-4-5-20250929-v1:0
 """
