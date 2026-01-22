@@ -588,14 +588,13 @@ for message in st.session_state.messages:
         st.markdown(message["content"])
 
 # Initialize the teacher agent with selected model
-@st.cache_resource
-def get_teacher_agent(_model, _version="v2"):  # Added version parameter to force cache refresh
+# NOTE: Caching disabled for deployed version to ensure fresh agent creation
+def get_teacher_agent(_model):
     """
     Create teacher agent with the specified model.
     
     Args:
         _model: The model instance (BedrockModel or SageMakerAIModel)
-        _version: Version string to force cache invalidation when code changes
     
     Returns:
         Configured Agent instance
@@ -751,3 +750,4 @@ if query:
 # 3. Ensure the authentication UI remains in the sidebar
 # 4. Test that both authentication and your features work together
 # =============================================================================
+# Build version: 2026-01-22-v3 - Cache decorator removed, response handling verified

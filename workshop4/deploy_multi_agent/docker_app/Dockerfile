@@ -3,7 +3,8 @@ EXPOSE 8501
 WORKDIR /app
 COPY requirements.txt ./requirements.txt
 RUN  pip3 install --upgrade pip && pip3 install -r requirements.txt
-# Force rebuild: 2026-01-22 v2 - Fixed Streamlit cache issue
+# Force rebuild: 2026-01-22 v3 - Removed cache decorator completely
+# This ensures fresh agent creation with updated response handling
 COPY . .
 
 # STRANDS_KNOWLEDGE_BASE_ID - Bedrock Knowledge Base identifier
