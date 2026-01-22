@@ -589,12 +589,13 @@ for message in st.session_state.messages:
 
 # Initialize the teacher agent with selected model
 @st.cache_resource
-def get_teacher_agent(_model):
+def get_teacher_agent(_model, _version="v2"):  # Added version parameter to force cache refresh
     """
     Create teacher agent with the specified model.
     
     Args:
         _model: The model instance (BedrockModel or SageMakerAIModel)
+        _version: Version string to force cache invalidation when code changes
     
     Returns:
         Configured Agent instance
