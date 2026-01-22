@@ -147,58 +147,41 @@ This implementation plan breaks down the workshop4-multi-agent-model-selection f
   - Verify custom model deployment information displays correctly
   - Ensure all tests pass, ask the user if questions arise
 
-- [ ] 7. Update configuration module for deployment
-  - [ ] 7.1 Add getter function to deployed config module
-    - Modify `workshop4/deploy_multi_agent/docker_app/config.py`
-    - Add `get_bedrock_custom_model_deployment_arn()` function (identical to local version)
-    - Use `_get_parameter('bedrock_custom_model_deployment_arn', default='my-bedrock-custom-model-deployment-arn')`
-    - Add comprehensive docstring with parameter path, default value, return type, and example
-    - Insert function alphabetically between `get_aws_region()` and `get_default_model_id()`
-    - _Requirements: 1.4, 1.5, 5.1_
+- [x] 7. Sync multi_agent changes to deploy_multi_agent
+  - [x] 7.1 Copy all Python files from multi_agent to deploy_multi_agent/docker_app (except app.py)
+    - Copy the following files from `workshop4/multi_agent/` to `workshop4/deploy_multi_agent/docker_app/`:
+      - `config.py` (includes new `get_bedrock_custom_model_deployment_arn()` function)
+      - `bedrock_model.py` (includes ARN pattern detection)
+      - `sagemaker_model.py`
+      - `model_factory.py`
+      - `teachers_assistant.py` (includes updated model selection)
+      - `math_assistant.py`
+      - `english_assistant.py`
+      - `computer_science_assistant.py`
+      - `language_assistant.py`
+      - `loan_offering_assistant.py`
+      - `no_expertise.py`
+      - `cross_platform_tools.py`
+    - Overwrite existing files in deploy_multi_agent/docker_app/
+    - _Requirements: 5.1_
+  
+  - [x] 7.2 Merge app.py logic while preserving Cognito authentication
+    - **CRITICAL**: Do NOT simply copy `multi_agent/app.py` over `deploy_multi_agent/docker_app/app.py`
+    - Read both files to understand the differences
+    - Preserve Cognito authentication section (lines 1-25) from `deploy_multi_agent/docker_app/app.py`
+    - Merge the following changes from `multi_agent/app.py` into `deploy_multi_agent/docker_app/app.py`:
+      - Import `get_bedrock_custom_model_deployment_arn` from config
+      - Fetch `custom_model_arn` and `sagemaker_endpoint` before model_options
+      - Add Bedrock Custom Model Deployment option to model_options dictionary
+      - Update SageMaker model option label to include endpoint name
+      - Add custom model deployment information display
+      - Update response extraction logic to use `str(response)` for full content
+      - Add empty response handling with helpful error messages
+    - Ensure authentication UI and logic remain intact
+    - Follow the merge workflow documented in PART-3-DEPLOY-MULTI-AGENT.md
+    - _Requirements: 2.1, 2.2, 2.3, 3.1, 3.2, 3.3, 4.1, 5.1_
 
-- [ ] 8. Update deployed application for model selection
-  - [ ] 8.1 Import configuration getter in deployed app
-    - Modify `workshop4/deploy_multi_agent/docker_app/app.py`
-    - Add `get_bedrock_custom_model_deployment_arn` to imports from config module
-    - _Requirements: 2.1, 5.1_
-  
-  - [ ] 8.2 Fetch configuration values before model_options dictionary
-    - Add `custom_model_arn = get_bedrock_custom_model_deployment_arn()` before model_options
-    - Add `sagemaker_endpoint = get_sagemaker_model_endpoint()` before model_options
-    - _Requirements: 2.1, 4.1, 5.1_
-  
-  - [ ] 8.3 Add Bedrock Custom Model Deployment option to model_options
-    - Add new dictionary entry with key `f"Bedrock Custom Model Deployment ({custom_model_arn})"`
-    - Set provider to "bedrock"
-    - Set model_id to `custom_model_arn`
-    - Set display_name to "Bedrock Custom Model Deployment"
-    - Place after existing Bedrock options and before SageMaker option
-    - _Requirements: 2.1, 2.2, 2.3, 5.1_
-  
-  - [ ] 8.4 Update SageMaker model option label
-    - Change key from "Custom SageMaker Model" to `f"SageMaker Model ({sagemaker_endpoint})"`
-    - Keep provider, model_id, and display_name unchanged
-    - Update display_name to "SageMaker Model"
-    - _Requirements: 4.1, 5.1_
-  
-  - [ ] 8.5 Add custom model deployment information display
-    - Add conditional block after active model info display
-    - Check if `selected_model_info['display_name'] == "Bedrock Custom Model Deployment"`
-    - Display markdown with explanation about ARN usage for custom model deployments
-    - Include information that model_id is the value of bedrock-custom-model-deployment-arn parameter
-    - _Requirements: 3.1, 3.2, 3.3, 5.1_
-
-- [ ] 9. Enhance deployed Bedrock model creation with ARN validation
-  - [ ] 9.1 Add ARN pattern detection to deployed bedrock_model.py
-    - Modify `workshop4/deploy_multi_agent/docker_app/bedrock_model.py`
-    - Import `re` module at top of file
-    - Add ARN_PATTERN constant: `r'^arn:aws:bedrock:[a-z0-9-]+:\d{12}:custom-model-deployment/[a-zA-Z0-9]+'`
-    - Update `create_bedrock_model()` to detect ARN format using regex
-    - Skip validation if model_id matches ARN pattern
-    - Keep existing validation for non-ARN model IDs
-    - _Requirements: 2.4, 5.1_
-
-- [ ] 10. Checkpoint - Remote deployment testing
+- [ ] 8. Checkpoint - Remote deployment testing
   - Follow PART-3-DEPLOY-MULTI-AGENT.md instructions for remote testing
   - Deploy application to remote environment
   - Verify SSM parameters are accessible
@@ -208,9 +191,10 @@ This implementation plan breaks down the workshop4-multi-agent-model-selection f
   - Test end-to-end functionality with custom model deployment
   - Run validate_all.py to verify all endpoints including custom model deployment
   - Verify backward compatibility with existing models
+  - Verify Cognito authentication still works correctly
   - Ensure all tests pass, ask the user if questions arise
 
-- [ ]* 11. Write property test for inference component conditional logic
+- [ ]* 9. Write property test for inference component conditional logic
   - **Property 1: Inference Component Conditional Setting**
   - **Validates: Requirements 4.3**
   - Use hypothesis to generate various inference component values
@@ -218,7 +202,7 @@ This implementation plan breaks down the workshop4-multi-agent-model-selection f
   - Test with None, placeholder value, and valid component names
   - _Requirements: 4.3_
 
-- [ ]* 12. Write integration tests for backward compatibility
+- [ ]* 10. Write integration tests for backward compatibility
   - Test that all existing Bedrock options still work
   - Test that SageMaker integration still works
   - Test that model invocation parameters are unchanged

@@ -60,8 +60,12 @@ def select_model():
     Returns:
         Configured model instance (BedrockModel or SageMakerAIModel)
     """
-    # Get temperature from config
+    # Get temperature and configuration from config
     temperature = get_temperature()
+    from config import get_bedrock_custom_model_deployment_arn, get_sagemaker_model_endpoint
+    
+    custom_model_arn = get_bedrock_custom_model_deployment_arn()
+    sagemaker_endpoint = get_sagemaker_model_endpoint()
     
     print("\n🤖 Model Selection")
     print("=" * 60)
@@ -71,7 +75,8 @@ def select_model():
     print("  2. Amazon Nova 2 Lite (Default)")
     print("  3. Anthropic Claude Haiku 4.5")
     print("  4. Anthropic Claude Sonnet 4.5")
-    print("  5. Custom gpt-oss-20b (SageMaker Endpoint)")
+    print(f"  5. Bedrock Custom Model Deployment ({custom_model_arn})")
+    print(f"  6. SageMaker Model ({sagemaker_endpoint})")
     print()
     
     # Model configuration mapping
@@ -97,7 +102,12 @@ def select_model():
             "model_id": "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
         },
         "5": {
-            "name": "Custom gpt-oss-20b (SageMaker Endpoint)",
+            "name": "Bedrock Custom Model Deployment",
+            "provider": "bedrock",
+            "model_id": custom_model_arn
+        },
+        "6": {
+            "name": "SageMaker Model",
             "provider": "sagemaker",
             "model_id": "sagemaker-endpoint"
         }
@@ -106,7 +116,7 @@ def select_model():
     # Get user selection
     while True:
         try:
-            choice = input("Enter your choice (1-5) [default: 2]: ").strip()
+            choice = input("Enter your choice (1-6) [default: 2]: ").strip()
             
             # Default to option 2 if empty
             if not choice:
@@ -137,7 +147,7 @@ def select_model():
                             temperature=temperature
                         )
             else:
-                print("❌ Invalid choice. Please enter a number between 1 and 5.")
+                print("❌ Invalid choice. Please enter a number between 1 and 6.")
         except KeyboardInterrupt:
             print("\n\n⚠️  Selection cancelled. Using default: Amazon Nova 2 Lite")
             return create_bedrock_model(
