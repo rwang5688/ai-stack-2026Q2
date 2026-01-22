@@ -12,9 +12,13 @@ Supported Models:
     - us.anthropic.claude-sonnet-4-5-20250929-v1:0
 """
 
+import re
 from strands.models import BedrockModel
 from config import get_default_model_id, get_aws_region
 
+
+# ARN pattern for Bedrock custom model deployments
+ARN_PATTERN = r'^arn:aws:bedrock:[a-z0-9-]+:\d{12}:custom-model-deployment/[a-zA-Z0-9]+'
 
 # Supported cross-region inference profiles
 SUPPORTED_MODELS = [
@@ -33,8 +37,9 @@ def create_bedrock_model(
     Create a Bedrock model instance.
     
     Args:
-        model_id: Bedrock model ID or cross-region profile.
+        model_id: Bedrock model ID, cross-region profile, or custom model deployment ARN.
                  If None, uses value from get_default_model_id().
+                 ARN format: arn:aws:bedrock:{region}:{account}:custom-model-deployment/{id}
                  Default: us.amazon.nova-2-lite-v1:0
         temperature: Model temperature setting (0.0 to 1.0).
                     Lower values make output more deterministic.
@@ -44,7 +49,7 @@ def create_bedrock_model(
         Configured BedrockModel instance
     
     Raises:
-        ValueError: If model_id is not in the list of supported models
+        ValueError: If model_id is not in the list of supported models and is not a valid ARN
     
     Example:
         >>> # Use default model from environment
@@ -55,13 +60,22 @@ def create_bedrock_model(
         ...     model_id="us.anthropic.claude-sonnet-4-5-20250929-v1:0",
         ...     temperature=0.5
         ... )
+        
+        >>> # Use custom model deployment ARN
+        >>> model = create_bedrock_model(
+        ...     model_id="arn:aws:bedrock:us-east-1:123456789012:custom-model-deployment/abc123",
+        ...     temperature=0.3
+        ... )
     """
     # Get model ID from parameter or config
     if model_id is None:
         model_id = get_default_model_id()
     
-    # Validate model ID
-    if model_id not in SUPPORTED_MODELS:
+    # Check if model_id is an ARN (custom model deployment)
+    is_arn = re.match(ARN_PATTERN, model_id) is not None
+    
+    # Validate model ID only if it's not an ARN
+    if not is_arn and model_id not in SUPPORTED_MODELS:
         raise ValueError(
             f"Invalid Bedrock model ID: '{model_id}'. "
             f"Supported models: {', '.join(SUPPORTED_MODELS)}"

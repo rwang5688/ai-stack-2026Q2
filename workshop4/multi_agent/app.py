@@ -5,6 +5,7 @@ from strands_tools import memory, use_agent
 
 # Import configuration module
 from config import (
+    get_bedrock_custom_model_deployment_arn,
     get_sagemaker_model_endpoint,
     get_sagemaker_model_inference_component,
     get_aws_region,
@@ -178,6 +179,10 @@ with st.sidebar:
     # Model Selection
     st.header("🤖 Model Selection")
     
+    # Fetch configuration values for dynamic model options
+    custom_model_arn = get_bedrock_custom_model_deployment_arn()
+    sagemaker_endpoint = get_sagemaker_model_endpoint()
+    
     # Define model options
     model_options = {
         "Amazon Nova Pro (us.amazon.nova-pro-v1:0)": {
@@ -200,10 +205,15 @@ with st.sidebar:
             "model_id": "us.anthropic.claude-sonnet-4-5-20250929-v1:0",
             "display_name": "Anthropic Claude Sonnet 4.5"
         },
-        "Custom SageMaker Model": {
+        f"Bedrock Custom Model Deployment ({custom_model_arn})": {
+            "provider": "bedrock",
+            "model_id": custom_model_arn,
+            "display_name": "Bedrock Custom Model Deployment"
+        },
+        f"SageMaker Model ({sagemaker_endpoint})": {
             "provider": "sagemaker",
             "model_id": "sagemaker-endpoint",
-            "display_name": "Custom SageMaker Model"
+            "display_name": "SageMaker Model"
         }
     }
     
@@ -243,6 +253,19 @@ with st.sidebar:
     
     # Display active model information
     st.info(f"**Active Model**: {selected_model_info['display_name']}\n\n**Provider**: {provider_display}")
+    
+    # Display custom model deployment information if applicable
+    if selected_model_info['display_name'] == "Bedrock Custom Model Deployment":
+        st.markdown("""
+        **ℹ️ About Custom Model Deployments**
+        
+        You are using a Bedrock Custom Model Deployment. The `model_id` is the ARN (Amazon Resource Name) 
+        of your custom model deployment, retrieved from the SSM Parameter Store parameter:
+        
+        `/teachers_assistant/{environment}/bedrock_custom_model_deployment_arn`
+        
+        Custom model deployments allow you to use fine-tuned or custom-trained models with Bedrock.
+        """)
     
     st.header("🔧 AI Service Details")
     aws_region = get_aws_region()

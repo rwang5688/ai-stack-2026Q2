@@ -61,7 +61,7 @@ This implementation plan breaks down the workshop4-multi-agent-model-selection f
     - Exit with appropriate status code (0 if all pass, 1 if any fail)
     - _Requirements: 2.6, 2.7_
 
-- [ ] 3. Update configuration module for local development
+- [x] 3. Update configuration module for local development
   - [x] 3.1 Add getter function to local config module
     - Modify `workshop4/multi_agent/config.py`
     - Add `get_bedrock_custom_model_deployment_arn()` function that retrieves the parameter value
@@ -76,18 +76,18 @@ This implementation plan breaks down the workshop4-multi-agent-model-selection f
     - Test default value handling
     - _Requirements: 1.4_
 
-- [ ] 4. Update local application for model selection
-  - [ ] 4.1 Import configuration getter in local app
+- [x] 4. Update local application for model selection
+  - [x] 4.1 Import configuration getter in local app
     - Modify `workshop4/multi_agent/app.py`
     - Add `get_bedrock_custom_model_deployment_arn` to imports from config module
     - _Requirements: 2.1_
   
-  - [ ] 4.2 Fetch configuration values before model_options dictionary
+  - [x] 4.2 Fetch configuration values before model_options dictionary
     - Add `custom_model_arn = get_bedrock_custom_model_deployment_arn()` before model_options
     - Add `sagemaker_endpoint = get_sagemaker_model_endpoint()` before model_options
     - _Requirements: 2.1, 4.1_
   
-  - [ ] 4.3 Add Bedrock Custom Model Deployment option to model_options
+  - [x] 4.3 Add Bedrock Custom Model Deployment option to model_options
     - Add new dictionary entry with key `f"Bedrock Custom Model Deployment ({custom_model_arn})"`
     - Set provider to "bedrock"
     - Set model_id to `custom_model_arn`
@@ -95,13 +95,13 @@ This implementation plan breaks down the workshop4-multi-agent-model-selection f
     - Place after existing Bedrock options and before SageMaker option
     - _Requirements: 2.1, 2.2, 2.3_
   
-  - [ ] 4.4 Update SageMaker model option label
+  - [x] 4.4 Update SageMaker model option label
     - Change key from "Custom SageMaker Model" to `f"SageMaker Model ({sagemaker_endpoint})"`
     - Keep provider, model_id, and display_name unchanged
     - Update display_name to "SageMaker Model"
     - _Requirements: 4.1_
   
-  - [ ] 4.5 Add custom model deployment information display
+  - [x] 4.5 Add custom model deployment information display
     - Add conditional block after active model info display
     - Check if `selected_model_info['display_name'] == "Bedrock Custom Model Deployment"`
     - Display markdown with explanation about ARN usage for custom model deployments
@@ -115,8 +115,8 @@ This implementation plan breaks down the workshop4-multi-agent-model-selection f
     - Test that all existing model options are preserved
     - _Requirements: 2.1, 2.2, 2.3, 2.5, 4.1_
 
-- [ ] 5. Enhance Bedrock model creation with ARN validation
-  - [ ] 5.1 Add ARN pattern detection to bedrock_model.py
+- [x] 5. Enhance Bedrock model creation with ARN validation
+  - [x] 5.1 Add ARN pattern detection to bedrock_model.py
     - Modify `workshop4/multi_agent/bedrock_model.py`
     - Import `re` module at top of file
     - Add ARN_PATTERN constant: `r'^arn:aws:bedrock:[a-z0-9-]+:\d{12}:custom-model-deployment/[a-zA-Z0-9]+'`
@@ -138,7 +138,7 @@ This implementation plan breaks down the workshop4-multi-agent-model-selection f
     - Test that standard model IDs still work
     - _Requirements: 2.4_
 
-- [ ] 6. Checkpoint - Local development testing
+- [x] 6. Checkpoint - Local development testing
   - Follow PART-2-MULTI-AGENT.md instructions for local testing
   - Test model selection dropdown displays all options correctly
   - Test selecting custom model deployment option
