@@ -217,3 +217,87 @@ Ready to proceed with deployment tasks:
 - Task 8: Update deployed application for model selection (docker_app/app.py)
 - Task 9: Enhance deployed Bedrock model creation with ARN validation (docker_app/bedrock_model.py)
 - Task 10: Checkpoint - Remote deployment testing
+
+
+## Session Continuation - Bug Fixes and SageMaker Limitation Discovery
+
+### Bug Fixes Completed
+
+#### Bug Fix 1: use_agent Tool - SageMaker Provider Not Supported ✅
+**Problem**: When selecting SageMaker model, got error "Unknown model provider: sagemaker"
+
+**Root Cause**: The `use_agent` tool from `strands_tools` only supports "bedrock" provider, not "sagemaker"
+
+**Solution**: Modified all `use_agent` calls to always use Bedrock (Nova 2 Lite) for internal routing decisions:
+- `determine_action()` - Routes queries to teacher vs knowledge base
+- `determine_kb_action()` - Determines store vs retrieve  
+- `run_kb_agent()` - Generates answers from knowledge base results
+
+**Rationale**: These are simple classification tasks that don't need advanced model capabilities. Using lightweight Bedrock model for routing is cost-effective and reliable.
+
+**Files Modified**:
+- `workshop4/multi_agent/app.py` - Lines ~395-550
+- `workshop4/REFERENCE.md` - Documented limitation
+
+#### Bug Fix 2: SageMaker Models Return Empty Responses ⚠️
+**Problem**: When using SageMaker models (Mistral Small 3.2 24B), teacher agent returns blank responses
+
+**Root Cause**: SageMaker models have **inconsistent tool-calling support**. The teacher agent needs to call specialized assistant tools (`math_assistant`, `english_assistant`, etc.), but SageMaker models don't reliably return content when making these tool calls.
+
+**Symptoms**:
+- `AgentResult` object has empty content: `message['content'] = []`
+- Works intermittently - sometimes succeeds, sometimes fails
+- Affects both Auto-Route and Teacher Agent modes
+- Knowledge Base mode works fine (doesn't use specialized assistant tools)
+
+**Investigation Process**:
+1. Added debug logging to trace response flow
+2. Discovered `AgentResult.message['content']` was empty array
+3. Confirmed Bedrock models return proper content in same code path
+4. Tested multiple times - confirmed intermittent behavior
+
+**Solution**: 
+1. Added proper content extraction from `AgentResult` objects
+2. Added helpful error messages explaining the limitation
+3. Documented in REFERENCE.md as a known issue
+4. Recommend using Bedrock models for multi-agent system
+
+**Files Modified**:
+- `workshop4/multi_agent/app.py` - Lines ~620-670 (response extraction and error handling)
+- `workshop4/REFERENCE.md` - Comprehensive documentation of limitation
+
+**Recommendation**: Use Bedrock models (Nova, Claude) for reliable multi-agent operation. SageMaker models are not recommended due to inconsistent tool-calling support.
+
+### Documentation Updates
+
+#### REFERENCE.md Enhancements ✅
+Added comprehensive sections:
+- **Known Issues** 
+  - SageMaker tool-calling limitations (detailed explanation)
+  - use_agent Bedrock-only support
+- **AWS Configuration** - SSM Parameter Store setup
+- **Environment Variables** - Required variables and how to set them
+- **Troubleshooting** - Common issues and solutions
+- **Performance Optimization** - Model selection guidelines
+- **Security Considerations** - IAM permissions and best practices
+
+### Key Decisions
+
+1. **Accept SageMaker Limitation**: Rather than spend more time trying to fix an SDK-level issue, we documented it clearly and recommend Bedrock models for the multi-agent system
+
+2. **Bedrock for Internal Routing**: Always use Bedrock (Nova 2 Lite) for `use_agent` calls, regardless of user's selected model. This ensures routing decisions are fast, reliable, and cost-effective.
+
+3. **Helpful Error Messages**: When SageMaker models fail, show clear explanation of the issue and actionable solutions
+
+### Checkpoint Status
+- ✅ Tasks 1-6 complete (local development)
+- ✅ Bug fixes applied and tested
+- ✅ Documentation updated
+- ⏳ Ready for checkpoint commit
+- ⏳ Next: Tasks 7-9 (deployment version)
+
+### Next Steps After Checkpoint
+1. Task 7: Update docker_app/config.py with new getter function
+2. Task 8: Update docker_app/app.py with model selection changes
+3. Task 9: Update docker_app/bedrock_model.py with ARN validation
+4. Task 10: Remote deployment testing

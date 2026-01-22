@@ -398,27 +398,17 @@ def determine_action(query, model, model_info):
     )
     
     try:
-        # Build model_settings based on provider
-        model_settings = {}
-        if model_info['provider'] == 'bedrock':
-            model_settings = {
-                'model_id': model_info['model_id'],
-                'temperature': TEMPERATURE
-            }
-        elif model_info['provider'] == 'sagemaker':
-            inference_component = get_sagemaker_model_inference_component()
-            model_settings = {
-                'endpoint_name': get_sagemaker_model_endpoint(),
-                'temperature': TEMPERATURE
-            }
-            # Add inference component if it's set and not the default placeholder
-            if inference_component and inference_component != "my-sagemaker-model-inference-component":
-                model_settings['inference_component_name'] = inference_component
+        # Build model_settings - use_agent tool only supports bedrock provider
+        # So we always use bedrock for routing decisions, regardless of main agent model
+        model_settings = {
+            'model_id': 'us.amazon.nova-2-lite-v1:0',
+            'temperature': TEMPERATURE
+        }
         
         result = agent.tool.use_agent(
             prompt=f"Query: {query}",
             system_prompt=ACTION_DETERMINATION_PROMPT,
-            model_provider=model_info['provider'],
+            model_provider="bedrock",
             model_settings=model_settings
         )
         
@@ -447,27 +437,17 @@ def determine_kb_action(query, model, model_info):
     )
     
     try:
-        # Build model_settings based on provider
-        model_settings = {}
-        if model_info['provider'] == 'bedrock':
-            model_settings = {
-                'model_id': model_info['model_id'],
-                'temperature': TEMPERATURE
-            }
-        elif model_info['provider'] == 'sagemaker':
-            inference_component = get_sagemaker_model_inference_component()
-            model_settings = {
-                'endpoint_name': get_sagemaker_model_endpoint(),
-                'temperature': TEMPERATURE
-            }
-            # Add inference component if it's set and not the default placeholder
-            if inference_component and inference_component != "my-sagemaker-model-inference-component":
-                model_settings['inference_component_name'] = inference_component
+        # Build model_settings - use_agent tool only supports bedrock provider
+        # So we always use bedrock for routing decisions, regardless of main agent model
+        model_settings = {
+            'model_id': 'us.amazon.nova-2-lite-v1:0',
+            'temperature': TEMPERATURE
+        }
         
         result = agent.tool.use_agent(
             prompt=f"Query: {query}",
             system_prompt=KB_ACTION_SYSTEM_PROMPT,
-            model_provider=model_info['provider'],
+            model_provider="bedrock",
             model_settings=model_settings
         )
         
@@ -520,28 +500,18 @@ def run_kb_agent(query, model, model_info):
             # Convert the result to a string to extract just the content text
             result_str = str(result)
             
-            # Build model_settings based on provider
-            model_settings = {}
-            if model_info['provider'] == 'bedrock':
-                model_settings = {
-                    'model_id': model_info['model_id'],
-                    'temperature': TEMPERATURE
-                }
-            elif model_info['provider'] == 'sagemaker':
-                inference_component = get_sagemaker_model_inference_component()
-                model_settings = {
-                    'endpoint_name': get_sagemaker_model_endpoint(),
-                    'temperature': TEMPERATURE
-                }
-                # Add inference component if it's set and not the default placeholder
-                if inference_component and inference_component != "my-sagemaker-model-inference-component":
-                    model_settings['inference_component_name'] = inference_component
+            # Build model_settings - use_agent tool only supports bedrock provider
+            # So we always use bedrock for answer generation, regardless of main agent model
+            model_settings = {
+                'model_id': 'us.amazon.nova-2-lite-v1:0',
+                'temperature': TEMPERATURE
+            }
             
             # Generate a clear, conversational answer using the retrieved information
             answer = agent.tool.use_agent(
                 prompt=f"User question: \"{query}\"\n\nInformation from knowledge base:\n{result_str}\n\nStart your answer with newline character and provide a helpful answer based on this information:",
                 system_prompt=KB_ANSWER_SYSTEM_PROMPT,
-                model_provider=model_info['provider'],
+                model_provider="bedrock",
                 model_settings=model_settings
             )
             
@@ -652,7 +622,29 @@ if query:
                 with st.spinner("Routing to educational specialist..."):
                     teacher_agent = get_teacher_agent(current_model)
                     response = teacher_agent(query)
-                    content = str(response)
+                    
+                    # Extract content from AgentResult
+                    if hasattr(response, 'message') and 'content' in response.message:
+                        content_list = response.message['content']
+                        if content_list:
+                            # Extract text from content items
+                            content = '\n'.join([item.get('text', '') for item in content_list if 'text' in item])
+                        else:
+                            # Empty content - model doesn't support tool calling properly
+                            content = "⚠️ **SageMaker Model Tool Calling Issue**\n\n" \
+                                     "The selected SageMaker model returned an empty response. This is a known limitation:\n\n" \
+                                     "**Issue**: SageMaker models have inconsistent tool-calling support with the multi-agent system.\n\n" \
+                                     "**Why This Happens**: The teacher agent needs to call specialized assistant tools " \
+                                     "(math_assistant, english_assistant, etc.), but SageMaker models don't reliably handle these tool calls.\n\n" \
+                                     "**Solutions**:\n" \
+                                     "1. **Switch to Bedrock Model**: Use Amazon Nova 2 Lite, Nova Pro, or Claude models (recommended)\n" \
+                                     "2. **Use Knowledge Base Mode**: If you only need knowledge base operations\n" \
+                                     "3. **Try Again**: Sometimes works intermittently\n\n" \
+                                     f"**Current Model**: {selected_model_info['display_name']}\n" \
+                                     f"**Mode**: Teacher Agent\n\n" \
+                                     "See REFERENCE.md for more details on this limitation."
+                    else:
+                        content = str(response)
             
             elif selected_agent_type == "Knowledge Base":
                 # Route directly to knowledge base agent
@@ -675,7 +667,26 @@ if query:
                     with st.spinner("Routing to educational specialist..."):
                         teacher_agent = get_teacher_agent(current_model)
                         response = teacher_agent(query)
-                        content = str(response)
+                        
+                        # Extract content from AgentResult
+                        if hasattr(response, 'message') and 'content' in response.message:
+                            content_list = response.message['content']
+                            if content_list:
+                                # Extract text from content items
+                                content = '\n'.join([item.get('text', '') for item in content_list if 'text' in item])
+                            else:
+                                # Empty content - model doesn't support tool calling properly
+                                content = "⚠️ **SageMaker Model Tool Calling Issue**\n\n" \
+                                         "The selected SageMaker model returned an empty response. This is a known limitation:\n\n" \
+                                         "**Issue**: SageMaker models have inconsistent tool-calling support with the multi-agent system.\n\n" \
+                                         "**Solutions**:\n" \
+                                         "1. **Switch to Bedrock Model**: Use Amazon Nova 2 Lite, Nova Pro, or Claude models (recommended)\n" \
+                                         "2. **Use Knowledge Base Mode**: If you only need knowledge base operations\n" \
+                                         "3. **Try Again**: Sometimes works intermittently\n\n" \
+                                         f"**Current Model**: {selected_model_info['display_name']}\n\n" \
+                                         "See REFERENCE.md for more details on this limitation."
+                        else:
+                            content = str(response)
             
             # Display the response
             message_placeholder.markdown(content)
