@@ -27,45 +27,51 @@ Comprehensive troubleshooting, cross-platform compatibility, authentication deta
 
 ### Model Provider Limitations
 
-#### SageMaker Model Tool Calling - Inconsistent Support
+#### SageMaker Model Tool Calling - Model Version Specific Limitation
 
-**Issue**: SageMaker models (including Mistral Small 3.2 24B) have **inconsistent tool-calling support** with the multi-agent system.
+**Issue**: Some SageMaker model versions have **incompatible tool-calling implementations** with the multi-agent system.
 
-**Symptoms**:
+**Confirmed Model Compatibility**:
+- ✅ **Mistral Small 3 24b Instruct (2501)** - Works correctly with tool calling
+- ❌ **Mistral Small 3.2 24b Instruct (2506)** - Does NOT work with tool calling (returns empty responses)
+
+**Symptoms** (when using incompatible models):
 - Empty responses when using SageMaker models
 - Error message: "The selected model returned an empty response"
-- Works intermittently - sometimes succeeds, sometimes fails
+- Bedrock models work fine with the same code
 
 **Root Cause**: 
-The teacher agent architecture requires reliable tool calling to route queries to specialized assistants (`math_assistant`, `english_assistant`, `computer_science_assistant`, etc.). SageMaker models don't consistently return content when making these tool calls, resulting in empty `AgentResult` objects with `message['content'] = []`.
+The teacher agent architecture requires reliable tool calling to route queries to specialized assistants (`math_assistant`, `english_assistant`, `computer_science_assistant`, etc.). Some SageMaker model versions (like Mistral Small 3.2) don't return content when making these tool calls, resulting in empty `AgentResult` objects with `message['content'] = []`.
 
-**Affected Modes**:
+**Affected Modes** (for incompatible models):
 - **Auto-Route Mode**: ❌ Fails - requires tool calling for routing decisions
 - **Teacher Agent Mode**: ❌ Fails - requires tool calling for specialized assistants  
 - **Knowledge Base Mode**: ✅ Works - doesn't require specialized assistant tools
 
 **Workaround Options**:
-1. **Use Bedrock Models**: Switch to Amazon Nova or Claude models which have reliable tool-calling support
-2. **Use Knowledge Base Mode**: If you only need knowledge base operations, this mode works with SageMaker
-3. **Wait for Model Updates**: Future SageMaker model versions may improve tool-calling reliability
+1. **Use Compatible SageMaker Models**: Deploy Mistral Small 3 (2501) Instruct or test other model versions
+2. **Use Bedrock Models**: Switch to Amazon Nova or Claude models which have reliable tool-calling support
+3. **Use Knowledge Base Mode**: If you only need knowledge base operations, this mode works with all models
+4. **Test Before Deploying**: Always test new SageMaker model versions with tool calling before production use
 
 **Recommended Models**:
 - ✅ **Amazon Nova 2 Lite** - Fast, reliable, cost-effective
 - ✅ **Amazon Nova Pro** - Balanced performance
 - ✅ **Claude Haiku 4.5** - Advanced reasoning
 - ✅ **Claude Sonnet 4.5** - Best for complex tasks
-- ⚠️ **SageMaker Models** - Inconsistent tool calling (not recommended for multi-agent system)
+- ✅ **Mistral Small 3 (2501) Instruct** - Works with SageMaker
+- ❌ **Mistral Small 3.2 (2506) Instruct** - Incompatible tool calling
 
 **Technical Details**:
 ```python
-# When SageMaker model fails, the response looks like:
+# When incompatible SageMaker model fails, the response looks like:
 AgentResult(
     stop_reason='end_turn',
     message={'role': 'assistant', 'content': []},  # Empty!
     metrics=EventLoopMetrics(...)
 )
 
-# Bedrock models return proper content:
+# Compatible models (Bedrock or Mistral Small 3 2501) return proper content:
 AgentResult(
     stop_reason='end_turn', 
     message={'role': 'assistant', 'content': [{'text': '...response...'}]},
@@ -78,9 +84,10 @@ AgentResult(
 - `workshop4/deploy_multi_agent/docker_app/app.py` - Lines ~670-720
 
 **Future Considerations**:
-- Monitor Strands Agents SDK updates for improved SageMaker tool-calling support
-- Consider implementing a fallback mode that doesn't use tool calling for SageMaker models
-- Test newer SageMaker model versions as they become available
+- Always test new SageMaker model versions with tool calling before production deployment
+- Monitor Strands Agents SDK updates for improved SageMaker compatibility
+- Consider maintaining a list of tested/compatible SageMaker models
+- Newer model versions may have different tool-calling implementations
 
 #### use_agent Tool - Bedrock Only Support
 

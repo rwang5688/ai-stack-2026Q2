@@ -623,28 +623,24 @@ if query:
                     teacher_agent = get_teacher_agent(current_model)
                     response = teacher_agent(query)
                     
-                    # Extract content from AgentResult
-                    if hasattr(response, 'message') and 'content' in response.message:
-                        content_list = response.message['content']
-                        if content_list:
-                            # Extract text from content items
-                            content = '\n'.join([item.get('text', '') for item in content_list if 'text' in item])
-                        else:
-                            # Empty content - model doesn't support tool calling properly
-                            content = "⚠️ **SageMaker Model Tool Calling Issue**\n\n" \
-                                     "The selected SageMaker model returned an empty response. This is a known limitation:\n\n" \
-                                     "**Issue**: SageMaker models have inconsistent tool-calling support with the multi-agent system.\n\n" \
-                                     "**Why This Happens**: The teacher agent needs to call specialized assistant tools " \
-                                     "(math_assistant, english_assistant, etc.), but SageMaker models don't reliably handle these tool calls.\n\n" \
-                                     "**Solutions**:\n" \
-                                     "1. **Switch to Bedrock Model**: Use Amazon Nova 2 Lite, Nova Pro, or Claude models (recommended)\n" \
-                                     "2. **Use Knowledge Base Mode**: If you only need knowledge base operations\n" \
-                                     "3. **Try Again**: Sometimes works intermittently\n\n" \
-                                     f"**Current Model**: {selected_model_info['display_name']}\n" \
-                                     f"**Mode**: Teacher Agent\n\n" \
-                                     "See REFERENCE.md for more details on this limitation."
-                    else:
-                        content = str(response)
+                    # Use str() to get the full response content
+                    # This works for both Bedrock and SageMaker models
+                    content = str(response)
+                    
+                    # Check if we got an empty response (SageMaker tool calling issue)
+                    if not content or content.strip() == "":
+                        content = "⚠️ **SageMaker Model Tool Calling Issue**\n\n" \
+                                 "The selected SageMaker model returned an empty response. This is a known limitation:\n\n" \
+                                 "**Issue**: SageMaker models have inconsistent tool-calling support with the multi-agent system.\n\n" \
+                                 "**Why This Happens**: The teacher agent needs to call specialized assistant tools " \
+                                 "(math_assistant, english_assistant, etc.), but SageMaker models don't reliably handle these tool calls.\n\n" \
+                                 "**Solutions**:\n" \
+                                 "1. **Switch to Bedrock Model**: Use Amazon Nova 2 Lite, Nova Pro, or Claude models (recommended)\n" \
+                                 "2. **Use Knowledge Base Mode**: If you only need knowledge base operations\n" \
+                                 "3. **Try Again**: Sometimes works intermittently\n\n" \
+                                 f"**Current Model**: {selected_model_info['display_name']}\n" \
+                                 f"**Mode**: Teacher Agent\n\n" \
+                                 "See REFERENCE.md for more details on this limitation."
             
             elif selected_agent_type == "Knowledge Base":
                 # Route directly to knowledge base agent
@@ -668,25 +664,24 @@ if query:
                         teacher_agent = get_teacher_agent(current_model)
                         response = teacher_agent(query)
                         
-                        # Extract content from AgentResult
-                        if hasattr(response, 'message') and 'content' in response.message:
-                            content_list = response.message['content']
-                            if content_list:
-                                # Extract text from content items
-                                content = '\n'.join([item.get('text', '') for item in content_list if 'text' in item])
-                            else:
-                                # Empty content - model doesn't support tool calling properly
-                                content = "⚠️ **SageMaker Model Tool Calling Issue**\n\n" \
-                                         "The selected SageMaker model returned an empty response. This is a known limitation:\n\n" \
-                                         "**Issue**: SageMaker models have inconsistent tool-calling support with the multi-agent system.\n\n" \
-                                         "**Solutions**:\n" \
-                                         "1. **Switch to Bedrock Model**: Use Amazon Nova 2 Lite, Nova Pro, or Claude models (recommended)\n" \
-                                         "2. **Use Knowledge Base Mode**: If you only need knowledge base operations\n" \
-                                         "3. **Try Again**: Sometimes works intermittently\n\n" \
-                                         f"**Current Model**: {selected_model_info['display_name']}\n\n" \
-                                         "See REFERENCE.md for more details on this limitation."
-                        else:
-                            content = str(response)
+                        # Use str() to get the full response content
+                        # This works for both Bedrock and SageMaker models
+                        content = str(response)
+                        
+                        # Check if we got an empty response (SageMaker tool calling issue)
+                        if not content or content.strip() == "":
+                            content = "⚠️ **SageMaker Model Tool Calling Issue**\n\n" \
+                                     "The selected SageMaker model returned an empty response. This is a known limitation:\n\n" \
+                                     "**Issue**: SageMaker models have inconsistent tool-calling support with the multi-agent system.\n\n" \
+                                     "**Why This Happens**: The teacher agent needs to call specialized assistant tools " \
+                                     "(math_assistant, english_assistant, etc.), but SageMaker models don't reliably handle these tool calls.\n\n" \
+                                     "**Solutions**:\n" \
+                                     "1. **Switch to Bedrock Model**: Use Amazon Nova 2 Lite, Nova Pro, or Claude models (recommended)\n" \
+                                     "2. **Use Knowledge Base Mode**: If you only need knowledge base operations\n" \
+                                     "3. **Try Again**: Sometimes works intermittently\n\n" \
+                                     f"**Current Model**: {selected_model_info['display_name']}\n" \
+                                     f"**Mode**: Auto-Route\n\n" \
+                                     "See REFERENCE.md for more details on this limitation."
             
             # Display the response
             message_placeholder.markdown(content)
