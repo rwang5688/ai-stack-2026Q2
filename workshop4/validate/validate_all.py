@@ -95,7 +95,7 @@ def main():
     validations = []
     
     # Validation 1: SSM Parameter Store
-    print("🔍 Running Validation 1 of 3...")
+    print("🔍 Running Validation 1 of 4...")
     ssm_passed = run_validation_script(
         "validate_ssm_parameters.py",
         "Validation 1: SSM Parameter Store"
@@ -104,21 +104,31 @@ def main():
     
     print_separator()
     
-    # Validation 2: SageMaker Model Endpoint
-    print("🔍 Running Validation 2 of 3...")
+    # Validation 2: Bedrock Custom Model Deployment
+    print("🔍 Running Validation 2 of 4...")
+    bedrock_custom_passed = run_validation_script(
+        "validate_bedrock_custom_model_deployment.py",
+        "Validation 2: Bedrock Custom Model Deployment"
+    )
+    validations.append(("Bedrock Custom Model Deployment", bedrock_custom_passed))
+    
+    print_separator()
+    
+    # Validation 3: SageMaker Model Endpoint
+    print("🔍 Running Validation 3 of 4...")
     sagemaker_passed = run_validation_script(
         "validate_sagemaker_endpoint.py",
-        "Validation 2: SageMaker Model Endpoint"
+        "Validation 3: SageMaker Model Endpoint"
     )
     validations.append(("SageMaker Model Endpoint", sagemaker_passed))
     
     print_separator()
     
-    # Validation 3: XGBoost Model Endpoint
-    print("🔍 Running Validation 3 of 3...")
+    # Validation 4: XGBoost Model Endpoint
+    print("🔍 Running Validation 4 of 4...")
     xgboost_passed = run_validation_script(
         "validate_xgboost_endpoint.py",
-        "Validation 3: XGBoost Model Endpoint"
+        "Validation 4: XGBoost Model Endpoint"
     )
     validations.append(("XGBoost Model Endpoint", xgboost_passed))
     
@@ -128,7 +138,7 @@ def main():
     all_passed = True
     for name, passed in validations:
         status = "✅ PASSED" if passed else "❌ FAILED"
-        print(f"   {name:30} {status}")
+        print(f"   {name:40} {status}")
         if not passed:
             all_passed = False
     

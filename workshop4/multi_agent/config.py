@@ -10,6 +10,7 @@ Environment Variables:
     - AWS_REGION: AWS region for all services - defaults to 'us-east-1'
 
 SSM Parameters (stored under /teachers_assistant/{environment}/{parameter_name}):
+    - bedrock_custom_model_deployment_arn
     - default_model_id
     - max_results
     - min_score
@@ -133,6 +134,28 @@ def get_aws_region() -> str:
         In EC2/ECS, this is automatically set from instance metadata.
     """
     return os.getenv('AWS_REGION', 'us-east-1')
+
+
+def get_bedrock_custom_model_deployment_arn() -> str:
+    """
+    Get Bedrock Custom Model Deployment ARN from SSM Parameter Store.
+    
+    Parameter: /teachers_assistant/{env}/bedrock_custom_model_deployment_arn
+    Default: my-bedrock-custom-model-deployment-arn
+    
+    Returns:
+        ARN for Bedrock Custom Model Deployment
+    
+    Example:
+        >>> arn = get_bedrock_custom_model_deployment_arn()
+        >>> print(arn)
+        'arn:aws:bedrock:us-east-1:123456789012:custom-model-deployment/10bnyrrf7js9'
+    
+    Note:
+        Custom model deployments allow you to use fine-tuned or custom-trained
+        models in Amazon Bedrock. The ARN uniquely identifies your deployed model.
+    """
+    return _get_parameter('bedrock_custom_model_deployment_arn', default='my-bedrock-custom-model-deployment-arn')
 
 
 def get_default_model_id() -> str:
@@ -369,6 +392,7 @@ def get_all_config_values() -> dict:
     return {
         "TEACHERS_ASSISTANT_ENV": TEACHERS_ASSISTANT_ENV,
         "AWS_REGION": get_aws_region(),
+        "BEDROCK_CUSTOM_MODEL_DEPLOYMENT_ARN": get_bedrock_custom_model_deployment_arn(),
         "DEFAULT_MODEL_ID": get_default_model_id(),
         "SAGEMAKER_MODEL_ENDPOINT": get_sagemaker_model_endpoint(),
         "SAGEMAKER_MODEL_INFERENCE_COMPONENT": get_sagemaker_model_inference_component(),

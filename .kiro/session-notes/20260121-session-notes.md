@@ -29,6 +29,11 @@ The feature adds two main enhancements:
 ## Next Steps
 - [x] Create design document with architecture and implementation details
 - [x] Create tasks document with implementation checklist
+- [x] Reorganize tasks.md to match user's preferred workflow
+- [x] Implement Task 1.1: Update CloudFormation template
+- [x] Implement Task 2: Create validation scripts
+- [x] User will deploy CloudFormation template (Task 1.2)
+- [ ] Continue with Task 3: Update configuration module for local development
 - [ ] Implement feature following local development workflow (PART-2-MULTI-AGENT.md)
 - [ ] Deploy and test in remote environment (PART-3-DEPLOY-MULTI-AGENT.md)
 
@@ -76,3 +81,93 @@ The feature adds two main enhancements:
 - Create validation script following pattern of existing validation scripts
 - Validation sequence: SSM parameters → Bedrock custom model → SageMaker → XGBoost
 - Update validate_ssm_parameters.py to include new parameter and remove strands_knowledge_base_id (now env var)
+
+
+## Task Reorganization
+User requested reorganization of tasks.md to better reflect the workflow:
+- **Task 1** now includes both CloudFormation template update (1.1) and deployment (1.2)
+- **Task 2** moved up to create validation scripts early (validate_ssm_parameters.py, validate_bedrock_custom_model_deployment.py, validate_all.py)
+- **Tasks 3-10** renumbered accordingly
+- This allows for early validation of SSM parameters and custom model deployment before proceeding with application code changes
+
+## Completed Tasks
+
+### Task 1.1: Update CloudFormation Template ✅
+- Added `BedrockCustomModelDeploymentArn` parameter to `workshop4/ssm/teachers-assistant-params.yaml`
+- Added SSM Parameter resource `ParamBedrockCustomModelDeploymentArn`
+- Added output `BedrockCustomModelDeploymentArnParameter`
+- Default value: `my-bedrock-custom-model-deployment-arn`
+- Parameter path: `/teachers_assistant/${Environment}/bedrock_custom_model_deployment_arn`
+- Includes appropriate tags (Environment, Application, ManagedBy)
+
+### Task 2.1: Add getter function to local config module ✅
+- Modified `workshop4/multi_agent/config.py`
+- Added `get_bedrock_custom_model_deployment_arn()` function
+- Uses `_get_parameter('bedrock_custom_model_deployment_arn', default='my-bedrock-custom-model-deployment-arn')`
+- Comprehensive docstring with parameter path, default value, return type, and example
+- Inserted alphabetically between `get_aws_region()` and `get_default_model_id()`
+- Updated module docstring to include new parameter
+- Updated `get_all_config_values()` to include new parameter
+
+### Task 3.1: Update validate_ssm_parameters.py ✅
+- Added `'bedrock_custom_model_deployment_arn'` to expected_parameters list
+- Removed `'strands_knowledge_base_id'` (now an environment variable)
+- Added `'my-bedrock-custom-model-deployment-arn'` to placeholder_values list
+- Maintained alphabetical ordering of parameters
+- Updated expected_parameters: bedrock_custom_model_deployment_arn, default_model_id, max_results, min_score, sagemaker_model_endpoint, sagemaker_model_inference_component, temperature, xgboost_model_endpoint
+
+### Task 3.1: Update validate_ssm_parameters.py ✅
+- Created new validation script at `workshop4/validate/validate_bedrock_custom_model_deployment.py`
+- Imports config module to get custom model deployment ARN
+- Imports BedrockModel from bedrock_model module
+- Implements `validate_bedrock_custom_model_deployment()` function
+- Checks if ARN is placeholder value and skips validation if so
+- Creates BedrockModel instance with ARN and invokes with test prompt
+- Prints clear success/failure messages with troubleshooting guidance
+- Returns True on success, False on failure
+
+### Task 3.2: Create validate_bedrock_custom_model_deployment.py ✅
+- Updated validation sequence to include 4 validations (was 3)
+- Validation order:
+  1. validate_ssm_parameters
+  2. validate_bedrock_custom_model_deployment (NEW)
+  3. validate_sagemaker_endpoint
+  4. validate_xgboost_endpoint
+- Updated progress indicators (1 of 4, 2 of 4, etc.)
+- Adjusted column width for validation names (30 → 40 characters)
+- Maintains existing validation logic and error handling
+
+### Task 3.3: Update validate_all.py ✅
+Ready for user to:
+1. Deploy CloudFormation template (Task 1.2)
+2. Run validate_all.py to verify SSM parameters and custom model deployment
+3. Proceed with Task 3 (configuration module updates) after checkpoint commit
+
+
+## Task Reordering (Second Pass)
+User discovered validation script needs config function first, so tasks were reordered:
+- **Task 2** is now "Update configuration module for local development" (was Task 3)
+- **Task 3** is now "Create validation scripts" (was Task 2)
+- This ensures `get_bedrock_custom_model_deployment_arn()` exists before validation script tries to import it
+
+## Checkpoint Status
+
+
+## Import Issue Resolution
+User discovered validation script had import errors. Root cause analysis:
+- **Issue**: validate_bedrock_custom_model_deployment.py tried to import from multi_agent module
+- **Why it failed**: multi_agent files used relative imports (`from config import`) which don't work when imported from outside the package
+- **Why SageMaker validation worked**: It's completely standalone - doesn't import from multi_agent at all
+- **Solution**: Rewrote Bedrock validation script to be standalone like SageMaker validation
+  - Uses its own `get_ssm_parameter()` function
+  - Directly uses boto3 for Bedrock Runtime API (Converse API)
+  - No dependencies on multi_agent module
+- **Reverted**: Removed the relative import changes (`.config`, etc.) from multi_agent files - they were working fine with the original imports
+
+
+## Final Task Order Correction
+Reverted tasks back to original order since validation scripts are now standalone:
+- **Task 2**: Create validation scripts (standalone, no multi_agent dependencies)
+- **Task 3**: Update configuration module for local development
+- This is the correct order because validation scripts don't need the config module anymore
+- Reverted all relative import changes to multi_agent files (they were working fine with `from config import`)

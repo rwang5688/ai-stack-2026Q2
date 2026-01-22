@@ -2,6 +2,11 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: 'Teacher Assistant Multi-Agent Application - SSM Parameter Store Configuration'
 
 Parameters:
+  BedrockCustomModelDeploymentArn:
+    Type: String
+    Default: my-bedrock-custom-model-deployment-arn
+    Description: Amazon Resource Name (ARN) for Bedrock Custom Model Deployment
+
   DefaultModelId:
     Type: String
     Default: us.amazon.nova-2-lite-v1:0
@@ -52,6 +57,19 @@ Parameters:
     Description: XGBoost loan prediction model endpoint name (required for loan assistant)
 
 Resources:
+  # Bedrock Custom Model Deployment ARN Parameter
+  ParamBedrockCustomModelDeploymentArn:
+    Type: AWS::SSM::Parameter
+    Properties:
+      Name: !Sub '/teachers_assistant/${Environment}/bedrock_custom_model_deployment_arn'
+      Description: ARN for Bedrock Custom Model Deployment
+      Type: String
+      Value: !Ref BedrockCustomModelDeploymentArn
+      Tags:
+        Environment: !Ref Environment
+        Application: TeacherAssistant
+        ManagedBy: CloudFormation
+
   # Default Model ID Parameter
   ParamDefaultModelId:
     Type: AWS::SSM::Parameter
@@ -144,6 +162,10 @@ Resources:
         ManagedBy: CloudFormation
 
 Outputs:
+  BedrockCustomModelDeploymentArnParameter:
+    Description: SSM Parameter name for Bedrock Custom Model Deployment ARN
+    Value: !Ref ParamBedrockCustomModelDeploymentArn
+
   DefaultModelIdParameter:
     Description: SSM Parameter name for Default Model ID
     Value: !Ref ParamDefaultModelId

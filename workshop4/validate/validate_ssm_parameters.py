@@ -51,12 +51,12 @@ def validate_ssm_parameters() -> Tuple[bool, Dict[str, str], List[str]]:
     
     # Expected parameters
     expected_parameters = [
+        'bedrock_custom_model_deployment_arn',
         'default_model_id',
         'max_results',
         'min_score',
         'sagemaker_model_endpoint',
         'sagemaker_model_inference_component',
-        'strands_knowledge_base_id',
         'temperature',
         'xgboost_model_endpoint'
     ]
@@ -110,8 +110,8 @@ def validate_ssm_parameters() -> Tuple[bool, Dict[str, str], List[str]]:
             value = found_parameters[param_name]
             
             # Highlight placeholder values that need updating
-            if value in ['my-sagemaker-model-endpoint', 'my-sagemaker-model-inference-component',
-                        'my-strands-knowledge-base-id', 'my-xgboost-model-endpoint']:
+            if value in ['my-bedrock-custom-model-deployment-arn', 'my-sagemaker-model-endpoint',
+                        'my-sagemaker-model-inference-component', 'my-xgboost-model-endpoint']:
                 display_value = f"{value} ⚠️  (placeholder - needs update)"
             else:
                 display_value = value
@@ -122,9 +122,9 @@ def validate_ssm_parameters() -> Tuple[bool, Dict[str, str], List[str]]:
         
         # Check for placeholder values (exact matches only, not real endpoint names)
         placeholder_values = [
+            'my-bedrock-custom-model-deployment-arn',
             'my-sagemaker-model-endpoint',
             'my-sagemaker-model-inference-component',
-            'my-strands-knowledge-base-id',
             'my-xgboost-model-endpoint'
         ]
         placeholder_params = [name for name, value in found_parameters.items() 
