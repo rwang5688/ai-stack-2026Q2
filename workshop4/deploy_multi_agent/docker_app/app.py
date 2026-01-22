@@ -670,11 +670,6 @@ if query:
                     response = teacher_agent(query)
                     
                     # Use str() to get the full response content
-                    # This works for both Bedrock and SageMaker models
-                    # DEBUG: Log the response object structure
-                    print(f"DEBUG: Response type: {type(response)}")
-                    print(f"DEBUG: Response repr: {repr(response)}")
-                    print(f"DEBUG: Response dir: {[attr for attr in dir(response) if not attr.startswith('_')]}")
                     content = str(response)
                     
                     # Check if we got an empty response (SageMaker tool calling issue)
@@ -715,11 +710,6 @@ if query:
                         response = teacher_agent(query)
                         
                         # Use str() to get the full response content
-                        # This works for both Bedrock and SageMaker models
-                        # DEBUG: Log the response object structure
-                        print(f"DEBUG: Response type: {type(response)}")
-                        print(f"DEBUG: Response repr: {repr(response)}")
-                        print(f"DEBUG: Response dir: {[attr for attr in dir(response) if not attr.startswith('_')]}")
                         content = str(response)
                         
                         # Check if we got an empty response (SageMaker tool calling issue)
