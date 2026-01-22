@@ -27,22 +27,12 @@ CLUSTER_NAME=$(aws ecs list-clusters --query 'clusterArns[?contains(@, `Streamli
 SERVICE_NAME=$(aws ecs list-services --cluster "$CLUSTER_NAME" --query 'serviceArns[?contains(@, `Streamlit`)]' --output text | xargs -n1 basename)
 
 if [ -n "$CLUSTER_NAME" ] && [ -n "$SERVICE_NAME" ]; then
-    echo "Found cluster: $CLUSTER_NAME"
-    echo "Found service: $SERVICE_NAME"
-    echo "Forcing new deployment..."
-    aws ecs update-service --cluster "$CLUSTER_NAME" --service "$SERVICE_NAME" --force-new-deployment
-    echo "✅ Forced new deployment initiated"
+    aws ecs update-service --cluster "$CLUSTER_NAME" --service "$SERVICE_NAME" --force-new-deployment > /dev/null 2>&1
+    echo "✅ Forced new deployment"
 else
-    echo "⚠️  Could not find ECS cluster/service. Deployment may still work via CDK."
+    echo "⚠️  Could not find ECS cluster/service"
 fi
 
 echo ""
-echo "========================================="
-echo "Deployment Complete!"
-echo "========================================="
-echo ""
-echo "Next steps:"
-echo "1. Wait 2-3 minutes for ECS to deploy new containers"
-echo "2. Test the CloudFront URL"
-echo "3. Verify full responses are displayed"
-echo ""
+echo "Done. Wait 2-3 minutes for ECS to deploy."
+
