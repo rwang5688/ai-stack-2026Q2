@@ -392,35 +392,21 @@ if "messages" not in st.session_state:
 # Knowledge base functions
 def determine_action(query, model, model_info):
     """Determine if the query should go to teacher agent or knowledge base agent."""
+    # Create a simple classification agent WITHOUT use_agent tool
     agent = Agent(
         model=model,
-        tools=[use_agent]
+        system_prompt=ACTION_DETERMINATION_PROMPT,
+        tools=[]  # No tools - just direct LLM classification
     )
     
     try:
-        # Build model_settings - use_agent tool only supports bedrock provider
-        # So we always use bedrock for routing decisions, regardless of main agent model
-        model_settings = {
-            'model_id': 'us.amazon.nova-2-lite-v1:0',
-            'temperature': TEMPERATURE
-        }
+        # Call agent directly with the query
+        result = agent(f"Query: {query}")
         
-        result = agent.tool.use_agent(
-            prompt=f"Query: {query}",
-            system_prompt=ACTION_DETERMINATION_PROMPT,
-            model_provider="bedrock",
-            model_settings=model_settings
-        )
-        
-        # Clean and extract the action
+        # Extract classification from response
         action_text = str(result).lower().strip()
         
-        # Handle structured response format
-        if isinstance(result, dict) and 'content' in result:
-            if result['content'] and len(result['content']) > 0:
-                action_text = result['content'][0].get('text', '').lower().strip()
-        
-        # Default to teacher if response isn't clear
+        # Parse the response
         if "knowledge" in action_text:
             return "knowledge"
         else:
@@ -431,35 +417,21 @@ def determine_action(query, model, model_info):
 
 def determine_kb_action(query, model, model_info):
     """Determine if the knowledge base query is a store or retrieve action."""
+    # Create a simple classification agent WITHOUT use_agent tool
     agent = Agent(
         model=model,
-        tools=[use_agent]
+        system_prompt=KB_ACTION_SYSTEM_PROMPT,
+        tools=[]  # No tools - just direct LLM classification
     )
     
     try:
-        # Build model_settings - use_agent tool only supports bedrock provider
-        # So we always use bedrock for routing decisions, regardless of main agent model
-        model_settings = {
-            'model_id': 'us.amazon.nova-2-lite-v1:0',
-            'temperature': TEMPERATURE
-        }
+        # Call agent directly with the query
+        result = agent(f"Query: {query}")
         
-        result = agent.tool.use_agent(
-            prompt=f"Query: {query}",
-            system_prompt=KB_ACTION_SYSTEM_PROMPT,
-            model_provider="bedrock",
-            model_settings=model_settings
-        )
-        
-        # Clean and extract the action
+        # Extract classification from response
         action_text = str(result).lower().strip()
         
-        # Handle structured response format
-        if isinstance(result, dict) and 'content' in result:
-            if result['content'] and len(result['content']) > 0:
-                action_text = result['content'][0].get('text', '').lower().strip()
-        
-        # Default to retrieve if response isn't clear
+        # Parse the response
         if "store" in action_text:
             return "store"
         else:
