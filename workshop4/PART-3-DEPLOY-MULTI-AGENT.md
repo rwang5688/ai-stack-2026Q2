@@ -77,120 +77,16 @@ streamlit run app.py
 
 **Note**: Since you've already tested the application locally in Part 2, there's no need to test Docker locally. We'll deploy directly to ECS Fargate and test the actual container in production.
 
-### 2. SageMaker Code Editor Environment Setup
+### 2. Development Environment Setup
 
-**⚠️ CRITICAL LIMITATION**: SageMaker Code Editor has Docker network restrictions that prevent CDK from building Docker images during deployment. The error you'll see is:
+**Recommended**: Use a development environment with full Docker access:
+- Local machine with Docker Desktop
+- EC2 instance with Docker installed
+- Custom code-server on EC2/Graviton
 
-```
-Error response from daemon: {"message":"Forbidden. Reason: [ImageBuild] 'sagemaker' is the only user allowed network input"}
-```
+**Not Recommended**: SageMaker Code Editor or JupyterLab (see Appendix A for details on Docker limitations)
 
-**This is a known SageMaker limitation and cannot be worked around.** CDK requires full Docker access to build and push images to ECR.
-
-**Recommended Alternatives**:
-1. **Deploy from local machine** - Best option if you have Docker Desktop
-2. **Deploy from EC2 instance** - Spin up a small instance with Docker
-3. **Deploy from custom code-server** - Self-hosted VS Code Server on EC2/Graviton
-4. **Pre-build image manually** - Build/push to ECR separately, modify CDK to use existing image
-
-If you still want to use SageMaker Code Editor for development, you can:
-- Use it for editing code and running Streamlit locally
-- Deploy from a different environment when ready
-
----
-
-#### Why SageMaker Code Editor?
-
-SageMaker Code Editor provides:
-- **Stable VS Code Server**: AWS service team supported, more reliable than custom deployments
-- **Native Docker Builds**: x86_64 architecture matches ECS Fargate deployment
-- **Integrated AWS Access**: Automatic credential management
-- **Persistent Storage**: EFS-backed workspace for code and dependencies
-
-#### Setup Steps
-
-Run these commands in your SageMaker Code Editor terminal:
-
-```bash
-# Step 1: Install Node.js via nvm (required for CDK)
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
-source ~/.bashrc
-nvm install 18
-nvm use 18
-node --version
-
-# Step 2: Install AWS CDK globally
-npm install -g aws-cdk
-cdk --version
-
-# Step 3: Verify Docker installation
-docker --version
-systemctl status docker
-
-# Step 4: If Docker daemon is not running, start it
-sudo systemctl start docker
-sudo systemctl enable docker
-
-# Step 5: Add your user to docker group (to run docker without sudo)
-sudo usermod -aG docker $USER
-
-# Step 6: Apply group changes (logout/login or use newgrp)
-newgrp docker
-
-# Step 7: Test Docker
-docker ps
-```
-
-**Expected Output**:
-```
-# Node.js
-v18.x.x
-
-# CDK
-2.x.x (build ...)
-
-# Docker
-Docker version 24.x.x, build ...
-
-# Docker test
-CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
-```
-
-#### Troubleshooting SageMaker Code Editor Setup
-
-**Issue: Docker shows "unknown-version"**
-```bash
-# Restart Docker daemon
-sudo systemctl restart docker
-docker --version
-```
-
-**Issue: Permission denied when running docker**
-```bash
-# Ensure you're in docker group
-groups | grep docker
-
-# If not, add yourself and reload
-sudo usermod -aG docker $USER
-newgrp docker
-```
-
-**Issue: CDK command not found after installation**
-```bash
-# Reload shell configuration
-source ~/.bashrc
-
-# Verify npm global bin path
-npm config get prefix
-# Should show: /home/sagemaker-user/.nvm/versions/node/v18.x.x
-
-# Add to PATH if needed
-export PATH="$PATH:$(npm config get prefix)/bin"
-```
-
-### 3. Install AWS CDK (Non-SageMaker Environments)
-
-If you're deploying from your local machine or other environments:
+### 3. Install AWS CDK
 
 ```bash
 npm install -g aws-cdk
@@ -458,62 +354,17 @@ The CDK stack creates an ECS task role with permissions for:
 
 ## Step 4: Deploy Infrastructure
 
-### Option A: One-Command Deployment (Recommended for SageMaker Code Editor)
-
-If you're deploying from **SageMaker Code Editor**, use the automated deployment script that handles all the environment quirks:
+### Prepare Environment
 
 ```bash
-cd ~/user-default-efs/ai-stack-2026Q2/workshop4/deploy_multi_agent
-./force-deploy.sh
-```
-
-This script will:
-1. ✅ Bypass venv and use system Python (avoids `--system-site-packages` issues)
-2. ✅ Install CDK into system Python
-3. ✅ Run `cdk synth` to generate CloudFormation template
-4. ✅ Run `cdk deploy` to deploy to AWS
-5. ✅ Force ECS service update to ensure latest container
-
-**Why use this script?**
-
-SageMaker Code Editor creates venvs with `--system-site-packages` flag, which causes pip to refuse installing packages into the venv (they go to `/opt/conda` instead, but Python can't import them). The script works around this by:
-- Using system Python (`/opt/conda/bin/python`) which already has all workshop dependencies
-- Installing only CDK (one package) into system Python where pip actually works
-- Keeping venv for local development (running Streamlit) where it works fine
-
-**Expected Output:**
-```
-✅ CDK synth successful - CloudFormation template generated
-✅ CDK deploy successful
-✅ Forced new ECS deployment
-```
-
-Deployment takes 10-15 minutes. The script will show progress and any errors.
-
----
-
-### Option B: Manual Deployment (For Non-SageMaker Environments)
-
-If you're deploying from your local machine or other environments without the venv issues:
-
-#### Prepare Environment
-
-```bash
-# Navigate to workshop4 root and activate venv
-cd ~/workspace/ai-stack-2026Q2/workshop4
-source venv/bin/activate
-
-# Install main workshop dependencies
-pip install -r requirements.txt
-
 # Navigate to deployment directory
-cd deploy_multi_agent
+cd ~/workspace/ai-stack-2026Q2/workshop4/deploy_multi_agent
 
 # Install CDK dependencies
 pip install -r requirements.txt
 ```
 
-#### Synthesize CloudFormation Template
+### Synthesize CloudFormation Template
 
 ```bash
 # Generate CloudFormation template
@@ -522,7 +373,7 @@ cdk synth
 
 Review the generated template in `cdk.out/`.
 
-#### Deploy to AWS
+### Deploy to AWS
 
 ```bash
 # Deploy the stack
@@ -896,3 +747,70 @@ You've successfully deployed the multi-agent application to production with full
 - [Cognito Documentation](https://docs.aws.amazon.com/cognito/)
 - [CloudWatch Documentation](https://docs.aws.amazon.com/cloudwatch/)
 - [Strands Agents Documentation](https://strandsagents.com/)
+
+---
+
+## Appendix A: SageMaker Code Editor Limitations (Historical Reference)
+
+**⚠️ NOT RECOMMENDED FOR DEPLOYMENT**
+
+This section is preserved for historical reference. SageMaker Code Editor has fundamental Docker limitations that prevent CDK deployments.
+
+### The Problem
+
+SageMaker Code Editor has Docker network restrictions that prevent CDK from building Docker images during deployment:
+
+```
+Error response from daemon: {"message":"Forbidden. Reason: [ImageBuild] 'sagemaker' is the only user allowed network input"}
+```
+
+**Root Cause**: CDK image assets require a working local Docker daemon that can build and push to ECR. SageMaker Studio/Code Editor has Docker disabled by default or heavily constrained, with network policies that block outbound calls from containers.
+
+**This is a known SageMaker limitation and cannot be worked around.**
+
+### Why We Tried SageMaker Code Editor
+
+SageMaker Code Editor initially seemed promising because it provides:
+- Stable VS Code Server (AWS service team supported)
+- Integrated AWS Access (automatic credential management)
+- Persistent Storage (EFS-backed workspace)
+
+However, the Docker restrictions make it unsuitable for CDK deployments.
+
+### Attempted Workarounds (All Failed)
+
+1. ❌ Environment variable `CDK_DOCKER_BUILD_ARGS="--network=sagemaker"` - CDK doesn't recognize it
+2. ❌ Modifying CDK stack to pass network parameter - CDK doesn't expose this option
+3. ❌ Docker wrapper script in PATH - CDK bypasses PATH (uses absolute docker path)
+
+### Alternative Solutions
+
+If you want to use SageMaker for development:
+
+1. **Use SageMaker Code Editor for editing only** - Edit code and run Streamlit locally, deploy from another environment
+2. **Enable Docker access at domain level** - Requires `DockerSettings.EnableDockerAccess` via `UpdateDomain` API (may still have network restrictions)
+3. **Pre-build images manually** - Build/push to ECR separately, modify CDK to reference existing images instead of building them
+
+### SageMaker Code Editor Setup (For Reference Only)
+
+If you still want to try SageMaker Code Editor despite the limitations:
+
+```bash
+# Step 1: Install Node.js via nvm (required for CDK)
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
+source ~/.bashrc
+nvm install 18
+nvm use 18
+
+# Step 2: Install AWS CDK globally
+npm install -g aws-cdk
+cdk --version
+
+# Step 3: Verify Docker installation
+docker --version
+
+# Step 4: Test Docker (will likely fail with network restrictions)
+docker ps
+```
+
+**Recommendation**: Use a local machine, EC2 instance, or custom code-server instead.

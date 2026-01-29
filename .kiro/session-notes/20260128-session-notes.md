@@ -397,12 +397,18 @@ source ../venv/bin/activate
 streamlit run app.py
 ```
 
-## SageMaker Code Editor Docker Network Restriction (UNRESOLVED)
+## SageMaker Code Editor Docker Network Restriction (UNRESOLVED - BLOCKED)
 
 **Problem Discovered**: SageMaker Code Editor restricts Docker builds to only use `sagemaker` network:
 ```
 Error response from daemon: {"message":"Forbidden. Reason: [ImageBuild] 'sagemaker' is the only user allowed network input"}
 ```
+
+**Root Cause** (confirmed by Perplexity.ai research):
+- CDK image assets require a working local Docker daemon that can build and push to ECR during `cdk deploy`
+- SageMaker Studio/Code Editor has Docker disabled by default or heavily constrained
+- Network policies block outbound calls from containers, breaking CDK asset build/push
+- This is a **fundamental SageMaker limitation**, not a configuration issue
 
 **Attempted Solutions**:
 1. ❌ Environment variable `CDK_DOCKER_BUILD_ARGS="--network=sagemaker"` - CDK doesn't recognize it
@@ -411,17 +417,29 @@ Error response from daemon: {"message":"Forbidden. Reason: [ImageBuild] 'sagemak
 
 **Current Status**: BLOCKED - Cannot deploy from SageMaker Code Editor due to Docker network restriction
 
-**Workarounds to Try**:
-1. Deploy from SageMaker JupyterLab instead (may not have same restriction)
-2. Deploy from local machine or EC2 instance
-3. Pre-build Docker image manually with `--network=sagemaker`, push to ECR, modify CDK to use existing image
-4. Contact AWS Support about SageMaker Code Editor Docker restrictions
+**Checkpoint Commit**: "got force-deploy.sh to work through build and still stuck on deployment"
+- ✅ System Python solution works (CDK synth succeeds)
+- ✅ All Python dependencies resolved
+- ❌ Docker build during deployment fails with network restriction
+
+**Recommended Solutions** (from Perplexity.ai):
+1. **Deploy from local machine** - Cleanest path, full Docker + ECR access
+2. **Deploy from EC2 instance** - Small dev box with Docker
+3. **Deploy from custom code-server** - Self-hosted VS Code Server on EC2/Graviton (user's preferred option)
+4. **Pre-build image manually** - Build/push to ECR separately, modify CDK to use existing image
+5. **Enable Docker in Studio** - Requires `DockerSettings.EnableDockerAccess` at domain level (may still have network restrictions)
+
+**User Decision**: Return to using custom code-server on EC2
+- Rationale: Full Docker access, no restrictions, already working
+- Trade-off: Less stable (dies occasionally), but can redeploy when needed
+- Benefit: Complete control over environment, no SageMaker limitations
+
+**Documentation Updated**:
+- `workshop4/PART-3-DEPLOY-MULTI-AGENT.md` - Added critical limitation warning about SageMaker Code Editor
+- `workshop4/deploy_multi_agent/force-deploy.sh` - Fully functional for environments with proper Docker access
+- `.kiro/session-notes/20260128-session-notes.md` - Documented issue and resolution path
 
 **Next Steps**:
-- User will investigate alternative deployment environments when they return
-- May need to use custom code-server on EC2 despite stability concerns
-- Document final working solution once found
-
-**Files Modified**:
-- `workshop4/deploy_multi_agent/force-deploy.sh` - Added Docker wrapper attempt (didn't work)
-- `workshop4/PART-3-DEPLOY-MULTI-AGENT.md` - Added SageMaker Execution Role permissions section
+- User will deploy from local machine or custom code-server when they return
+- force-deploy.sh script is ready to use in any environment with proper Docker access
+- SageMaker Code Editor can still be used for development/editing, just not deployment

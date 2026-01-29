@@ -14,7 +14,7 @@ Parameters:
   InstanceVolumeSize:
     Type: Number
     Description: The volume size in GB
-    Default: 30
+    Default: 50
   InstanceType:
     Description: Type of EC2 instance to launch
     Type: String

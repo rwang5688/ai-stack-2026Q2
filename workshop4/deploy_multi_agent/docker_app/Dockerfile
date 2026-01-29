@@ -1,8 +1,7 @@
-# Architecture: x86_64 (amd64) for SageMaker Code Editor compatibility
-# SageMaker Code Editor runs on ml.c5.large (x86_64 architecture)
-# Using x86_64 enables native Docker builds without QEMU emulation
-# This provides faster builds and better stability compared to ARM64 cross-compilation
-FROM --platform=linux/amd64 python:3.12
+# Architecture: ARM64 (Graviton) for cost-effective deployment
+# Using ARM64 provides ~20% cost savings on ECS Fargate compared to x86_64
+# Graviton instances offer excellent price/performance for containerized workloads
+FROM --platform=linux/arm64 python:3.12
 EXPOSE 8501
 WORKDIR /app
 COPY requirements.txt ./requirements.txt
