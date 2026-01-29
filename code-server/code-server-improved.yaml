@@ -10,7 +10,7 @@ Parameters:
   EC2KeyPair:
     Type: AWS::EC2::KeyPair::KeyName
     Description: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/create-key-pairs.html
-    Default: ws-default-keypair
+    Default: ws-default-keypair-us-east-1
   InstanceVolumeSize:
     Type: Number
     Description: The volume size in GB
