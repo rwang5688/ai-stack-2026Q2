@@ -244,4 +244,95 @@ This fix is critical for enabling the Code Editor development workflow.
 ## Next Steps
 
 - [ ] Finalize documentation (Task 7) - mark spec complete
-- [ ] Create new spec for deployment: `workshop4-sagemaker-code-editor-deployment`
+- [ ] Create new spec for deployment: `workshop4-sagemaker-code-editor-deployment` ✅
+
+---
+
+## New Spec Created: workshop4-sagemaker-code-editor-deployment
+
+**Created**: January 28, 2026 (evening session)
+
+**Purpose**: Deploy the fixed multi-agent Streamlit application from SageMaker Code Editor to AWS ECS Fargate
+
+**Key Components**:
+1. Configure Docker for x86_64 architecture (critical for SageMaker Code Editor compatibility)
+2. Apply infinite loop fix to `deploy_multi_agent/docker_app/app.py`
+3. Build and validate Docker container
+4. Deploy using CDK from SageMaker Code Editor
+5. Verify production functionality with Cognito authentication
+6. Validate fix effectiveness in production
+
+**Files Created**:
+- `.kiro/specs/workshop4-sagemaker-code-editor-deployment/requirements.md` - 7 requirements, 35 acceptance criteria
+- `.kiro/specs/workshop4-sagemaker-code-editor-deployment/design.md` - Architecture, components, 5 correctness properties
+- `.kiro/specs/workshop4-sagemaker-code-editor-deployment/tasks.md` - 12 tasks with checkpoints
+
+**Critical Architectural Decision: x86_64 vs ARM64/Graviton**
+
+**Problem Identified**:
+- Existing Dockerfile specified `--platform=linux/arm64` (Graviton architecture)
+- SageMaker Code Editor runs on ml.c5.large (x86_64 architecture)
+- Building ARM64 on x86_64 requires QEMU emulation (slow, error-prone)
+
+**Options Considered**:
+1. **Keep ARM64, use emulation** - Slow builds, potential failures
+2. **Switch to x86_64** - Fast native builds, higher runtime cost
+3. **Use Graviton build instance** - Requires switching instance types
+
+**Decision Made**: Switch to x86_64 architecture
+
+**Rationale**:
+- **Stability**: SageMaker AI Code Editor is AWS service team supported, much more stable than custom code-server deployment
+- **Developer Experience**: Native builds are significantly faster and more reliable
+- **Maintainability**: Consistent architecture between development and deployment environments
+- **Trade-off Accepted**: Higher ECS Fargate runtime cost for x86_64 vs Graviton is acceptable for improved stability
+- **Backup Option**: Can always spin up custom Graviton VS Code Server (code-server) if cost becomes prohibitive
+
+**Implementation**:
+- Change Dockerfile: `FROM --platform=linux/amd64 python:3.12`
+- Verify CDK stack uses x86_64 ECS instance types
+- Document architecture choice in code comments
+
+**Impact**:
+- Faster Docker builds in SageMaker Code Editor
+- No emulation overhead or compatibility issues
+- Slightly higher AWS costs (x86_64 vs Graviton pricing)
+- Improved developer workflow and stability
+
+**Files Archived**:
+- `workshop4/deploy_multi_agent/docker_app/default_app.py` → `archive/` (unused demo app)
+- `workshop4/deploy_multi_agent/docker_app/docker-compose.yml` → `archive/` (not used in CDK deployment)
+
+**Ready for Implementation**: User will review over dinner and begin implementation
+
+## Implementation Progress (Evening Session)
+
+**Tasks Completed**:
+1. ✅ **Task 1**: Configured Docker for x86_64 architecture
+   - Updated Dockerfile: `FROM --platform=linux/amd64 python:3.12`
+   - Updated CDK stack: `cpu_architecture=ecs.CpuArchitecture.X86_64`
+   - Added explanatory comments documenting architecture decision
+
+2. ✅ **Task 2**: Applied infinite loop fix to deployment application
+   - Fixed `determine_action()` - removed `use_agent` tool, direct LLM classification
+   - Fixed `determine_kb_action()` - removed `use_agent` tool, direct LLM classification
+   - Verified Cognito authentication preserved (authenticator, login, logout)
+   - Verified UI elements preserved (model selection, agent type, clear conversation)
+
+3. ✅ **Task 3**: Synchronized all Python files from `multi_agent/` to `deploy_multi_agent/docker_app/`
+   - Copied 12 Python support files (bedrock_model, config, all assistants, etc.)
+   - User manually verified all files copied correctly
+   - Confirmed app.py merged properly without breaking Cognito sign-in
+   - Confirmed Dockerfile and cdk_stack.py changed to x86_64 architecture
+
+**Files Ready for Deployment**:
+- All files in `workshop4/deploy_multi_agent/` directory ready
+- Architecture: x86_64 (SageMaker Code Editor compatible)
+- Infinite loop fix: Applied to both routing functions
+- Cognito authentication: Preserved and verified
+- All Python support files: Synchronized and verified
+
+**Next Steps**:
+- User will upload files to SageMaker Code Editor
+- Deploy to ECS Fargate using `cdk deploy`
+- Test in production environment (no local testing required per user request)

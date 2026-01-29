@@ -102,7 +102,10 @@ class CdkStack(Stack):
             memory_limit_mib=512,
             cpu=256,
             runtime_platform=ecs.RuntimePlatform(
-                cpu_architecture=ecs.CpuArchitecture.ARM64,
+                # Changed from ARM64 to X86_64 for SageMaker Code Editor compatibility
+                # SageMaker Code Editor (ml.c5.large) uses x86_64 architecture
+                # This matches the Dockerfile platform specification (linux/amd64)
+                cpu_architecture=ecs.CpuArchitecture.X86_64,
                 operating_system_family=ecs.OperatingSystemFamily.LINUX
             )
         )
