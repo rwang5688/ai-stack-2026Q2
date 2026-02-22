@@ -1,0 +1,2 @@
+# CloudFormation linter
+cfn-lint>=0.83.0

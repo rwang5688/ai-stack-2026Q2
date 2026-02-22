@@ -1,20 +1,20 @@
-# Copyright 2025 Amazon.com and its affiliates; all rights reserved.
+# Copyright 2023 Amazon.com and its affiliates; all rights reserved.
 # This file is Amazon Web Services Content and may not be duplicated or distributed without permission.
 AWSTemplateFormatVersion: '2010-09-09'
-Description: Code Server
+Description: Building Agents with Amazon Nova Act and MCP
 
 Parameters:
   CodeEditorUser:
     Type: String
     Default: ubuntu
-  EC2KeyPairName:
+  EC2KeyPair:
     Type: AWS::EC2::KeyPair::KeyName
     Description: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/create-key-pairs.html
     Default: ws-default-keypair
   InstanceVolumeSize:
     Type: Number
     Description: The volume size in GB
-    Default: 50
+    Default: 30
   InstanceType:
     Description: Type of EC2 instance to launch
     Type: String
@@ -231,7 +231,7 @@ Metadata:
           default: Instance Configuration
         Parameters:
           - InstanceVolumeSize
-          - EC2KeyPairName
+          - EC2KeyPair
       - Label:
           default: Code Server Configuration
         Parameters:
@@ -241,7 +241,7 @@ Metadata:
     ParameterLabels:
       InstanceVolumeSize:
         default: Attached volume size
-      EC2KeyPairName:
+      EC2KeyPair:
         default: EC2 key pair name
       HomeFolder:
         default: Folder to open in code server when launching
@@ -298,7 +298,7 @@ Mappings:
       PrefixList: pl-82a045eb
 
 Resources:
-  ############## CODE SERVER ##############
+  ############## VS CODE BOX ##############
 
   VPC:
     Type: AWS::EC2::VPC
@@ -391,6 +391,7 @@ Resources:
         - PrivateOne
         - CIDR
       VpcId: !Ref VPC
+      MapPublicIpOnLaunch: true
       AvailabilityZone: !Select
         - 0
         - !GetAZs ''
@@ -403,52 +404,17 @@ Resources:
         - PrivateTwo
         - CIDR
       VpcId: !Ref VPC
+      MapPublicIpOnLaunch: true
       AvailabilityZone: !Select
         - 1
         - !GetAZs ''
 
-  NATGatewayEIP:
-    Type: AWS::EC2::EIP
-    Properties:
-      Domain: vpc
-
-  NATGateway:
-    Type: AWS::EC2::NatGateway
-    Properties:
-      AllocationId: !GetAtt NATGatewayEIP.AllocationId
-      SubnetId: !Ref PublicSubnetOne
-
-  PrivateRouteTable:
-    Type: AWS::EC2::RouteTable
-    Properties:
-      VpcId: !Ref VPC
-
-  PrivateRoute:
-    Type: AWS::EC2::Route
-    Properties:
-      RouteTableId: !Ref PrivateRouteTable
-      DestinationCidrBlock: 0.0.0.0/0
-      NatGatewayId: !Ref NATGateway
-
-  PrivateSubnetOneRouteTableAssociation:
-    Type: AWS::EC2::SubnetRouteTableAssociation
-    Properties:
-      RouteTableId: !Ref PrivateRouteTable
-      SubnetId: !Ref PrivateSubnetOne
-
-  PrivateSubnetTwoRouteTableAssociation:
-    Type: AWS::EC2::SubnetRouteTableAssociation
-    Properties:
-      RouteTableId: !Ref PrivateRouteTable
-      SubnetId: !Ref PrivateSubnetTwo
-
-  ALBSecurityGroup:
+  SecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Security group for Application Load Balancer
-      VpcId: !Ref VPC
+      GroupDescription: SG for Developer Machine - only allow CloudFront ingress
       SecurityGroupIngress:
-        - Description: Allow HTTP from CloudFront
+        - Description: Allow HTTP from com.amazonaws.global.cloudfront.origin-facing
           IpProtocol: tcp
           FromPort: 80
           ToPort: 80
@@ -456,13 +422,7 @@ Resources:
             - AWSRegions2PrefixListID
             - !Ref AWS::Region
             - PrefixList
-
-  EC2SecurityGroup:
-    Type: AWS::EC2::SecurityGroup
-    Properties:
-      GroupDescription: SG for Developer Machine - only allow CloudFront ingress
-      SecurityGroupIngress:
-        - Description: Allow TCP 8501-8600 from all IPs
+        - Description: Allow TCP 8051-8060 from all IPs
           IpProtocol: tcp
           FromPort: 8501
           ToPort: 8600
@@ -472,66 +432,6 @@ Resources:
           IpProtocol: -1
           CidrIp: 0.0.0.0/0
       VpcId: !Ref VPC
-
-  ALBSecurityGroupEgress:
-    Type: AWS::EC2::SecurityGroupEgress
-    Properties:
-      GroupId: !Ref ALBSecurityGroup
-      Description: Allow HTTP to EC2 instances
-      IpProtocol: tcp
-      FromPort: 80
-      ToPort: 80
-      DestinationSecurityGroupId: !Ref EC2SecurityGroup
-
-  EC2SecurityGroupIngress:
-    Type: AWS::EC2::SecurityGroupIngress
-    Properties:
-      GroupId: !Ref EC2SecurityGroup
-      Description: Allow HTTP from ALB
-      IpProtocol: tcp
-      FromPort: 80
-      ToPort: 80
-      SourceSecurityGroupId: !Ref ALBSecurityGroup
-
-  ApplicationLoadBalancer:
-    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
-    Properties:
-      Type: application
-      Scheme: internet-facing
-      IpAddressType: ipv4
-      Subnets:
-        - !Ref PublicSubnetOne
-        - !Ref PublicSubnetTwo
-      SecurityGroups:
-        - !Ref ALBSecurityGroup
-
-  ALBTargetGroup:
-    Type: AWS::ElasticLoadBalancingV2::TargetGroup
-    Properties:
-      VpcId: !Ref VPC
-      Port: 80
-      Protocol: HTTP
-      TargetType: instance
-      HealthCheckEnabled: true
-      HealthCheckProtocol: HTTP
-      HealthCheckPath: /health
-      HealthCheckIntervalSeconds: 30
-      HealthCheckTimeoutSeconds: 5
-      HealthyThresholdCount: 2
-      UnhealthyThresholdCount: 2
-      Targets:
-        - Id: !Ref VSCodeInstanceEC2Instance
-          Port: 80
-
-  ALBListener:
-    Type: AWS::ElasticLoadBalancingV2::Listener
-    Properties:
-      LoadBalancerArn: !Ref ApplicationLoadBalancer
-      Port: 80
-      Protocol: HTTP
-      DefaultActions:
-        - Type: forward
-          TargetGroupArn: !Ref ALBTargetGroup
 
   ########### SSM Resources ###########
   SSMLogBucket:
@@ -543,6 +443,7 @@ Resources:
             reason: Access logs aren't needed for this bucket
     DeletionPolicy: Delete
     Properties:
+      AccessControl: Private
       BucketEncryption:
         ServerSideEncryptionConfiguration:
           - ServerSideEncryptionByDefault:
@@ -552,24 +453,6 @@ Resources:
         BlockPublicPolicy: true
         IgnorePublicAcls: true
         RestrictPublicBuckets: true
-
-  SSMLogBucketPolicy:
-    Type: AWS::S3::BucketPolicy
-    Properties:
-      Bucket: !Ref SSMLogBucket
-      PolicyDocument:
-        Version: 2012-10-17
-        Statement:
-          - Sid: DenyInsecureTransport
-            Effect: Deny
-            Principal: '*'
-            Action: 's3:*'
-            Resource:
-              - !GetAtt SSMLogBucket.Arn
-              - !Sub '${SSMLogBucket.Arn}/*'
-            Condition:
-              Bool:
-                'aws:SecureTransport': 'false'
 
   VSCodeInstanceSSMDoc:
     Type: AWS::SSM::Document
@@ -685,17 +568,17 @@ Resources:
             name: InstallNode
             inputs:
               runCommand:
-                - NODE_VERSION="20.18.0"
-                - ARCH=$(uname -m)
-                - if [ "$ARCH" = "aarch64" ]; then NODE_ARCH="arm64"; else
-                  NODE_ARCH="x64"; fi
-                - cd /tmp
-                - curl -fL
-                  "https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${NODE_ARCH}.tar.xz"
-                  -o node.tar.xz
-                - tar -xf node.tar.xz
-                - cp -r node-v${NODE_VERSION}-linux-${NODE_ARCH}/* /usr/local/
-                - rm -rf node-v${NODE_VERSION}-linux-${NODE_ARCH} node.tar.xz
+                - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get
+                  install -y curl
+                - curl -fsSL
+                  https://deb.nodesource.com/gpgkey/nodesource.gpg.key | gpg
+                  --dearmor -o /usr/share/keyrings/nodesource-keyring.gpg
+                - echo "deb [arch={{ architecture }}
+                  signed-by=/usr/share/keyrings/nodesource-keyring.gpg]
+                  https://deb.nodesource.com/{{ nodeVersion }} {{ ubuntuVersion
+                  }} main" >> /etc/apt/sources.list.d/nodesource.list
+                - apt-get update && DEBIAN_FRONTEND=noninteractive apt-get
+                  install -y nodejs
           - action: aws:runShellScript
             name: InstallPython
             inputs:
@@ -722,8 +605,28 @@ Resources:
                   libsqlite3-dev curl llvm libncursesw5-dev xz-utils tk-dev
                   libxml2-dev libxmlsec1-dev libffi-dev liblzma-dev xvfb
                   python3.12-venv graphviz
-                - mkdir -p /home/ubuntu/workshop
+                - git clone
+                  https://github.com/VincentV89/agentic-ai-with-mcp-and-strands
+                  /home/ubuntu/workshop
                 - chown ubuntu:ubuntu /home/ubuntu/workshop
+                - echo "export PYENV_ROOT=\"\$HOME/workshop\"" >>
+                  /home/ubuntu/.profile
+                - echo "command -v pyenv >/dev/null || export
+                  PATH=\"\$PYENV_ROOT/bin:$PATH\"" >> /home/ubuntu/.profile
+                - echo "eval \"\$(pyenv init -)\"" >> /home/ubuntu/.profile
+                - chown ubuntu:ubuntu /home/ubuntu/workshop
+          - action: aws:runShellScript
+            name: InstallPython2
+            inputs:
+              runCommand:
+                - cd /home/ubuntu/workshop
+                - sudo -u ubuntu python3 -m pip install -r
+                  /home/ubuntu/workshop/requirements.txt
+                - sudo -u ubuntu python3 -m pip install pyopenssl --upgrade
+                - sudo -u ubuntu python3 -m playwright install chrome
+                - sudo -u ubuntu python3 -m pip install streamlit
+                - sudo -u ubuntu python3 -m pip install --upgrade attrs cffi
+                - sudo chown ubuntu /home/ubuntu/workshop -R
           - action: aws:runShellScript
             name: UpdateProfile
             inputs:
@@ -752,12 +655,7 @@ Resources:
                   server {
                       listen 80;
                       listen [::]:80;
-                      server_name _;
-                      location /health {
-                        access_log off;
-                        return 200 \"healthy\n\";
-                        add_header Content-Type text/plain;
-                      }
+                      server_name ${CloudFrontDistribution.DomainName};
                       location / {
                         proxy_pass http://localhost:8080/;
                         proxy_set_header Host \$host;
@@ -783,7 +681,7 @@ Resources:
                 - sudo -u ubuntu --login mkdir -p /home/ubuntu/.local/share/code-server/User/
                 - sudo -u ubuntu --login touch
                   /home/ubuntu/.local/share/code-server/User/settings.json
-                - |
+                - !Sub |
                   sudo tee /home/ubuntu/.local/share/code-server/User/settings.json <<EOF
                   {
                     "extensions.autoUpdate": false,
@@ -804,10 +702,8 @@ Resources:
                   }
                   EOF
                 - sudo systemctl restart code-server@ubuntu
-                - sudo rm -f /etc/nginx/sites-enabled/default
                 - sudo ln -s ../sites-available/code-server
                   /etc/nginx/sites-enabled/code-server
-                - sudo nginx -t
                 - sudo systemctl restart nginx
                 # - sudo -u ubuntu --login code-server --install-extension AmazonWebServices.aws-toolkit-vscode --force
                 - sudo -u ubuntu --login code-server --install-extension
@@ -861,9 +757,9 @@ Resources:
           OutputS3BucketName: !Ref SSMLogBucket
           OutputS3KeyPrefix: bootstrap
       Targets:
-        - Key: InstanceIds
+        - Key: tag:SSMBootstrap
           Values:
-            - !Ref VSCodeInstanceEC2Instance
+            - true
 
   ### Empty S3 bucket resources ###
   EmptyS3BucketExecutionRole:
@@ -1009,9 +905,8 @@ Resources:
 
   VSCodeInstanceEC2Instance:
     Type: AWS::EC2::Instance
-    DependsOn: PrivateSubnetOneRouteTableAssociation
     Properties:
-      KeyName: !Ref EC2KeyPairName
+      KeyName: !Ref EC2KeyPair
       BlockDeviceMappings:
         - Ebs:
             VolumeSize: !Ref InstanceVolumeSize
@@ -1020,11 +915,11 @@ Resources:
             Encrypted: true
           DeviceName: /dev/sda1
       Monitoring: true
-      SubnetId: !Ref PrivateSubnetOne
+      SubnetId: !Ref PublicSubnetOne
       ImageId: '{{resolve:ssm:/aws/service/canonical/ubuntu/server/22.04/stable/current/arm64/hvm/ebs-gp2/ami-id}}'
       InstanceType: !Ref InstanceType
       SecurityGroupIds:
-        - !Ref EC2SecurityGroup
+        - !Ref SecurityGroup
       IamInstanceProfile: !Ref VSCodeInstanceProfile
       UserData: !Base64
         Fn::Sub: |
@@ -1095,11 +990,11 @@ Resources:
           TargetOriginId: !Sub CloudFront-${AWS::StackName}
           ViewerProtocolPolicy: allow-all
         Origins:
-          - DomainName: !GetAtt ApplicationLoadBalancer.DNSName
+          - DomainName: !GetAtt VSCodeInstanceEC2Instance.PublicDnsName
             Id: !Sub CloudFront-${AWS::StackName}
             CustomOriginConfig:
               OriginProtocolPolicy: http-only
-  ############## CODE SERVER END ##############
+  ############## VS CODE BOX END ##############
 
 Outputs:
   Password:

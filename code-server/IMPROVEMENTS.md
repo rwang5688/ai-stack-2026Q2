@@ -1,5 +1,92 @@
 # Code Server CloudFormation Template Improvements
 
+## Private Subnet Security Architecture (February 2026)
+
+### Overview
+The most significant security improvement: moved EC2 instances from public subnets to private subnets with no public IP addresses, implementing defense-in-depth security architecture that meets AWS internal security policies.
+
+### Security Benefits
+
+1. **No Public IP Address**: EC2 instances cannot be directly accessed from the internet
+2. **Defense-in-Depth**: Three-layer security validation (CloudFront → ALB → EC2)
+3. **Controlled Outbound Access**: NAT Gateway provides auditable internet access for dependency installation
+4. **Security Group Chain**: Each layer validates traffic source before forwarding
+5. **AWS Compliance**: Meets internal AWS security policies for EC2 deployments
+6. **Stable CloudFront Origin**: ALB provides consistent endpoint (no IP changes on instance replacement)
+
+### Architecture Changes
+
+**New Resources Added** (10):
+- **NATGatewayEIP**: Elastic IP for NAT Gateway outbound traffic
+- **NATGateway**: Enables EC2 instances to download dependencies from internet
+- **PrivateRouteTable**: Routes private subnet traffic to NAT Gateway
+- **PrivateRoute**: Default route (0.0.0.0/0) pointing to NAT Gateway
+- **PrivateSubnetOneRouteTableAssociation**: Links private subnet 1 to route table
+- **PrivateSubnetTwoRouteTableAssociation**: Links private subnet 2 to route table
+- **ALBSecurityGroup**: Controls inbound traffic from CloudFront prefix list
+- **ApplicationLoadBalancer**: Internet-facing ALB spanning two availability zones
+- **ALBTargetGroup**: Contains EC2 instance with health checking
+- **ALBListener**: Forwards HTTP:80 traffic from ALB to EC2
+
+**Modified Resources** (6):
+- **PrivateSubnetOne**: Removed `MapPublicIpOnLaunch: true` (no public IPs assigned)
+- **PrivateSubnetTwo**: Removed `MapPublicIpOnLaunch: true` (no public IPs assigned)
+- **SecurityGroup → EC2SecurityGroup**: Changed ingress from CloudFront prefix list to ALB security group
+- **VSCodeInstanceEC2Instance**: Moved from public subnet to PrivateSubnetOne, no public IP
+- **CloudFrontDistribution**: Changed origin from EC2 public IP to ALB DNS name
+- **VSCodeInstanceSSMDoc**: Removed sample code, empty workshop directory for clean start
+
+### Traffic Flows
+
+**Inbound (User → Code-Server)**:
+1. User connects via HTTPS to CloudFront distribution
+2. CloudFront terminates TLS, forwards HTTP:80 to ALB
+3. ALB security group validates traffic from CloudFront prefix list
+4. ALB forwards to EC2 instance in private subnet
+5. EC2 security group validates traffic from ALB security group
+6. Code-server responds through same path
+
+**Outbound (EC2 → Internet)**:
+1. EC2 initiates connection (apt-get, npm install, pip, docker pull)
+2. Traffic routes via PrivateRouteTable to NAT Gateway
+3. NAT Gateway translates private IP to Elastic IP
+4. Traffic exits via Internet Gateway
+5. Response returns via stateful NAT connection
+
+### Cost Considerations
+
+**Single NAT Gateway Design**:
+- Optimized for workshop/hackathon use (~$32/month + data transfer)
+- EC2 and NAT Gateway in same AZ to minimize cross-AZ charges
+- ALB spans two AZs for high availability
+
+**Production Recommendations**:
+- Deploy NAT Gateway per availability zone for fault tolerance
+- Consider NAT instances for lower-traffic scenarios
+- Monitor data transfer costs through NAT Gateway
+
+### Implementation Details
+
+**Circular Dependency Resolution**:
+The security groups have a circular dependency (ALB → EC2, EC2 → ALB). Resolved using separate `AWS::EC2::SecurityGroupIngress` and `AWS::EC2::SecurityGroupEgress` resources instead of inline rules.
+
+**Health Checking**:
+ALB target group performs health checks on EC2:80 every 30 seconds, ensuring traffic only routes to healthy instances.
+
+**User Experience**:
+No change to end users - they still access via CloudFront HTTPS URL with AWS Account ID as password.
+
+**Debugging Access**:
+Use AWS Systems Manager Session Manager instead of SSH:
+```bash
+aws ssm start-session --target <instance-id>
+```
+
+**Template Validation**:
+Template passes cfn-lint validation with 0 warnings after fixing:
+- Removed unnecessary DependsOn declarations (intrinsic functions create implicit dependencies)
+- Replaced hardcoded partition "aws" with !Ref AWS::Partition for multi-partition support
+
 ## Key Issues Fixed
 
 ### 1. **Node.js Installation Reliability**
@@ -57,31 +144,28 @@ server_name ${CloudFrontDistribution.DomainName};
 server_name _;  # Accept any hostname
 ```
 
-### 4. **Missing SSH Access for Debugging**
-**Problem:** No way to troubleshoot when bootstrap fails
-**Solution:** Optional SSH access parameter
+### 4. **SSM Session Manager Access for Debugging**
+**Problem:** No way to troubleshoot when bootstrap fails in private subnet
+**Solution:** Use AWS Systems Manager Session Manager for secure access
 
-**Added:**
-```yaml
-Parameters:
-  AllowSSHAccess:
-    Type: String
-    Default: 'true'
-    AllowedValues: ['true', 'false']
+**Note:** With the private subnet architecture (February 2026), SSH access was removed. EC2 instances have no public IP addresses and cannot be accessed via SSH. Instead, use SSM Session Manager:
 
-Conditions:
-  EnableSSHAccess: !Equals [!Ref AllowSSHAccess, 'true']
+```bash
+# Get instance ID from stack outputs
+INSTANCE_ID=$(aws cloudformation describe-stacks \
+  --stack-name code-server \
+  --query 'Stacks[0].Outputs[?OutputKey==`InstanceId`].OutputValue' \
+  --output text)
 
-SecurityGroupIngress:
-  - !If
-    - EnableSSHAccess
-    - Description: Allow SSH access for debugging
-      IpProtocol: tcp
-      FromPort: 22
-      ToPort: 22
-      CidrIp: 0.0.0.0/0
-    - !Ref AWS::NoValue
+# Start session
+aws ssm start-session --target $INSTANCE_ID
 ```
+
+**Benefits:**
+- No need for SSH keys or bastion hosts
+- Secure access without public IP addresses
+- Audit trail in CloudTrail
+- Works with private subnet architecture
 
 ### 5. **Explicit SSM Permissions**
 **Problem:** AdministratorAccess should be enough but SSM needs explicit policy
