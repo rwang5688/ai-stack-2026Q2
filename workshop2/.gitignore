@@ -1,0 +1,3 @@
+# Model fine-tuning output directories (created by HuggingFace Trainer)
+distilgpt2-finetuned-wikitext2/
+distilroberta-base-finetuned-wikitext2/
