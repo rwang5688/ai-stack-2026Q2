@@ -92,18 +92,34 @@ def get_region():
 
 
 def get_execution_role():
-    """Resolve the SageMaker execution role ARN."""
+    """Resolve the SageMaker execution role ARN.
+
+    Resolution order:
+    1. EXECUTION_ROLE_ARN constant (if set manually)
+    2. boto3 STS get-caller-identity (works in any AWS environment with a role)
+    """
     if EXECUTION_ROLE_ARN:
         return EXECUTION_ROLE_ARN
 
-    # Try to get the role from SageMaker metadata (works inside SageMaker environments)
+    # Use boto3 STS — if we're running with an assumed role, extract the role ARN
     try:
-        import sagemaker
-        return sagemaker.get_execution_role()
+        sts = boto3.client("sts")
+        identity = sts.get_caller_identity()
+        arn = identity["Arn"]
+        # If the ARN is an assumed-role session, convert to the role ARN
+        # Format: arn:aws:sts::123456789012:assumed-role/RoleName/session-name
+        if ":assumed-role/" in arn:
+            parts = arn.split(":")
+            account_id = parts[4]
+            role_name = parts[5].split("/")[1]
+            return f"arn:aws:iam::{account_id}:role/{role_name}"
+        # If it's already a role ARN, return as-is
+        if ":role/" in arn:
+            return arn
     except Exception:
         pass
 
-    print("ERROR: EXECUTION_ROLE_ARN is not set.")
+    print("ERROR: EXECUTION_ROLE_ARN is not set and could not be auto-detected.")
     print("Edit deploy_provisioned.py and set EXECUTION_ROLE_ARN to your")
     print("SageMaker execution role ARN, e.g.:")
     print('  EXECUTION_ROLE_ARN = "arn:aws:iam::123456789012:role/YourRole"')
