@@ -96,23 +96,23 @@ def get_execution_role():
 
     Resolution order:
     1. EXECUTION_ROLE_ARN constant (if set manually)
-    2. boto3 STS get-caller-identity (works in any AWS environment with a role)
+    2. boto3 IAM — look up the role from the assumed-role session to get the full ARN with path
     """
     if EXECUTION_ROLE_ARN:
         return EXECUTION_ROLE_ARN
 
-    # Use boto3 STS — if we're running with an assumed role, extract the role ARN
+    # Use boto3 STS + IAM — get the role name from STS, then look up the full ARN from IAM
     try:
         sts = boto3.client("sts")
         identity = sts.get_caller_identity()
         arn = identity["Arn"]
-        # If the ARN is an assumed-role session, convert to the role ARN
+        # If the ARN is an assumed-role session, extract the role name and look it up in IAM
         # Format: arn:aws:sts::123456789012:assumed-role/RoleName/session-name
         if ":assumed-role/" in arn:
-            parts = arn.split(":")
-            account_id = parts[4]
-            role_name = parts[5].split("/")[1]
-            return f"arn:aws:iam::{account_id}:role/{role_name}"
+            role_name = arn.split(":assumed-role/")[1].split("/")[0]
+            iam = boto3.client("iam")
+            role_info = iam.get_role(RoleName=role_name)
+            return role_info["Role"]["Arn"]
         # If it's already a role ARN, return as-is
         if ":role/" in arn:
             return arn

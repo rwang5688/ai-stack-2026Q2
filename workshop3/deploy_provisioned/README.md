@@ -37,6 +37,13 @@ DLC_TAG = "2.1.0-transformers4.37.0-cpu-py310-ubuntu22.04"
 - The fine-tuned model published to HuggingFace Hub: [rwang5688/distilgpt2-finetuned-wikitext2](https://huggingface.co/rwang5688/distilgpt2-finetuned-wikitext2)
 - **Service quota for `ml.g6.xlarge` endpoint instances** (request increase via Service Quotas console if needed)
 
+  **How to request the quota increase:**
+  1. Go to the [Service Quotas console](https://console.aws.amazon.com/servicequotas/)
+  2. Select **Amazon SageMaker**
+  3. Search for `ml.g6.xlarge for endpoint usage`
+  4. Click **Request increase at account level** and set the value to at least 1
+  5. Approval typically takes a few hours
+
 ```bash
 pip install boto3
 ```
