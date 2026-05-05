@@ -5,7 +5,7 @@ on a GPU instance using an explicit Deep Learning Container (DLC) image URI.
 This script demonstrates deploying to a PROVISIONED GPU endpoint — in contrast to
 deploy_serverless.py which deploys to a serverless CPU endpoint. The same universal
 DLC pattern is used, but here we:
-  1. Retrieve the GPU-optimized variant of the DLC image
+  1. Use the GPU-optimized variant of the DLC image (includes CUDA)
   2. Deploy to a dedicated ml.g6.xlarge instance (NVIDIA L4, 24 GB VRAM)
 
 Key differences from serverless:
@@ -26,7 +26,7 @@ Prerequisites:
     - Service quota for ml.g6.xlarge endpoint instances (request increase if needed)
 
 DLC Image Catalog:
-    https://github.com/aws/deep-learning-containers/blob/master/available_images.md
+    https://aws.github.io/deep-learning-containers/reference/available_images/
 
 COST WARNING:
     A provisioned ml.g6.xlarge endpoint costs approximately $0.80/hour.
@@ -39,7 +39,6 @@ import sys
 
 import boto3
 import sagemaker
-from sagemaker import image_uris
 from sagemaker.model import Model
 
 
@@ -54,17 +53,25 @@ HUB_CONFIG = {
 }
 
 # --- DLC Image Configuration ---
-# These parameters select the GPU-optimized variant of the HuggingFace DLC.
-# Compare with deploy_serverless.py which uses a CPU instance type to get the CPU variant.
+# AWS Deep Learning Containers follow a predictable URI pattern:
+#   <account_id>.dkr.ecr.<region>.amazonaws.com/<repository>:<tag>
 #
-# Available DLC images: https://github.com/aws/deep-learning-containers/blob/master/available_images.md
-TRANSFORMERS_VERSION = "4.37.0"
-BASE_FRAMEWORK_VERSION = "pytorch2.1.0"
-PY_VERSION = "py310"
-IMAGE_SCOPE = "inference"
+# For HuggingFace PyTorch Inference (GPU variant):
+#   Account ID: 763104351884 (same across all regions for DLC images)
+#   Repository: huggingface-pytorch-inference
+#   Tag: includes "gpu" and CUDA version for GPU-accelerated inference
+#
+# Compare with deploy_serverless.py which uses the CPU tag (no CUDA, smaller image).
+#
+# Find available images at:
+#   https://aws.github.io/deep-learning-containers/reference/available_images/
+#
+# GPU tag (includes CUDA for GPU-accelerated inference):
+DLC_ACCOUNT_ID = "763104351884"
+DLC_REPOSITORY = "huggingface-pytorch-inference"
+DLC_TAG = "2.1.0-transformers4.37.0-gpu-py310-cu118-ubuntu20.04"
 
 # --- Provisioned Endpoint Configuration ---
-# The instance type determines BOTH the DLC image variant (GPU) AND the deployment hardware.
 # ml.g6.xlarge: NVIDIA L4 GPU, 24 GB VRAM, 4 vCPUs, 16 GB RAM
 # This is the same instance type used for training in Workshop 2.
 DEPLOY_INSTANCE_TYPE = "ml.g6.xlarge"
@@ -99,43 +106,37 @@ def get_sagemaker_session_and_role():
     return sess, role
 
 
-def retrieve_dlc_image_uri(region):
+def get_dlc_image_uri(region):
     """
-    Retrieve the GPU-optimized DLC image URI from the AWS Deep Learning Container catalog.
+    Construct the GPU-optimized DLC image URI for the given region.
 
-    This uses the SAME image_uris.retrieve() call as deploy_serverless.py, but with a
-    GPU instance type. The SDK uses the instance_type to determine whether to return
-    the CPU or GPU variant of the container image.
+    This uses the SAME URI pattern as deploy_serverless.py, but with the GPU tag.
+    The GPU image includes CUDA libraries for GPU-accelerated inference.
+    The CPU image (used by serverless) does not include CUDA — smaller image, CPU-only.
 
-    GPU variant includes CUDA libraries for GPU-accelerated inference.
-    CPU variant (used by serverless) does not include CUDA — smaller image, CPU-only.
+    URI pattern: <account_id>.dkr.ecr.<region>.amazonaws.com/<repository>:<tag>
+
+    To use a DIFFERENT DLC, just change DLC_REPOSITORY and DLC_TAG:
+      - PyTorch inference (GPU): "pytorch-inference" + "2.1.0-gpu-py310-cu118-ubuntu20.04"
+      - TensorFlow inference:    "tensorflow-inference" + "2.14.0-gpu-py310-cu121-ubuntu22.04"
 
     Args:
-        region: AWS region for the ECR repository (e.g., "us-east-1")
+        region: AWS region (e.g., "us-west-2")
 
     Returns:
         The fully qualified ECR image URI for the GPU-optimized DLC
     """
-    image_uri = image_uris.retrieve(
-        framework="huggingface",
-        region=region,
-        version=TRANSFORMERS_VERSION,
-        instance_type=DEPLOY_INSTANCE_TYPE,  # GPU instance -> GPU-optimized image
-        image_scope=IMAGE_SCOPE,
-        py_version=PY_VERSION,
-        base_framework_version=BASE_FRAMEWORK_VERSION,
-    )
-    return image_uri
+    return f"{DLC_ACCOUNT_ID}.dkr.ecr.{region}.amazonaws.com/{DLC_REPOSITORY}:{DLC_TAG}"
 
 
 def deploy():
     """Deploy the model to a provisioned GPU endpoint (ml.g6.xlarge)."""
     sess, role = get_sagemaker_session_and_role()
 
-    # Step 1: Retrieve the GPU-optimized DLC image URI
-    # Note: This returns a DIFFERENT image than deploy_serverless.py because we pass
-    # a GPU instance type. The GPU image includes CUDA for GPU-accelerated inference.
-    image_uri = retrieve_dlc_image_uri(region=sess.boto_region_name)
+    # Step 1: Construct the GPU-optimized DLC image URI
+    # Note: This uses a DIFFERENT tag than deploy_serverless.py — the GPU tag includes
+    # CUDA libraries for GPU-accelerated inference.
+    image_uri = get_dlc_image_uri(region=sess.boto_region_name)
     print(f"\nDLC Image URI (GPU): {image_uri}")
 
     # Step 2: Create a SageMaker Model — same universal pattern as serverless

@@ -2,17 +2,17 @@
 
 ## Overview
 
-Deploy a fine-tuned model using two SageMaker inference patterns: Serverless (CPU, pay-per-request) and Provisioned (GPU, always-on). Both use explicit DLC image URI retrieval with the generic `sagemaker.model.Model` class.
+Deploy a fine-tuned model using two SageMaker inference patterns: Serverless (CPU, pay-per-request) and Provisioned (GPU, always-on). Both use direct DLC image URI construction with the generic `sagemaker.model.Model` class.
 
 ## Tasks
 
 - [x] 1. Implement serverless deployment script (`deploy_serverless.py`)
-  - [x] 1.1 Use `sagemaker.image_uris.retrieve()` with CPU instance type for DLC image selection
+  - [x] 1.1 Construct DLC image URI directly using AWS ECR pattern with CPU tag
   - [x] 1.2 Create model with generic `sagemaker.model.Model` class and explicit DLC image URI
   - [x] 1.3 Deploy with `ServerlessInferenceConfig` (4096 MB memory, max concurrency 5)
   - [x] 1.4 Implement invoke command using `boto3 sagemaker-runtime` client
   - [x] 1.5 Implement cleanup command (delete endpoint, config, model in order)
-  - [x] 1.6 Add educational comments explaining DLC parameters and the universal pattern
+  - [x] 1.6 Add educational comments explaining DLC URI pattern and the universal deployment approach
 
 - [x] 2. Document serverless deployment in README
   - [x] 2.1 Explain explicit DLC approach vs HuggingFaceModel wrapper
@@ -23,7 +23,7 @@ Deploy a fine-tuned model using two SageMaker inference patterns: Serverless (CP
 
 - [x] 3. Implement provisioned GPU deployment script (`deploy_provisioned.py`)
   - [x] 3.1 Create `deploy_provisioned.py` with same structure as `deploy_serverless.py` (deploy, invoke, cleanup commands)
-  - [x] 3.2 Use `sagemaker.image_uris.retrieve()` with GPU instance type (`ml.g6.xlarge`) for DLC image selection
+  - [x] 3.2 Construct DLC image URI with GPU tag (includes CUDA) for GPU-accelerated inference
   - [x] 3.3 Create model with generic `sagemaker.model.Model` class and GPU-variant DLC image URI
   - [x] 3.4 Deploy with `instance_type="ml.g6.xlarge"` and `initial_instance_count=1` (no ServerlessInferenceConfig)
   - [x] 3.5 Use endpoint name `"distilgpt2-finetuned-wikitext2-provisioned"`

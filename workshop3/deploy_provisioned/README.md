@@ -16,21 +16,19 @@ This is the **provisioned** deployment pattern — compare with `../deploy_serve
 
 ## Key Concept: GPU DLC Image Selection
 
-This script uses the same `image_uris.retrieve()` + `Model()` pattern as the serverless script, but passes a **GPU instance type** to get the GPU-optimized DLC image (includes CUDA):
+This script uses the same direct URI construction pattern as the serverless script, but with the **GPU tag** (includes CUDA):
 
 ```python
-image_uri = image_uris.retrieve(
-    framework="huggingface",
-    region=region,
-    version="4.37.0",
-    instance_type="ml.g6.xlarge",       # GPU instance -> GPU image with CUDA
-    image_scope="inference",
-    py_version="py310",
-    base_framework_version="pytorch2.1.0",
-)
+# GPU variant — includes CUDA for GPU-accelerated inference
+DLC_TAG = "2.1.0-transformers4.37.0-gpu-py310-cu118-ubuntu20.04"
+image_uri = f"763104351884.dkr.ecr.{region}.amazonaws.com/huggingface-pytorch-inference:{DLC_TAG}"
 ```
 
-Compare with the serverless script which uses `instance_type="ml.m5.xlarge"` (CPU) to get the CPU-only image.
+Compare with the serverless script which uses the CPU tag:
+```python
+# CPU variant — no CUDA, smaller image, for serverless (CPU-only)
+DLC_TAG = "2.1.0-transformers4.37.0-cpu-py310-ubuntu22.04"
+```
 
 ## Prerequisites
 

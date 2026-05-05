@@ -26,11 +26,11 @@ This workshop module demonstrates deploying a fine-tuned model to SageMaker Infe
 
 #### Acceptance Criteria
 
-1. WHEN the deploy command is executed in either script, THE Script SHALL retrieve the HuggingFace DLC image URI using `sagemaker.image_uris.retrieve()` with explicit framework, version, and scope parameters
-2. WHEN the image URI is retrieved, THE Script SHALL display the full ECR image URI to the student so they can see the DLC image being used
-3. THE Serverless_Script SHALL use a CPU instance type (`ml.m5.xlarge`) for image selection since serverless runs on CPU
-4. THE Provisioned_Script SHALL use a GPU instance type (`ml.g6.xlarge`) for image selection to get the GPU-optimized DLC variant
-5. THE Scripts SHALL include comments explaining each parameter of `image_uris.retrieve()` so students understand how to adapt it for other frameworks
+1. WHEN the deploy command is executed in either script, THE Script SHALL construct the HuggingFace DLC image URI using the predictable AWS ECR pattern with the appropriate CPU or GPU tag
+2. WHEN the image URI is constructed, THE Script SHALL display the full ECR image URI to the student so they can see the DLC image being used
+3. THE Serverless_Script SHALL use the CPU tag (`2.1.0-transformers4.37.0-cpu-py310-ubuntu22.04`) since serverless runs on CPU
+4. THE Provisioned_Script SHALL use the GPU tag (`2.1.0-transformers4.37.0-gpu-py310-cu118-ubuntu20.04`) to get the CUDA-enabled DLC variant
+5. THE Scripts SHALL include comments explaining the URI pattern and how to adapt it for other frameworks
 
 ### Requirement 2: Generic Model Creation with DLC
 

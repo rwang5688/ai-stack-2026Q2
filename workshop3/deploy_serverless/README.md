@@ -19,15 +19,17 @@ This is the **serverless** deployment pattern — compare with `../deploy_provis
 This script demonstrates the **universal pattern** for deploying models to SageMaker using any available Deep Learning Container:
 
 ```python
-from sagemaker import image_uris
 from sagemaker.model import Model
 
-image_uri = image_uris.retrieve(framework=..., region=..., version=..., ...)
+# Construct the DLC image URI directly
+# Pattern: <account_id>.dkr.ecr.<region>.amazonaws.com/<repository>:<tag>
+image_uri = f"763104351884.dkr.ecr.{region}.amazonaws.com/huggingface-pytorch-inference:{tag}"
+
 model = Model(image_uri=image_uri, env={...}, role=role)
 model.deploy(serverless_inference_config=...)
 ```
 
-Instead of using the `HuggingFaceModel` wrapper (which hides the DLC selection), we use the generic `Model` class with an explicitly retrieved DLC image URI. This pattern works with ANY framework — PyTorch, TensorFlow, MXNet, or custom containers.
+Instead of using the `HuggingFaceModel` wrapper (which hides the DLC selection), we use the generic `Model` class with a directly constructed DLC image URI. This pattern works with ANY framework — PyTorch, TensorFlow, MXNet, or custom containers.
 
 ### Why This Approach Over the Wrapper?
 
@@ -38,8 +40,9 @@ Instead of using the `HuggingFaceModel` wrapper (which hides the DLC selection),
 
 ## Finding Available DLC Images
 
-- **Full catalog**: [github.com/aws/deep-learning-containers/blob/master/available_images.md](https://github.com/aws/deep-learning-containers/blob/master/available_images.md)
-- **Programmatic lookup**: Use `sagemaker.image_uris.retrieve()` with the framework and version you need
+- **Full catalog**: [aws.github.io/deep-learning-containers/reference/available_images/](https://aws.github.io/deep-learning-containers/reference/available_images/)
+- **URI pattern**: `763104351884.dkr.ecr.<region>.amazonaws.com/<repository>:<tag>`
+- The account ID `763104351884` is the same across all regions for AWS DLC images
 
 ### Common Frameworks
 

@@ -5,15 +5,16 @@ using an explicit Deep Learning Container (DLC) image URI.
 This script demonstrates the UNIVERSAL pattern for deploying ANY model with ANY
 available AWS Deep Learning Container. Instead of using framework-specific wrapper
 classes (like HuggingFaceModel), it uses the generic sagemaker.model.Model class
-with an explicitly retrieved DLC image URI.
+with a directly constructed DLC image URI.
 
 This approach teaches you how to:
-1. Find and retrieve DLC image URIs from the AWS DLC catalog
-2. Create a SageMaker Model with any DLC image
-3. Deploy to a serverless endpoint for cost-effective inference
+1. Find DLC image URIs from the AWS DLC catalog
+2. Construct the full ECR image URI for your region
+3. Create a SageMaker Model with any DLC image
+4. Deploy to a serverless endpoint for cost-effective inference
 
 The same pattern works with PyTorch DLCs, TensorFlow DLCs, MXNet DLCs, or any
-custom container — just change the framework and version parameters.
+custom container — just change the repository name and tag.
 
 Usage:
     python deploy_serverless.py deploy     # Deploy the model
@@ -26,7 +27,7 @@ Prerequisites:
     - The model rwang5688/distilgpt2-finetuned-wikitext2 must exist on HuggingFace Hub
 
 DLC Image Catalog:
-    https://github.com/aws/deep-learning-containers/blob/master/available_images.md
+    https://aws.github.io/deep-learning-containers/reference/available_images/
 """
 
 import argparse
@@ -35,7 +36,6 @@ import sys
 
 import boto3
 import sagemaker
-from sagemaker import image_uris
 from sagemaker.model import Model
 from sagemaker.serverless import ServerlessInferenceConfig
 
@@ -52,23 +52,21 @@ HUB_CONFIG = {
 }
 
 # --- DLC Image Configuration ---
-# These parameters are used by image_uris.retrieve() to select the correct DLC image.
-# Change these to use a different framework or version.
+# AWS Deep Learning Containers follow a predictable URI pattern:
+#   <account_id>.dkr.ecr.<region>.amazonaws.com/<repository>:<tag>
 #
-# Available DLC images: https://github.com/aws/deep-learning-containers/blob/master/available_images.md
+# For HuggingFace PyTorch Inference:
+#   Account ID: 763104351884 (same across all regions for DLC images)
+#   Repository: huggingface-pytorch-inference
+#   Tag format: <pytorch_version>-transformers<transformers_version>-<cpu|gpu>-<py_version>-<os>
 #
-# framework:               The ML framework ("huggingface", "pytorch", "tensorflow", etc.)
-# TRANSFORMERS_VERSION:    The transformers library version inside the DLC
-# BASE_FRAMEWORK_VERSION:  The underlying framework version (format: "pytorch2.1.0" or "tensorflow2.14.0")
-# PY_VERSION:              Python version in the container
-# IMAGE_SCOPE:             "inference" for serving, "training" for training
-# INSTANCE_TYPE:           Used ONLY for selecting CPU vs GPU image variant
-#                          (does not affect serverless deployment — serverless uses CPU)
-TRANSFORMERS_VERSION = "4.37.0"
-BASE_FRAMEWORK_VERSION = "pytorch2.1.0"
-PY_VERSION = "py310"
-IMAGE_SCOPE = "inference"
-INSTANCE_TYPE = "ml.m5.xlarge"  # CPU instance — selects the CPU variant of the DLC image
+# Find available images at:
+#   https://aws.github.io/deep-learning-containers/reference/available_images/
+#
+# CPU tag for serverless (no CUDA needed since serverless runs on CPU):
+DLC_ACCOUNT_ID = "763104351884"
+DLC_REPOSITORY = "huggingface-pytorch-inference"
+DLC_TAG = "2.1.0-transformers4.37.0-cpu-py310-ubuntu22.04"
 
 # Serverless config
 # distilgpt2 (~82M params, ~330MB) fits comfortably in 4096 MB
@@ -104,46 +102,38 @@ def get_sagemaker_session_and_role():
     return sess, role
 
 
-def retrieve_dlc_image_uri(region):
+def get_dlc_image_uri(region):
     """
-    Retrieve the DLC image URI from the AWS Deep Learning Container catalog.
+    Construct the DLC image URI for the given region.
 
-    This is the KEY function that demonstrates the explicit DLC approach.
-    Instead of letting a wrapper class (like HuggingFaceModel) resolve the image
-    internally, we call image_uris.retrieve() directly so you can see exactly
-    which container image is being used.
+    AWS DLC images use a consistent URI pattern across all regions:
+      <account_id>.dkr.ecr.<region>.amazonaws.com/<repository>:<tag>
 
-    You can adapt this for ANY framework by changing the parameters:
-      - PyTorch inference:    framework="pytorch", version="2.1.0"
-      - TensorFlow inference: framework="tensorflow", version="2.14.0"
-      - HuggingFace:          framework="huggingface", version="4.37.0",
-                              base_framework_version="pytorch2.1.0"
+    The account ID (763104351884) is the same for all AWS DLC images in all regions.
+    The repository name identifies the framework (e.g., huggingface-pytorch-inference).
+    The tag specifies the exact versions (PyTorch, Transformers, CPU/GPU, Python, OS).
+
+    To use a DIFFERENT DLC, just change DLC_REPOSITORY and DLC_TAG:
+      - PyTorch inference:    "pytorch-inference" + "2.1.0-cpu-py310-ubuntu22.04"
+      - TensorFlow inference: "tensorflow-inference" + "2.14.0-cpu-py310-ubuntu22.04"
+      - HuggingFace (GPU):   "huggingface-pytorch-inference" + "2.1.0-transformers4.37.0-gpu-py310-cu118-ubuntu20.04"
 
     Args:
-        region: AWS region for the ECR repository (e.g., "us-east-1")
+        region: AWS region (e.g., "us-west-2")
 
     Returns:
-        The fully qualified ECR image URI for the DLC
+        The fully qualified ECR image URI
     """
-    image_uri = image_uris.retrieve(
-        framework="huggingface",
-        region=region,
-        version=TRANSFORMERS_VERSION,
-        instance_type=INSTANCE_TYPE,
-        image_scope=IMAGE_SCOPE,
-        py_version=PY_VERSION,
-        base_framework_version=BASE_FRAMEWORK_VERSION,
-    )
-    return image_uri
+    return f"{DLC_ACCOUNT_ID}.dkr.ecr.{region}.amazonaws.com/{DLC_REPOSITORY}:{DLC_TAG}"
 
 
 def deploy():
     """Deploy the model to a SageMaker Serverless Inference endpoint using an explicit DLC image."""
     sess, role = get_sagemaker_session_and_role()
 
-    # Step 1: Retrieve the DLC image URI explicitly
-    # This makes the container selection visible — you can see exactly which image is used.
-    image_uri = retrieve_dlc_image_uri(region=sess.boto_region_name)
+    # Step 1: Construct the DLC image URI for our region
+    # This makes the container selection explicit — you see exactly which image is used.
+    image_uri = get_dlc_image_uri(region=sess.boto_region_name)
     print(f"\nDLC Image URI: {image_uri}")
 
     # Step 2: Create a SageMaker Model using the GENERIC Model class

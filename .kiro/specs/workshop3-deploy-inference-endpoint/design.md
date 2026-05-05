@@ -19,7 +19,7 @@ Both scripts follow the same universal deployment pattern:
 
 ```
 1. Resolve SageMaker session + role
-2. Retrieve DLC image URI via image_uris.retrieve()
+2. Construct DLC image URI for the region (CPU or GPU tag)
 3. Create Model(image_uri=..., env=HUB_CONFIG, role=..., sagemaker_session=...)
 4. Deploy with endpoint-specific configuration
 ```
@@ -30,14 +30,17 @@ The only difference is step 4:
 
 ## Components
 
-### 1. DLC Image URI Retrieval (Shared)
+### 1. DLC Image URI Construction (Shared)
 
-Both scripts use `image_uris.retrieve()` but with different `instance_type` parameters to select the appropriate image variant:
+Both scripts construct the DLC image URI directly using the predictable AWS pattern:
+`763104351884.dkr.ecr.<region>.amazonaws.com/<repository>:<tag>`
 
-| Script | `instance_type` | Image Variant | Reason |
-|--------|-----------------|---------------|--------|
-| `deploy_serverless.py` | `ml.m5.xlarge` (CPU) | CPU-optimized | Serverless runs on CPU |
-| `deploy_provisioned.py` | `ml.g6.xlarge` (GPU) | GPU-optimized (CUDA) | Provisioned runs on GPU |
+The only difference is the tag — CPU vs GPU variant:
+
+| Script | DLC Tag | Image Variant | Reason |
+|--------|---------|---------------|--------|
+| `deploy_serverless.py` | `2.1.0-transformers4.37.0-cpu-py310-ubuntu22.04` | CPU-optimized | Serverless runs on CPU |
+| `deploy_provisioned.py` | `2.1.0-transformers4.37.0-gpu-py310-cu118-ubuntu20.04` | GPU-optimized (CUDA) | Provisioned runs on GPU |
 
 ### 2. Serverless Deployment (`deploy_serverless.py`)
 
