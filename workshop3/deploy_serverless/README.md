@@ -1,6 +1,53 @@
-# Workshop 3: Deploy a Fine-Tuned Model with SageMaker Serverless Inference
+# Workshop 3A: Deploy to a Serverless Inference Endpoint
 
-Deploy the fine-tuned `rwang5688/distilgpt2-finetuned-wikitext2` model from Workshop 2 to a SageMaker Serverless Inference endpoint using the HuggingFace Deep Learning Container.
+Deploy the fine-tuned `rwang5688/distilgpt2-finetuned-wikitext2` model to a SageMaker Serverless Inference endpoint (CPU, pay-per-request) using an explicit DLC image URI.
+
+This is the **serverless** deployment pattern — compare with `../deploy_provisioned/` for the provisioned GPU pattern.
+
+## Serverless vs Provisioned
+
+| Aspect | Serverless (this directory) | Provisioned (`../deploy_provisioned/`) |
+|--------|----------------------------|----------------------------------------|
+| **Hardware** | Managed CPU | ml.g6.xlarge (NVIDIA L4, 24 GB VRAM) |
+| **GPU** | No | Yes |
+| **Cold start** | 30-60 seconds | None |
+| **Cost model** | Per-request (duration x memory) | Per-hour (~$0.80/hr) |
+| **Best for** | Small models, infrequent traffic, demos | Large models, low-latency, GPU-required |
+
+## Key Concept: Explicit DLC Image Selection
+
+This script demonstrates the **universal pattern** for deploying models to SageMaker using any available Deep Learning Container:
+
+```python
+from sagemaker import image_uris
+from sagemaker.model import Model
+
+image_uri = image_uris.retrieve(framework=..., region=..., version=..., ...)
+model = Model(image_uri=image_uri, env={...}, role=role)
+model.deploy(serverless_inference_config=...)
+```
+
+Instead of using the `HuggingFaceModel` wrapper (which hides the DLC selection), we use the generic `Model` class with an explicitly retrieved DLC image URI. This pattern works with ANY framework — PyTorch, TensorFlow, MXNet, or custom containers.
+
+### Why This Approach Over the Wrapper?
+
+| Approach | Pros | Cons |
+|----------|------|------|
+| **`HuggingFaceModel` wrapper** | Convenient, fewer lines of code | Only works for HuggingFace models; hides the DLC selection |
+| **Generic `Model` + explicit DLC** | Works with ANY framework/model; you see exactly which container is used | Slightly more code |
+
+## Finding Available DLC Images
+
+- **Full catalog**: [github.com/aws/deep-learning-containers/blob/master/available_images.md](https://github.com/aws/deep-learning-containers/blob/master/available_images.md)
+- **Programmatic lookup**: Use `sagemaker.image_uris.retrieve()` with the framework and version you need
+
+### Common Frameworks
+
+| Framework | `framework` param | Example `version` | `base_framework_version` |
+|-----------|-------------------|-------------------|--------------------------|
+| HuggingFace | `"huggingface"` | `"4.37.0"` | `"pytorch2.1.0"` |
+| PyTorch | `"pytorch"` | `"2.1.0"` | — |
+| TensorFlow | `"tensorflow"` | `"2.14.0"` | — |
 
 ## Prerequisites
 
@@ -12,13 +59,11 @@ Deploy the fine-tuned `rwang5688/distilgpt2-finetuned-wikitext2` model from Work
 pip install sagemaker boto3
 ```
 
-**If running locally** (not in SageMaker JupyterLab), edit `deploy_serverless.py` and set `LOCAL_EXECUTION_ROLE_ARN` to your SageMaker execution role ARN:
+**If running locally** (not in SageMaker JupyterLab), edit `deploy_serverless.py` and set `LOCAL_EXECUTION_ROLE_ARN`:
 
 ```python
 LOCAL_EXECUTION_ROLE_ARN = "arn:aws:iam::123456789012:role/YourSageMakerExecutionRole"
 ```
-
-If running from a SageMaker JupyterLab terminal, the role is picked up automatically.
 
 ## Runbook
 
@@ -28,11 +73,12 @@ If running from a SageMaker JupyterLab terminal, the role is picked up automatic
 python deploy_serverless.py deploy
 ```
 
-This creates a SageMaker Serverless Inference endpoint with:
-- **Model**: `rwang5688/distilgpt2-finetuned-wikitext2` (text-generation)
-- **Container**: HuggingFace DLC (transformers 4.37.0, PyTorch 2.1.0)
+Creates a serverless endpoint with:
+- **Container**: HuggingFace DLC (CPU variant, transformers 4.37.0, PyTorch 2.1.0)
 - **Memory**: 4096 MB
 - **Max concurrency**: 5
+
+The script prints the full DLC image URI so you can see exactly which container is being used.
 
 Deployment takes about 2-5 minutes.
 
@@ -42,7 +88,7 @@ Deployment takes about 2-5 minutes.
 python deploy_serverless.py invoke
 ```
 
-Sends a text-generation prompt to the endpoint. The first request may have a cold start of 30-60 seconds.
+First request may have a cold start of 30-60 seconds.
 
 ### 3. Clean up
 
@@ -50,15 +96,26 @@ Sends a text-generation prompt to the endpoint. The first request may have a col
 python deploy_serverless.py cleanup
 ```
 
-Deletes the endpoint, endpoint configuration, and model. **Always run this when done** — serverless endpoints don't charge while idle, but cleaning up avoids any unexpected costs.
+Deletes the endpoint, endpoint configuration, and model.
 
-## Why Serverless?
+## Serverless Inference Limitations
 
-distilgpt2 is a small model (~82M parameters, ~330MB) that fits well within the serverless limits:
-- Container image < 10 GB
-- Model memory footprint < 6 GB
+| Limitation | Value |
+|------------|-------|
+| **Maximum memory** | 6144 MB (6 GB) |
+| **Maximum container image size** | 10 GB (uncompressed) |
+| **Maximum concurrency** | 200 (per endpoint) |
+| **GPU support** | **None** — CPU only |
+| **Maximum payload size** | 4 MB (request) / 4 MB (response) |
+| **Maximum invocation timeout** | 60 seconds |
+| **Cold start** | 30-60+ seconds on first request after idle |
 
-Serverless Inference is a good fit for demos and workshops because you only pay per invocation instead of per hour for a dedicated instance.
+### Key Implications
+
+- **No GPU**: Serverless endpoints run exclusively on CPU. For GPU, use `../deploy_provisioned/`.
+- **Memory ceiling**: Model + framework must fit within 6 GB. distilgpt2 (~330 MB) fits easily.
+- **Container size**: DLC image + model artifacts must stay under 10 GB uncompressed.
+- **Cold starts**: Not suitable for latency-sensitive production workloads.
 
 ## Cost Estimate
 

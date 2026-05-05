@@ -1,32 +1,36 @@
 """
-Deploy a fine-tuned distilgpt2 model to a SageMaker Serverless Inference endpoint
-using an explicit Deep Learning Container (DLC) image URI.
+Deploy a fine-tuned distilgpt2 model to a SageMaker Real-Time Inference endpoint
+on a GPU instance using an explicit Deep Learning Container (DLC) image URI.
 
-This script demonstrates the UNIVERSAL pattern for deploying ANY model with ANY
-available AWS Deep Learning Container. Instead of using framework-specific wrapper
-classes (like HuggingFaceModel), it uses the generic sagemaker.model.Model class
-with an explicitly retrieved DLC image URI.
+This script demonstrates deploying to a PROVISIONED GPU endpoint — in contrast to
+deploy_serverless.py which deploys to a serverless CPU endpoint. The same universal
+DLC pattern is used, but here we:
+  1. Retrieve the GPU-optimized variant of the DLC image
+  2. Deploy to a dedicated ml.g6.xlarge instance (NVIDIA L4, 24 GB VRAM)
 
-This approach teaches you how to:
-1. Find and retrieve DLC image URIs from the AWS DLC catalog
-2. Create a SageMaker Model with any DLC image
-3. Deploy to a serverless endpoint for cost-effective inference
-
-The same pattern works with PyTorch DLCs, TensorFlow DLCs, MXNet DLCs, or any
-custom container — just change the framework and version parameters.
+Key differences from serverless:
+  - GPU acceleration (faster inference)
+  - No cold starts (instance is always running)
+  - Charges PER HOUR while the endpoint is active (~$0.80/hr for ml.g6.xlarge)
+  - ALWAYS run cleanup when done to stop charges!
 
 Usage:
-    python deploy_serverless.py deploy     # Deploy the model
-    python deploy_serverless.py invoke     # Send a test request
-    python deploy_serverless.py cleanup    # Delete the endpoint and model
+    python deploy_provisioned.py deploy     # Deploy the model to a GPU instance
+    python deploy_provisioned.py invoke     # Send a test request
+    python deploy_provisioned.py cleanup    # Delete the endpoint (STOPS CHARGES)
 
 Prerequisites:
     - pip install sagemaker boto3
     - AWS credentials configured (SageMaker execution role or local credentials)
     - The model rwang5688/distilgpt2-finetuned-wikitext2 must exist on HuggingFace Hub
+    - Service quota for ml.g6.xlarge endpoint instances (request increase if needed)
 
 DLC Image Catalog:
     https://github.com/aws/deep-learning-containers/blob/master/available_images.md
+
+COST WARNING:
+    A provisioned ml.g6.xlarge endpoint costs approximately $0.80/hour.
+    Always run 'python deploy_provisioned.py cleanup' when you're done!
 """
 
 import argparse
@@ -37,43 +41,34 @@ import boto3
 import sagemaker
 from sagemaker import image_uris
 from sagemaker.model import Model
-from sagemaker.serverless import ServerlessInferenceConfig
 
 
 # --- Configuration ---
-ENDPOINT_NAME = "distilgpt2-finetuned-wikitext2-serverless"
+ENDPOINT_NAME = "distilgpt2-finetuned-wikitext2-provisioned"
 
 # Environment variables passed to the DLC container.
 # The HuggingFace DLC uses these to know which model to download and what task to run.
-# This same env-var pattern works with any DLC that supports environment-based configuration.
 HUB_CONFIG = {
     "HF_MODEL_ID": "rwang5688/distilgpt2-finetuned-wikitext2",
     "HF_TASK": "text-generation",
 }
 
 # --- DLC Image Configuration ---
-# These parameters are used by image_uris.retrieve() to select the correct DLC image.
-# Change these to use a different framework or version.
+# These parameters select the GPU-optimized variant of the HuggingFace DLC.
+# Compare with deploy_serverless.py which uses a CPU instance type to get the CPU variant.
 #
 # Available DLC images: https://github.com/aws/deep-learning-containers/blob/master/available_images.md
-#
-# framework:               The ML framework ("huggingface", "pytorch", "tensorflow", etc.)
-# TRANSFORMERS_VERSION:    The transformers library version inside the DLC
-# BASE_FRAMEWORK_VERSION:  The underlying framework version (format: "pytorch2.1.0" or "tensorflow2.14.0")
-# PY_VERSION:              Python version in the container
-# IMAGE_SCOPE:             "inference" for serving, "training" for training
-# INSTANCE_TYPE:           Used ONLY for selecting CPU vs GPU image variant
-#                          (does not affect serverless deployment — serverless uses CPU)
 TRANSFORMERS_VERSION = "4.37.0"
 BASE_FRAMEWORK_VERSION = "pytorch2.1.0"
 PY_VERSION = "py310"
 IMAGE_SCOPE = "inference"
-INSTANCE_TYPE = "ml.m5.xlarge"  # CPU instance — selects the CPU variant of the DLC image
 
-# Serverless config
-# distilgpt2 (~82M params, ~330MB) fits comfortably in 4096 MB
-MEMORY_SIZE_IN_MB = 4096
-MAX_CONCURRENCY = 5
+# --- Provisioned Endpoint Configuration ---
+# The instance type determines BOTH the DLC image variant (GPU) AND the deployment hardware.
+# ml.g6.xlarge: NVIDIA L4 GPU, 24 GB VRAM, 4 vCPUs, 16 GB RAM
+# This is the same instance type used for training in Workshop 2.
+DEPLOY_INSTANCE_TYPE = "ml.g6.xlarge"
+INITIAL_INSTANCE_COUNT = 1
 
 # If running locally (not in SageMaker), replace with your SageMaker execution role ARN.
 # Example: "arn:aws:iam::123456789012:role/YourSageMakerExecutionRole"
@@ -93,7 +88,7 @@ def get_sagemaker_session_and_role():
             role = LOCAL_EXECUTION_ROLE_ARN
         else:
             print("ERROR: Not running in SageMaker and LOCAL_EXECUTION_ROLE_ARN is not set.")
-            print("Edit deploy_serverless.py and set LOCAL_EXECUTION_ROLE_ARN to your")
+            print("Edit deploy_provisioned.py and set LOCAL_EXECUTION_ROLE_ARN to your")
             print("SageMaker execution role ARN, e.g.:")
             print('  LOCAL_EXECUTION_ROLE_ARN = "arn:aws:iam::123456789012:role/YourRole"')
             sys.exit(1)
@@ -106,30 +101,26 @@ def get_sagemaker_session_and_role():
 
 def retrieve_dlc_image_uri(region):
     """
-    Retrieve the DLC image URI from the AWS Deep Learning Container catalog.
+    Retrieve the GPU-optimized DLC image URI from the AWS Deep Learning Container catalog.
 
-    This is the KEY function that demonstrates the explicit DLC approach.
-    Instead of letting a wrapper class (like HuggingFaceModel) resolve the image
-    internally, we call image_uris.retrieve() directly so you can see exactly
-    which container image is being used.
+    This uses the SAME image_uris.retrieve() call as deploy_serverless.py, but with a
+    GPU instance type. The SDK uses the instance_type to determine whether to return
+    the CPU or GPU variant of the container image.
 
-    You can adapt this for ANY framework by changing the parameters:
-      - PyTorch inference:    framework="pytorch", version="2.1.0"
-      - TensorFlow inference: framework="tensorflow", version="2.14.0"
-      - HuggingFace:          framework="huggingface", version="4.37.0",
-                              base_framework_version="pytorch2.1.0"
+    GPU variant includes CUDA libraries for GPU-accelerated inference.
+    CPU variant (used by serverless) does not include CUDA — smaller image, CPU-only.
 
     Args:
         region: AWS region for the ECR repository (e.g., "us-east-1")
 
     Returns:
-        The fully qualified ECR image URI for the DLC
+        The fully qualified ECR image URI for the GPU-optimized DLC
     """
     image_uri = image_uris.retrieve(
         framework="huggingface",
         region=region,
         version=TRANSFORMERS_VERSION,
-        instance_type=INSTANCE_TYPE,
+        instance_type=DEPLOY_INSTANCE_TYPE,  # GPU instance -> GPU-optimized image
         image_scope=IMAGE_SCOPE,
         py_version=PY_VERSION,
         base_framework_version=BASE_FRAMEWORK_VERSION,
@@ -138,17 +129,16 @@ def retrieve_dlc_image_uri(region):
 
 
 def deploy():
-    """Deploy the model to a SageMaker Serverless Inference endpoint using an explicit DLC image."""
+    """Deploy the model to a provisioned GPU endpoint (ml.g6.xlarge)."""
     sess, role = get_sagemaker_session_and_role()
 
-    # Step 1: Retrieve the DLC image URI explicitly
-    # This makes the container selection visible — you can see exactly which image is used.
+    # Step 1: Retrieve the GPU-optimized DLC image URI
+    # Note: This returns a DIFFERENT image than deploy_serverless.py because we pass
+    # a GPU instance type. The GPU image includes CUDA for GPU-accelerated inference.
     image_uri = retrieve_dlc_image_uri(region=sess.boto_region_name)
-    print(f"\nDLC Image URI: {image_uri}")
+    print(f"\nDLC Image URI (GPU): {image_uri}")
 
-    # Step 2: Create a SageMaker Model using the GENERIC Model class
-    # This is the universal pattern — it works with ANY DLC image, not just HuggingFace.
-    # The env dict passes configuration to the container (model ID, task, etc.)
+    # Step 2: Create a SageMaker Model — same universal pattern as serverless
     print(f"\nCreating Model with config: {json.dumps(HUB_CONFIG, indent=2)}")
 
     model = Model(
@@ -158,32 +148,31 @@ def deploy():
         sagemaker_session=sess,
     )
 
-    # Step 3: Configure serverless inference
-    serverless_config = ServerlessInferenceConfig(
-        memory_size_in_mb=MEMORY_SIZE_IN_MB,
-        max_concurrency=MAX_CONCURRENCY,
-    )
-
-    # Step 4: Deploy
-    print(f"\nDeploying serverless endpoint: {ENDPOINT_NAME}")
-    print(f"  Memory:          {MEMORY_SIZE_IN_MB} MB")
-    print(f"  Max concurrency: {MAX_CONCURRENCY}")
-    print("  This may take 2-5 minutes...\n")
+    # Step 3: Deploy to a PROVISIONED endpoint with a dedicated GPU instance
+    # Unlike serverless, this creates an always-on instance that charges per hour.
+    print(f"\nDeploying provisioned endpoint: {ENDPOINT_NAME}")
+    print(f"  Instance type:    {DEPLOY_INSTANCE_TYPE} (NVIDIA L4, 24 GB VRAM)")
+    print(f"  Instance count:   {INITIAL_INSTANCE_COUNT}")
+    print("  This may take 5-10 minutes...\n")
+    print("  ** COST WARNING: This endpoint charges ~$0.80/hour while running.")
+    print("  ** Run 'python deploy_provisioned.py cleanup' when done!\n")
 
     predictor = model.deploy(
         endpoint_name=ENDPOINT_NAME,
-        serverless_inference_config=serverless_config,
+        instance_type=DEPLOY_INSTANCE_TYPE,
+        initial_instance_count=INITIAL_INSTANCE_COUNT,
     )
 
     print(f"\nEndpoint '{ENDPOINT_NAME}' is now InService.")
-    print("Run: python deploy_serverless.py invoke")
+    print("Run: python deploy_provisioned.py invoke")
+    print("\n** Remember: Run 'python deploy_provisioned.py cleanup' when done to stop charges!")
     return predictor
 
 
 def invoke():
-    """Send a test text-generation request to the serverless endpoint."""
+    """Send a test text-generation request to the provisioned endpoint."""
     print(f"Invoking endpoint: {ENDPOINT_NAME}")
-    print("  (First request may have a cold start of 30-60 seconds)\n")
+    print("  (No cold start — GPU instance is always running)\n")
 
     runtime = boto3.client("sagemaker-runtime")
 
@@ -210,8 +199,9 @@ def invoke():
 
 
 def cleanup():
-    """Delete the serverless endpoint and its model."""
+    """Delete the provisioned endpoint and its model. STOPS HOURLY CHARGES."""
     print(f"Cleaning up endpoint: {ENDPOINT_NAME}")
+    print("  (This will stop the hourly GPU instance charges)\n")
 
     sm_client = boto3.client("sagemaker")
 
@@ -237,12 +227,12 @@ def cleanup():
     print(f"  Deleting model:           {model_name}")
     sm_client.delete_model(ModelName=model_name)
 
-    print("\nCleanup complete. No more charges for this endpoint.")
+    print("\nCleanup complete. GPU instance charges have stopped.")
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Deploy/invoke/cleanup a SageMaker Serverless Inference endpoint"
+        description="Deploy/invoke/cleanup a SageMaker Provisioned GPU Inference endpoint"
     )
     parser.add_argument(
         "action",
