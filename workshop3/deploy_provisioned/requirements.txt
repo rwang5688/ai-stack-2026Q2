@@ -1,2 +1,3 @@
-sagemaker>=2.200.0
 boto3
+# sagemaker is optional — only used for get_execution_role() auto-detection
+# If running locally, set EXECUTION_ROLE_ARN in the script instead

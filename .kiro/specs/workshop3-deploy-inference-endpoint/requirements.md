@@ -38,9 +38,9 @@ This workshop module demonstrates deploying a fine-tuned model to SageMaker Infe
 
 #### Acceptance Criteria
 
-1. WHEN the deploy command is executed, THE Scripts SHALL create a SageMaker Model using `sagemaker.model.Model` (not `HuggingFaceModel`) with the retrieved DLC image URI
+1. WHEN the deploy command is executed, THE Scripts SHALL create a SageMaker Model using the boto3 `create_model` API with the constructed DLC image URI
 2. WHEN the Model is created, THE Scripts SHALL pass the Hub_Config environment variables (HF_MODEL_ID, HF_TASK) to configure the container
-3. WHEN the Model is created, THE Scripts SHALL pass the SageMaker execution role and session
+3. WHEN the Model is created, THE Scripts SHALL pass the SageMaker execution role
 4. THE Scripts SHALL include comments explaining that this same pattern works with any DLC image (PyTorch, TensorFlow, MXNet, etc.)
 
 ### Requirement 3: Serverless Endpoint Deployment

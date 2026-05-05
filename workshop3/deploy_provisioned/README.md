@@ -38,13 +38,13 @@ DLC_TAG = "2.1.0-transformers4.37.0-cpu-py310-ubuntu22.04"
 - **Service quota for `ml.g6.xlarge` endpoint instances** (request increase via Service Quotas console if needed)
 
 ```bash
-pip install sagemaker boto3
+pip install boto3
 ```
 
-**If running locally** (not in SageMaker JupyterLab), edit `deploy_provisioned.py` and set `LOCAL_EXECUTION_ROLE_ARN`:
+**If running locally** (not in SageMaker JupyterLab), edit `deploy_provisioned.py` and set `EXECUTION_ROLE_ARN`:
 
 ```python
-LOCAL_EXECUTION_ROLE_ARN = "arn:aws:iam::123456789012:role/YourSageMakerExecutionRole"
+EXECUTION_ROLE_ARN = "arn:aws:iam::123456789012:role/YourSageMakerExecutionRole"
 ```
 
 ## Runbook

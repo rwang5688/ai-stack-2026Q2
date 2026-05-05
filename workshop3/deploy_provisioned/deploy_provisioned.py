@@ -4,7 +4,7 @@ on a GPU instance using an explicit Deep Learning Container (DLC) image URI.
 
 This script demonstrates deploying to a PROVISIONED GPU endpoint — in contrast to
 deploy_serverless.py which deploys to a serverless CPU endpoint. The same universal
-DLC pattern is used, but here we:
+boto3 pattern is used, but here we:
   1. Use the GPU-optimized variant of the DLC image (includes CUDA)
   2. Deploy to a dedicated ml.g6.xlarge instance (NVIDIA L4, 24 GB VRAM)
 
@@ -20,7 +20,7 @@ Usage:
     python deploy_provisioned.py cleanup    # Delete the endpoint (STOPS CHARGES)
 
 Prerequisites:
-    - pip install sagemaker boto3
+    - pip install boto3
     - AWS credentials configured (SageMaker execution role or local credentials)
     - The model rwang5688/distilgpt2-finetuned-wikitext2 must exist on HuggingFace Hub
     - Service quota for ml.g6.xlarge endpoint instances (request increase if needed)
@@ -38,8 +38,6 @@ import json
 import sys
 
 import boto3
-import sagemaker
-from sagemaker.model import Model
 
 
 # --- Configuration ---
@@ -77,33 +75,39 @@ DLC_TAG = "2.1.0-transformers4.37.0-gpu-py310-cu118-ubuntu20.04"
 DEPLOY_INSTANCE_TYPE = "ml.g6.xlarge"
 INITIAL_INSTANCE_COUNT = 1
 
-# If running locally (not in SageMaker), replace with your SageMaker execution role ARN.
+# SageMaker execution role ARN.
+# If running in SageMaker, this is auto-detected. If running locally, set it here.
 # Example: "arn:aws:iam::123456789012:role/YourSageMakerExecutionRole"
-LOCAL_EXECUTION_ROLE_ARN = None
+EXECUTION_ROLE_ARN = None
 
 
-def get_sagemaker_session_and_role():
-    """Set up SageMaker session and resolve the execution role."""
-    sess = sagemaker.Session()
+def get_region():
+    """Get the current AWS region from the boto3 session."""
+    session = boto3.session.Session()
+    region = session.region_name
+    if not region:
+        print("ERROR: No AWS region configured. Set AWS_DEFAULT_REGION or configure your AWS CLI.")
+        sys.exit(1)
+    return region
 
+
+def get_execution_role():
+    """Resolve the SageMaker execution role ARN."""
+    if EXECUTION_ROLE_ARN:
+        return EXECUTION_ROLE_ARN
+
+    # Try to get the role from SageMaker metadata (works inside SageMaker environments)
     try:
-        # Works automatically inside SageMaker JupyterLab / Studio / Notebook Instances
-        role = sagemaker.get_execution_role()
-    except ValueError:
-        # Running locally — use the explicitly configured role ARN
-        if LOCAL_EXECUTION_ROLE_ARN:
-            role = LOCAL_EXECUTION_ROLE_ARN
-        else:
-            print("ERROR: Not running in SageMaker and LOCAL_EXECUTION_ROLE_ARN is not set.")
-            print("Edit deploy_provisioned.py and set LOCAL_EXECUTION_ROLE_ARN to your")
-            print("SageMaker execution role ARN, e.g.:")
-            print('  LOCAL_EXECUTION_ROLE_ARN = "arn:aws:iam::123456789012:role/YourRole"')
-            sys.exit(1)
+        import sagemaker
+        return sagemaker.get_execution_role()
+    except Exception:
+        pass
 
-    print(f"SageMaker role ARN: {role}")
-    print(f"SageMaker bucket:   {sess.default_bucket()}")
-    print(f"Region:             {sess.boto_region_name}")
-    return sess, role
+    print("ERROR: EXECUTION_ROLE_ARN is not set.")
+    print("Edit deploy_provisioned.py and set EXECUTION_ROLE_ARN to your")
+    print("SageMaker execution role ARN, e.g.:")
+    print('  EXECUTION_ROLE_ARN = "arn:aws:iam::123456789012:role/YourRole"')
+    sys.exit(1)
 
 
 def get_dlc_image_uri(region):
@@ -131,43 +135,88 @@ def get_dlc_image_uri(region):
 
 def deploy():
     """Deploy the model to a provisioned GPU endpoint (ml.g6.xlarge)."""
-    sess, role = get_sagemaker_session_and_role()
+    region = get_region()
+    role = get_execution_role()
+    sm_client = boto3.client("sagemaker", region_name=region)
+
+    print(f"Region:             {region}")
+    print(f"SageMaker role ARN: {role}")
 
     # Step 1: Construct the GPU-optimized DLC image URI
     # Note: This uses a DIFFERENT tag than deploy_serverless.py — the GPU tag includes
     # CUDA libraries for GPU-accelerated inference.
-    image_uri = get_dlc_image_uri(region=sess.boto_region_name)
+    image_uri = get_dlc_image_uri(region)
     print(f"\nDLC Image URI (GPU): {image_uri}")
 
-    # Step 2: Create a SageMaker Model — same universal pattern as serverless
-    print(f"\nCreating Model with config: {json.dumps(HUB_CONFIG, indent=2)}")
+    # Step 2: Create a SageMaker Model
+    model_name = f"{ENDPOINT_NAME}-model"
+    print(f"\nCreating Model '{model_name}' with config: {json.dumps(HUB_CONFIG, indent=2)}")
 
-    model = Model(
-        image_uri=image_uri,
-        env=HUB_CONFIG,
-        role=role,
-        sagemaker_session=sess,
-    )
+    try:
+        sm_client.create_model(
+            ModelName=model_name,
+            PrimaryContainer={
+                "Image": image_uri,
+                "Environment": HUB_CONFIG,
+            },
+            ExecutionRoleArn=role,
+        )
+    except sm_client.exceptions.ClientError as e:
+        if "Cannot create already existing model" in str(e):
+            print(f"  Model '{model_name}' already exists, reusing it.")
+        else:
+            raise
 
-    # Step 3: Deploy to a PROVISIONED endpoint with a dedicated GPU instance
-    # Unlike serverless, this creates an always-on instance that charges per hour.
-    print(f"\nDeploying provisioned endpoint: {ENDPOINT_NAME}")
+    # Step 3: Create endpoint configuration with provisioned instance
+    config_name = f"{ENDPOINT_NAME}-config"
+    print(f"\nCreating endpoint config: {config_name}")
     print(f"  Instance type:    {DEPLOY_INSTANCE_TYPE} (NVIDIA L4, 24 GB VRAM)")
     print(f"  Instance count:   {INITIAL_INSTANCE_COUNT}")
+
+    try:
+        sm_client.create_endpoint_config(
+            EndpointConfigName=config_name,
+            ProductionVariants=[
+                {
+                    "VariantName": "AllTraffic",
+                    "ModelName": model_name,
+                    "InstanceType": DEPLOY_INSTANCE_TYPE,
+                    "InitialInstanceCount": INITIAL_INSTANCE_COUNT,
+                }
+            ],
+        )
+    except sm_client.exceptions.ClientError as e:
+        if "Cannot create already existing" in str(e):
+            print(f"  Config '{config_name}' already exists, reusing it.")
+        else:
+            raise
+
+    # Step 4: Create the endpoint
+    print(f"\nDeploying provisioned endpoint: {ENDPOINT_NAME}")
     print("  This may take 5-10 minutes...\n")
     print("  ** COST WARNING: This endpoint charges ~$0.80/hour while running.")
     print("  ** Run 'python deploy_provisioned.py cleanup' when done!\n")
 
-    predictor = model.deploy(
-        endpoint_name=ENDPOINT_NAME,
-        instance_type=DEPLOY_INSTANCE_TYPE,
-        initial_instance_count=INITIAL_INSTANCE_COUNT,
-    )
+    try:
+        sm_client.create_endpoint(
+            EndpointName=ENDPOINT_NAME,
+            EndpointConfigName=config_name,
+        )
+    except sm_client.exceptions.ClientError as e:
+        if "Cannot create already existing" in str(e):
+            print(f"  Endpoint '{ENDPOINT_NAME}' already exists.")
+            return
+        else:
+            raise
+
+    # Wait for endpoint to be in service
+    print("  Waiting for endpoint to be InService...")
+    waiter = sm_client.get_waiter("endpoint_in_service")
+    waiter.wait(EndpointName=ENDPOINT_NAME)
 
     print(f"\nEndpoint '{ENDPOINT_NAME}' is now InService.")
     print("Run: python deploy_provisioned.py invoke")
     print("\n** Remember: Run 'python deploy_provisioned.py cleanup' when done to stop charges!")
-    return predictor
 
 
 def invoke():

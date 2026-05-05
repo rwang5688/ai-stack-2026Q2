@@ -15,13 +15,14 @@ workshop3/deploy_serverless/
 
 ### Shared Pattern
 
-Both scripts follow the same universal deployment pattern:
+Both scripts follow the same universal deployment pattern using boto3 directly:
 
 ```
-1. Resolve SageMaker session + role
+1. Resolve AWS region and execution role
 2. Construct DLC image URI for the region (CPU or GPU tag)
-3. Create Model(image_uri=..., env=HUB_CONFIG, role=..., sagemaker_session=...)
-4. Deploy with endpoint-specific configuration
+3. CreateModel (boto3 create_model API with image URI and environment variables)
+4. CreateEndpointConfig (serverless or provisioned settings)
+5. CreateEndpoint and wait for InService
 ```
 
 The only difference is step 4:
@@ -44,28 +45,35 @@ The only difference is the tag — CPU vs GPU variant:
 
 ### 2. Serverless Deployment (`deploy_serverless.py`)
 
-**Already implemented.** Uses `ServerlessInferenceConfig`:
+**Already implemented.** Uses boto3 `create_endpoint_config` with `ServerlessConfig`:
 
 ```python
-serverless_config = ServerlessInferenceConfig(
-    memory_size_in_mb=4096,
-    max_concurrency=5,
-)
-model.deploy(
-    endpoint_name=ENDPOINT_NAME,
-    serverless_inference_config=serverless_config,
+sm_client.create_endpoint_config(
+    EndpointConfigName=config_name,
+    ProductionVariants=[{
+        "VariantName": "AllTraffic",
+        "ModelName": model_name,
+        "ServerlessConfig": {
+            "MemorySizeInMB": 4096,
+            "MaxConcurrency": 5,
+        },
+    }],
 )
 ```
 
 ### 3. Provisioned Deployment (`deploy_provisioned.py`)
 
-Uses standard real-time deployment with a GPU instance:
+Uses boto3 `create_endpoint_config` with a dedicated GPU instance:
 
 ```python
-model.deploy(
-    endpoint_name=ENDPOINT_NAME,
-    instance_type="ml.g6.xlarge",
-    initial_instance_count=1,
+sm_client.create_endpoint_config(
+    EndpointConfigName=config_name,
+    ProductionVariants=[{
+        "VariantName": "AllTraffic",
+        "ModelName": model_name,
+        "InstanceType": "ml.g6.xlarge",
+        "InitialInstanceCount": 1,
+    }],
 )
 ```
 
@@ -104,13 +112,12 @@ model.deploy(
 | `PY_VERSION` | `"py310"` |
 | `IMAGE_SCOPE` | `"inference"` |
 
-### 5. Session and Role Resolution (Shared)
+### 4. Session and Role Resolution (Shared)
 
-Both scripts use the same `get_sagemaker_session_and_role()` function:
-1. Create `sagemaker.Session()`
-2. Try `sagemaker.get_execution_role()` (works in SageMaker environments)
-3. Fall back to `LOCAL_EXECUTION_ROLE_ARN` constant
-4. Exit with helpful error if neither is available
+Both scripts use the same `get_execution_role()` function:
+1. Check `EXECUTION_ROLE_ARN` constant (for local development)
+2. Try `sagemaker.get_execution_role()` (works in SageMaker environments, optional import)
+3. Exit with helpful error if neither is available
 
 ### 6. Endpoint Invocation (Shared Pattern)
 
@@ -140,15 +147,17 @@ Both scripts follow the same deletion order:
 
 ## Key Design Decisions
 
-1. **Two separate scripts**: Rather than one script with flags, two scripts make the comparison clearer. Students can read each independently and see the full pattern.
+1. **Two separate scripts in separate directories**: Rather than one script with flags, two scripts in their own directories make the comparison clearer. Students can read each independently and see the full pattern.
 
 2. **Same model, two deployments**: Using the same distilgpt2 model for both lets students compare latency and behavior without model differences confounding the comparison.
 
 3. **GPU instance for provisioned**: `ml.g6.xlarge` (NVIDIA L4) matches the training instance from Workshop 2, reinforcing the connection between training and inference hardware.
 
-4. **Explicit DLC in both**: Both scripts use `image_uris.retrieve()` + `Model()`, showing that the universal pattern works regardless of deployment target.
+4. **boto3 directly over SageMaker SDK wrappers**: Using boto3 `create_model`, `create_endpoint_config`, and `create_endpoint` directly ensures compatibility with any SageMaker SDK version (v2 or v3) and shows students the raw AWS API calls, which are transferable to any language.
 
-5. **Cost warnings**: The provisioned script prominently warns about hourly charges and emphasizes cleanup, since forgetting to delete a GPU endpoint is an expensive mistake.
+5. **Direct DLC URI construction over SDK helpers**: Constructing the ECR URI from the known pattern (`763104351884.dkr.ecr.<region>.amazonaws.com/<repo>:<tag>`) is more educational than a helper function — students see exactly how the URI is composed and can look up tags in the DLC catalog.
+
+6. **Cost warnings**: The provisioned script prominently warns about hourly charges and emphasizes cleanup, since forgetting to delete a GPU endpoint is an expensive mistake.
 
 ## Correctness Properties
 

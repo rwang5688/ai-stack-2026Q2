@@ -59,13 +59,13 @@ Instead of using the `HuggingFaceModel` wrapper (which hides the DLC selection),
 - The fine-tuned model published to HuggingFace Hub: [rwang5688/distilgpt2-finetuned-wikitext2](https://huggingface.co/rwang5688/distilgpt2-finetuned-wikitext2)
 
 ```bash
-pip install sagemaker boto3
+pip install boto3
 ```
 
-**If running locally** (not in SageMaker JupyterLab), edit `deploy_serverless.py` and set `LOCAL_EXECUTION_ROLE_ARN`:
+**If running locally** (not in SageMaker JupyterLab), edit `deploy_serverless.py` and set `EXECUTION_ROLE_ARN`:
 
 ```python
-LOCAL_EXECUTION_ROLE_ARN = "arn:aws:iam::123456789012:role/YourSageMakerExecutionRole"
+EXECUTION_ROLE_ARN = "arn:aws:iam::123456789012:role/YourSageMakerExecutionRole"
 ```
 
 ## Runbook
