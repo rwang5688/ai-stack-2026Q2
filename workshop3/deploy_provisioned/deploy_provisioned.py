@@ -65,9 +65,11 @@ HUB_CONFIG = {
 #   https://aws.github.io/deep-learning-containers/reference/available_images/
 #
 # GPU tag (includes CUDA for GPU-accelerated inference):
+# NOTE: Use a transformers version compatible with the version used during training.
+# Training used transformers 5.7.0, so we use the DLC with transformers 5.5.3.
 DLC_ACCOUNT_ID = "763104351884"
 DLC_REPOSITORY = "huggingface-pytorch-inference"
-DLC_TAG = "2.1.0-transformers4.37.0-gpu-py310-cu118-ubuntu20.04"
+DLC_TAG = "2.6.0-transformers5.5.3-gpu-py312-cu124-ubuntu22.04"
 
 # --- Provisioned Endpoint Configuration ---
 # ml.g6.xlarge: NVIDIA L4 GPU, 24 GB VRAM, 4 vCPUs, 16 GB RAM
