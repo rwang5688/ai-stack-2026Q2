@@ -60,12 +60,12 @@ HUB_CONFIG = {
 # Find available images at:
 #   https://aws.github.io/deep-learning-containers/reference/available_images/
 #
-# GPU-variant tag used for serverless too — the GPU image works on CPU infrastructure,
-# it just has extra CUDA libraries. We use it because there's no CPU image with
-# transformers 5.x, and our model was trained with transformers 5.7.0.
+# CPU tag for serverless — uses transformers 4.49.0 which can load safetensors
+# models saved by transformers 5.x. The GPU images with transformers 5.x are too
+# large (>10 GB) for the serverless container size limit.
 DLC_ACCOUNT_ID = "763104351884"
 DLC_REPOSITORY = "huggingface-pytorch-inference"
-DLC_TAG = "2.6.0-transformers5.5.3-gpu-py312-cu124-ubuntu22.04"
+DLC_TAG = "2.6.0-transformers4.49.0-cpu-py312-ubuntu22.04"
 
 # Serverless config
 MEMORY_SIZE_IN_MB = 4096
