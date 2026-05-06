@@ -88,7 +88,7 @@ The only meaningful changes to make things work on SageMaker are:
        args=training_args,
        train_dataset=lm_datasets["train"],
        eval_dataset=lm_datasets["validation"],
-       tokenizer=tokenizer,  # Required for push_to_hub to include tokenizer files
+       processing_class=tokenizer,  # Required for push_to_hub to include tokenizer files
    )
    ```
 
