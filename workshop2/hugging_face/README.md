@@ -28,7 +28,7 @@ Run these scripts from a terminal in your SageMaker JupyterLab space.
 HuggingFace model downloads require git-lfs. SageMaker doesn't have it pre-installed.
 
 ```bash
-bash scripts/install-git-lfs.sh
+bash install-git-lfs.sh
 ```
 
 You only need to do this once per SageMaker environment.
@@ -37,12 +37,12 @@ You only need to do this once per SageMaker environment.
 
 This clears stale credential helpers and sets your remote URL with your token so the JupyterLab Git UI can push.
 
-1. Edit `scripts/git-push.sh` and replace `YOUR_TOKEN_HERE` with your classic GitHub token
+1. Edit `git-push.sh` and replace `YOUR_TOKEN_HERE` with your classic GitHub token
 2. Run from inside your repo directory:
 
 ```bash
 cd ~/user-default-efs/ai-stack-2026Q2
-bash scripts/git-push.sh
+bash workshop2/hugging_face/git-push.sh
 ```
 
 **Do not check in the script with a real token.** Reset it to `YOUR_TOKEN_HERE` before committing.
@@ -51,11 +51,11 @@ bash scripts/git-push.sh
 
 Required before running the notebook (model downloads and push-to-hub).
 
-1. Edit `scripts/hf-setup.sh` and replace `YOUR_TOKEN_HERE` with your Hugging Face token
+1. Edit `hf-setup.sh` and replace `YOUR_TOKEN_HERE` with your Hugging Face token
 2. Run:
 
 ```bash
-bash scripts/hf-setup.sh
+bash hf-setup.sh
 ```
 
 This persists across kernel restarts.
@@ -73,14 +73,24 @@ Open `language_modeling.ipynb` in JupyterLab and run through the cells in order.
 
 ### Key change from the original notebook
 
-The only meaningful change to make things work on SageMaker is in the first code cell — upgrading packages with explicit `pyarrow`:
+The only meaningful changes to make things work on SageMaker are:
 
-```python
-!pip install -U datasets pyarrow
-!pip install -U transformers
-```
+1. **Explicit pyarrow upgrade** in the first code cell — avoids Arrow serialization errors during `.map()` calls:
+   ```python
+   !pip install -U datasets pyarrow
+   !pip install -U transformers
+   ```
 
-This avoids Arrow serialization errors during the `.map()` calls.
+2. **Pass tokenizer to Trainer** — ensures `push_to_hub()` uploads the tokenizer files alongside the model weights. Without this, the deployed inference endpoint can't load the tokenizer:
+   ```python
+   trainer = Trainer(
+       model=model,
+       args=training_args,
+       train_dataset=lm_datasets["train"],
+       eval_dataset=lm_datasets["validation"],
+       tokenizer=tokenizer,  # Required for push_to_hub to include tokenizer files
+   )
+   ```
 
 ### We only run the CLM section
 
