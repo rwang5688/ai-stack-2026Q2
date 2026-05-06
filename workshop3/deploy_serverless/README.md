@@ -77,7 +77,7 @@ python deploy_serverless.py deploy
 ```
 
 Creates a serverless endpoint with:
-- **Container**: HuggingFace DLC (CPU variant, transformers 4.37.0, PyTorch 2.1.0)
+- **Container**: HuggingFace DLC (CPU variant, transformers 4.49.0, PyTorch 2.6.0)
 - **Memory**: 4096 MB
 - **Max concurrency**: 5
 
@@ -123,3 +123,21 @@ Deletes the endpoint, endpoint configuration, and model.
 ## Cost Estimate
 
 Serverless Inference charges per request duration and memory used. For occasional test invocations with distilgpt2, expect costs well under $1/day.
+
+## DLC Version Compatibility
+
+When deploying a model, the DLC container's transformers version must be able to load the model files saved during training. Key lessons learned:
+
+| Training Version | DLC Version | Works? | Notes |
+|-----------------|-------------|--------|-------|
+| transformers 5.7.0 | 4.37.0 | No | Too old — can't deserialize safetensors from 5.x |
+| transformers 5.7.0 | 4.49.0 | Yes | Safetensors format is stable across minor versions |
+| transformers 5.7.0 | 5.5.3 | Yes | Close version match, guaranteed compatible |
+
+### Rules of Thumb
+
+1. **Use the latest available DLC image** — newer is almost always better for compatibility
+2. **CPU images lag behind GPU images** — AWS publishes GPU DLC images with newer transformers versions first. CPU images may not have the latest
+3. **Safetensors format is stable** — models saved as `.safetensors` (the default since transformers ~4.30) can generally be loaded by any version >= 4.30
+4. **Container size limits serverless** — GPU DLC images (with CUDA) are 8-10+ GB and exceed the 10 GB serverless limit. Serverless must use CPU images
+5. **When in doubt, match versions** — if you control the training environment, pin your transformers version to match the DLC you plan to deploy on

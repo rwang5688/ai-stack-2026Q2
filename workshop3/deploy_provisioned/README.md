@@ -63,7 +63,7 @@ python deploy_provisioned.py deploy
 ```
 
 Creates a real-time endpoint with:
-- **Container**: HuggingFace DLC (GPU variant with CUDA, transformers 4.37.0, PyTorch 2.1.0)
+- **Container**: HuggingFace DLC (GPU variant with CUDA, transformers 5.5.3, PyTorch 2.6.0)
 - **Instance**: ml.g6.xlarge (NVIDIA L4, 24 GB VRAM)
 - **Instance count**: 1
 
@@ -104,3 +104,22 @@ python deploy_provisioned.py cleanup
 - You need consistent low-latency responses (no cold starts)
 - You're serving production traffic with steady request volume
 - Your container image exceeds the 10 GB serverless limit
+- **You need the latest transformers version** — GPU DLC images have transformers 5.x, but they're too large for serverless (>10 GB with CUDA). Serverless is limited to CPU images which currently max out at transformers 4.49.0
+
+## DLC Version Compatibility
+
+The DLC container's transformers version must be able to load the model files saved during training.
+
+### What We Learned
+
+- **Training** was done with transformers 5.7.0 (on SageMaker JupyterLab)
+- **Provisioned endpoint** uses the GPU DLC with transformers 5.5.3 — works perfectly
+- **Serverless endpoint** uses the CPU DLC with transformers 4.49.0 — also works (safetensors format is backward-compatible)
+- DLC with transformers 4.37.0 — **does NOT work** (too old to deserialize the model)
+
+### Rules of Thumb
+
+1. **Use the latest available DLC image** — newer is almost always better for compatibility
+2. **GPU images have newer transformers** — AWS publishes GPU DLCs with the latest versions first
+3. **Safetensors format is stable** — models saved as `.safetensors` can generally be loaded by any transformers >= 4.30
+4. **When in doubt, match versions** — pin your training transformers version to match the DLC you plan to deploy on
