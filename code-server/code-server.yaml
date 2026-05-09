@@ -7,10 +7,6 @@ Parameters:
   CodeEditorUser:
     Type: String
     Default: ubuntu
-  EC2KeyPairName:
-    Type: AWS::EC2::KeyPair::KeyName
-    Description: https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/create-key-pairs.html
-    Default: ws-default-keypair
   InstanceVolumeSize:
     Type: Number
     Description: The volume size in GB
@@ -231,7 +227,6 @@ Metadata:
           default: Instance Configuration
         Parameters:
           - InstanceVolumeSize
-          - EC2KeyPairName
       - Label:
           default: Code Server Configuration
         Parameters:
@@ -241,8 +236,6 @@ Metadata:
     ParameterLabels:
       InstanceVolumeSize:
         default: Attached volume size
-      EC2KeyPairName:
-        default: EC2 key pair name
       HomeFolder:
         default: Folder to open in code server when launching
       DevServerBasePath:
@@ -1011,7 +1004,6 @@ Resources:
     Type: AWS::EC2::Instance
     DependsOn: PrivateSubnetOneRouteTableAssociation
     Properties:
-      KeyName: !Ref EC2KeyPairName
       BlockDeviceMappings:
         - Ebs:
             VolumeSize: !Ref InstanceVolumeSize
