@@ -1,0 +1,8 @@
+# Environment file with secrets (endpoint names, etc.)
+.env
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/

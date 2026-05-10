@@ -212,10 +212,28 @@ def main():
     parser.add_argument(
         "--xgboost-endpoint-name",
         default=None,
-        help="SageMaker XGBoost endpoint name (optional — if not provided, Loan Application Agent won't work until set)",
+        help="SageMaker XGBoost endpoint name (reads from .env file if not provided)",
     )
 
     args = parser.parse_args()
+
+    # Read .env file if it exists (for XGBOOST_ENDPOINT_NAME)
+    env_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".env")
+    env_file = os.path.normpath(env_file)
+    if os.path.exists(env_file):
+        with open(env_file, "r") as f:
+            for line in f:
+                line = line.strip()
+                if line and not line.startswith("#") and "=" in line:
+                    key, value = line.split("=", 1)
+                    key = key.strip()
+                    value = value.strip()
+                    if value and not value.startswith("<"):
+                        os.environ.setdefault(key, value)
+
+    # If --xgboost-endpoint-name not provided, try .env
+    if not args.xgboost_endpoint_name:
+        args.xgboost_endpoint_name = os.environ.get("XGBOOST_ENDPOINT_NAME")
 
     # Determine data directory relative to this script
     script_dir = os.path.dirname(os.path.abspath(__file__))
