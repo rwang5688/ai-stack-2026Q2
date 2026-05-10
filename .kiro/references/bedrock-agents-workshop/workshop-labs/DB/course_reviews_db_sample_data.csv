@@ -1,0 +1,10 @@
+course_name,course_title,difficulty,rating,review_count,semester,workload_hrs_per_week
+CS 598,Advanced Bayesian Modeling,4.3,4.5,6,spring,19.5
+CS 525,Advanced Distributed Systems,5,4.5,6,spring,10
+CS 441,Machine Learning,5,4.5,4,spring,19.5
+CS 498,Cloud Computing Applications,3,4.5,6,spring,5
+CS 435,Cloud Networking,3,4.5,5,spring,5
+CS 445,Computational Photography,3,4.5,10,spring,5
+CS 411,Database Systems,2,4.5,15,spring,5
+CS 437,Internet of Things,2,4.5,2,spring,5
+CS 447,Natural Language Processing,5,4.5,4,spring,10
