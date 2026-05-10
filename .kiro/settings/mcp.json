@@ -1,5 +1,12 @@
 {
   "mcpServers": {
+    "aws-cdk": {
+      "command": "uvx",
+      "args": ["awslabs.cdk-mcp-server@latest"],
+      "env": { "FASTMCP_LOG_LEVEL": "ERROR" },
+      "disabled": false,
+      "autoApprove": []
+    },
     "aws-knowledge": {
       "command": "uvx",
       "args": [
@@ -8,29 +15,30 @@
         "streamablehttp",
         "https://knowledge-mcp.global.api.aws"
       ],
-      "env": {
-        "FASTMCP_LOG_LEVEL": "ERROR"
-      },
+      "env": { "FASTMCP_LOG_LEVEL": "ERROR" },
+      "disabled": false,
+      "autoApprove": ["aws___search_documentation"]
+    },
+    "awslabs.aws-diagram-mcp-server": {
+      "command": "uvx",
+      "args": ["awslabs.aws-diagram-mcp-server"],
+      "env": { "FASTMCP_LOG_LEVEL": "ERROR" },
       "disabled": false,
       "autoApprove": []
     },
-    "aws-cdk": {
+    "awslabs.aws-documentation-mcp-server": {
       "command": "uvx",
-      "args": ["awslabs.cdk-mcp-server@latest"],
-      "env": {
-        "FASTMCP_LOG_LEVEL": "ERROR"
-      },
+      "args": ["awslabs.aws-documentation-mcp-server@latest"],
+      "env": { "FASTMCP_LOG_LEVEL": "ERROR" },
       "disabled": false,
-      "autoApprove": []
+      "autoApprove": ["read_documentation", "read_sections"]
     },
     "strands-agents": {
       "command": "uvx",
       "args": ["strands-agents-mcp-server"],
-      "env": {
-        "FASTMCP_LOG_LEVEL": "ERROR"
-      },
+      "env": { "FASTMCP_LOG_LEVEL": "ERROR" },
       "disabled": false,
-      "autoApprove": []
+      "autoApprove": ["search_docs", "fetch_doc"]
     }
   }
 }
