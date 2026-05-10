@@ -211,8 +211,8 @@ def main():
     )
     parser.add_argument(
         "--xgboost-endpoint-name",
-        required=True,
-        help="SageMaker XGBoost endpoint name (required for Loan Application Agent)",
+        default=None,
+        help="SageMaker XGBoost endpoint name (optional — if not provided, Loan Application Agent won't work until set)",
     )
 
     args = parser.parse_args()
@@ -260,9 +260,14 @@ def main():
     trigger_kb_ingestion(kb_id, ds_id, args.region)
     print()
 
-    # Step 5: Write XGBoost endpoint to SSM
-    print("[5/5] Writing XGBoost endpoint name to SSM Parameter Store...")
-    write_xgboost_endpoint_to_ssm(args.xgboost_endpoint_name, args.region)
+    # Step 5: Write XGBoost endpoint to SSM (if provided)
+    if args.xgboost_endpoint_name:
+        print("[5/5] Writing XGBoost endpoint name to SSM Parameter Store...")
+        write_xgboost_endpoint_to_ssm(args.xgboost_endpoint_name, args.region)
+    else:
+        print("[5/5] Skipping XGBoost endpoint — not provided.")
+        print("  WARNING: Loan Application Agent won't work until you run:")
+        print(f"  python scripts/populate_seed_data.py --region {args.region} --xgboost-endpoint-name <your-endpoint>")
     print()
 
     # Print summary

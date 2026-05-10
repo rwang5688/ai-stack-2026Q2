@@ -24,18 +24,19 @@ Resources:
         RestrictPublicBuckets: true
 
   VectorsBucket:
-    Type: AWS::S3::Bucket
+    Type: AWS::S3Vectors::VectorBucket
     Properties:
-      BucketName: !Sub student-services-vectors-${AWS::AccountId}-${AWS::Region}
-      BucketEncryption:
-        ServerSideEncryptionConfiguration:
-          - ServerSideEncryptionByDefault:
-              SSEAlgorithm: AES256
-      PublicAccessBlockConfiguration:
-        BlockPublicAcls: true
-        BlockPublicPolicy: true
-        IgnorePublicAcls: true
-        RestrictPublicBuckets: true
+      VectorBucketName: !Sub student-services-vectors-${AWS::AccountId}-${AWS::Region}
+
+  VectorsIndex:
+    Type: AWS::S3Vectors::Index
+    DependsOn: VectorsBucket
+    Properties:
+      VectorBucketName: !Sub student-services-vectors-${AWS::AccountId}-${AWS::Region}
+      IndexName: student-services-kb-index
+      DataType: float32
+      Dimension: 1024
+      DistanceMetric: cosine
 
   # ============================================================================
   # IAM Role for Bedrock Knowledge Base
@@ -71,13 +72,15 @@ Resources:
               - Sid: S3VectorsBucketAccess
                 Effect: Allow
                 Action:
-                  - s3:GetObject
-                  - s3:PutObject
-                  - s3:ListBucket
-                  - s3:DeleteObject
+                  - s3vectors:GetVector
+                  - s3vectors:PutVector
+                  - s3vectors:DeleteVector
+                  - s3vectors:QueryVectors
+                  - s3vectors:GetIndex
+                  - s3vectors:ListIndexes
                 Resource:
-                  - !GetAtt VectorsBucket.Arn
-                  - !Sub ${VectorsBucket.Arn}/*
+                  - !Sub arn:aws:s3vectors:${AWS::Region}:${AWS::AccountId}:bucket/student-services-vectors-${AWS::AccountId}-${AWS::Region}
+                  - !Sub arn:aws:s3vectors:${AWS::Region}:${AWS::AccountId}:bucket/student-services-vectors-${AWS::AccountId}-${AWS::Region}/*
               - Sid: BedrockInvokeModel
                 Effect: Allow
                 Action:
@@ -93,7 +96,7 @@ Resources:
     Type: AWS::Bedrock::KnowledgeBase
     DependsOn:
       - BedrockKBRole
-      - VectorsBucket
+      - VectorsIndex
     Properties:
       Name: student-services-kb
       Description: Knowledge base for Student Services course catalog
@@ -105,7 +108,9 @@ Resources:
       StorageConfiguration:
         Type: S3_VECTORS
         S3VectorsConfiguration:
-          VectorBucketArn: !GetAtt VectorsBucket.Arn
+          VectorBucketArn: !Sub arn:aws:s3vectors:${AWS::Region}:${AWS::AccountId}:bucket/student-services-vectors-${AWS::AccountId}-${AWS::Region}
+          IndexArn: !GetAtt VectorsIndex.IndexArn
+          IndexName: student-services-kb-index
 
   DataSource:
     Type: AWS::Bedrock::DataSource
@@ -165,8 +170,8 @@ Resources:
     Properties:
       Name: /student-services/vectors-bucket-name
       Type: String
-      Value: !Ref VectorsBucket
-      Description: S3 vectors bucket name for student services
+      Value: !Sub student-services-vectors-${AWS::AccountId}-${AWS::Region}
+      Description: S3 Vectors bucket name for student services
 
   SSMKnowledgeBaseId:
     Type: AWS::SSM::Parameter
@@ -244,8 +249,8 @@ Outputs:
       Name: !Sub ${AWS::StackName}-DataBucketName
 
   VectorsBucketName:
-    Description: S3 vectors bucket name
-    Value: !Ref VectorsBucket
+    Description: S3 Vectors bucket name
+    Value: !Sub student-services-vectors-${AWS::AccountId}-${AWS::Region}
     Export:
       Name: !Sub ${AWS::StackName}-VectorsBucketName
 
