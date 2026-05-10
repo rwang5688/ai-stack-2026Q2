@@ -1,0 +1,6 @@
+boto3==1.*
+hypothesis==6.*
+pytest==8.*
+strands-agents==0.1.*
+strands-agents-tools==0.1.*
+streamlit==1.*

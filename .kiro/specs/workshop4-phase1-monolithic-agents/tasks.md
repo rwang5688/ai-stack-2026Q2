@@ -7,19 +7,19 @@ This plan implements a monolithic Streamlit desktop application with a multi-age
 ## Tasks
 
 - [ ] 1. Set up project structure and deploy infrastructure
-  - [ ] 1.1 Create directory structure and initial files
+  - [x] 1.1 Create directory structure and initial files
     - Create all directories: `workshop4/phase1/cloudformation/`, `course_registration_agent/`, `course_review_agent/`, `data/`, `loan_application_agent/`, `math_teaching_agent/`, `shared/`, `streamlit_app/`, `student_services_agent/`, `tests/`, `tests/integration/`
     - Create `__init__.py` files in each agent directory, `shared/`, and `tests/`
     - Create `requirements.txt` with pinned dependencies: `strands-agents==0.1.*`, `strands-agents-tools==0.1.*`, `streamlit==1.*`, `boto3==1.*`, `hypothesis==6.*`, `pytest==8.*`
     - _Requirements: 1.1, 1.4_
 
-  - [ ] 1.2 Copy data files to `workshop4/phase1/data/`
+  - [x] 1.2 Copy data files to `workshop4/phase1/data/`
     - Copy `course_catalog.pdf` from `.kiro/references/bedrock-agents-workshop/workshop-labs/KB-DataSource/Undergraduate-Catalog-2023-24.pdf`
     - Copy and rename `.kiro/references/bedrock-agents-workshop/workshop-labs/DB/course_registration_db_sample_data.csv` → `data/course_registrations.csv`
     - Copy and rename `.kiro/references/bedrock-agents-workshop/workshop-labs/DB/course_reviews_db_sample_data.csv` → `data/course_reviews.csv`
     - _Requirements: 2.1, 2.4, 2.5_
 
-  - [ ] 1.3 Create `cloudformation/student-services-infra.yaml`
+  - [x] 1.3 Create `cloudformation/student-services-infra.yaml`
     - S3 bucket for all data files, named `student-services-data-{AccountId}-{Region}`
     - S3 Vectors bucket as vector store for Bedrock Knowledge Base (NOT OpenSearch Serverless), named `student-services-vectors-{AccountId}-{Region}`
     - Bedrock Knowledge Base configured with S3 data source prefix `kb-datasource/` and **S3 Vectors** storage type, embedding model `amazon.titan-embed-text-v2:0`
@@ -53,7 +53,7 @@ This plan implements a monolithic Streamlit desktop application with a multi-age
     - Print summary of all SSM parameters written
     - _Requirements: 2.1, 2.4, 2.5, 2.10_
 
-  - [ ] 1.5 Create `deploy.sh`
+  - [x] 1.5 Create `deploy.sh`
     - Accept XGBoost endpoint name as first argument: `./deploy.sh <xgboost-endpoint-name>`
     - Step 1: `aws cloudformation deploy --stack-name student-services-infra --template-file cloudformation/student-services-infra.yaml --capabilities CAPABILITY_IAM --region us-west-2`
     - Step 2: `python scripts/populate_seed_data.py --xgboost-endpoint-name $1`
