@@ -37,6 +37,9 @@ Resources:
       DataType: float32
       Dimension: 1024
       DistanceMetric: cosine
+      MetadataConfiguration:
+        NonFilterableMetadataKeys:
+          - AMAZON_BEDROCK_TEXT
 
   # ============================================================================
   # IAM Role for Bedrock Knowledge Base
@@ -69,18 +72,16 @@ Resources:
                 Resource:
                   - !GetAtt DataBucket.Arn
                   - !Sub ${DataBucket.Arn}/*
-              - Sid: S3VectorsBucketAccess
+              - Sid: S3VectorsAccess
                 Effect: Allow
                 Action:
-                  - s3vectors:GetVector
-                  - s3vectors:PutVector
-                  - s3vectors:DeleteVector
-                  - s3vectors:QueryVectors
                   - s3vectors:GetIndex
-                  - s3vectors:ListIndexes
+                  - s3vectors:QueryVectors
+                  - s3vectors:PutVectors
+                  - s3vectors:GetVectors
+                  - s3vectors:DeleteVectors
                 Resource:
-                  - !Sub arn:aws:s3vectors:${AWS::Region}:${AWS::AccountId}:bucket/student-services-vectors-${AWS::AccountId}-${AWS::Region}
-                  - !Sub arn:aws:s3vectors:${AWS::Region}:${AWS::AccountId}:bucket/student-services-vectors-${AWS::AccountId}-${AWS::Region}/*
+                  - !Sub arn:aws:s3vectors:${AWS::Region}:${AWS::AccountId}:bucket/student-services-vectors-${AWS::AccountId}-${AWS::Region}/index/student-services-kb-index
               - Sid: BedrockInvokeModel
                 Effect: Allow
                 Action:
@@ -108,9 +109,7 @@ Resources:
       StorageConfiguration:
         Type: S3_VECTORS
         S3VectorsConfiguration:
-          VectorBucketArn: !Sub arn:aws:s3vectors:${AWS::Region}:${AWS::AccountId}:bucket/student-services-vectors-${AWS::AccountId}-${AWS::Region}
           IndexArn: !GetAtt VectorsIndex.IndexArn
-          IndexName: student-services-kb-index
 
   DataSource:
     Type: AWS::Bedrock::DataSource
