@@ -17,6 +17,13 @@ Implemented all Phase 1 code: shared utilities, specialist agents, orchestrator,
 - Implemented Task 7: Orchestrator and Streamlit UI
   - `student_services_agent/agent.py` — Orchestrator routing to 4 specialists
   - `streamlit_app/app.py` — Full Streamlit chat UI with model selection, debug sidebar, cache clear
+- Tested end-to-end on Windows (Nova 2 Lite) and Ubuntu Linux (Claude Sonnet 4.6)
+- Fixed XGBoost endpoint ARN issue (invoke_endpoint requires name, not ARN)
+- Fixed SageMaker import issue (conditional import for cross-version compatibility)
+- Updated requirements.txt to pin strands-agents>=1.0.0
+- Reorganized session notes into yyyy/mm/ structure
+- Reorganized specs into module-based structure
+- Updated MCP servers (aws-cdk → aws-iac-mcp-server, disabled deprecated diagram server)
 
 ## Verification Results
 - All 9 Python files pass syntax check (AST parse)
@@ -48,7 +55,7 @@ Implemented all Phase 1 code: shared utilities, specialist agents, orchestrator,
 - **XGBoost endpoint ARN fix**: `invoke_endpoint` requires the endpoint name (max 63 chars), not the full ARN. Added extraction logic: `endpoint.split("/")[-1]` when value starts with `arn:`.
 
 ## Next Steps
-- [ ] User to test Streamlit app on Windows: `streamlit run streamlit_app/app.py`
-- [ ] User to test on Ubuntu Linux (code-server)
-- [ ] Task 9: Create README documentation
-- [ ] Task 10: Final checkpoint
+- [ ] Task 9: Create README documentation (deferred — can do in a future session)
+- [x] Phase 1 implementation complete and tested on both platforms
+- [ ] Phase 2: Deploy to ECS Fargate
+- [ ] Phase 3: AgentCore microservices

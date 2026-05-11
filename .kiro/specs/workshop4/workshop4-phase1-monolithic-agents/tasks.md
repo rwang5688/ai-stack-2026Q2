@@ -194,8 +194,8 @@ This plan implements a monolithic Streamlit desktop application with a multi-age
 - [x] 8. Checkpoint - Ensure orchestrator and UI work end-to-end
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 9. Create README and documentation
-  - [ ] 9.1 Create `workshop4/phase1/README.md`
+- [x] 9. Create README and documentation
+  - [x] 9.1 Create `workshop4/phase1/README.md`
     - Document setup prerequisites (Python version, AWS CLI, SageMaker endpoint pre-deployed)
     - Document all environment variables with name, description, example value, and default
     - Step-by-step instructions for deploying CloudFormation stack (`aws cloudformation deploy`)
@@ -204,8 +204,9 @@ This plan implements a monolithic Streamlit desktop application with a multi-age
     - "Design Decisions" section: runtime-boundary directory structure explanation (enables independent agent evolution and Phase 3 AgentCore migration)
     - _Requirements: 1.1, 1.2, 1.3, 1.5, 1.7, 1.8_
 
-- [ ] 10. Final checkpoint - Ensure all tests pass and app runs end-to-end
-  - Ensure all tests pass, ask the user if questions arise.
+- [x] 10. Final checkpoint - Ensure all tests pass and app runs end-to-end
+  - Tested on Windows (Amazon Nova 2 Lite) and Ubuntu Linux (Anthropic Claude Sonnet 4.6)
+  - All specialist agents working: Course Review, Course Registration, Loan Prediction, Math Teaching
 
 ## Notes
 
