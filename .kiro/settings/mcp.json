@@ -3,7 +3,7 @@
     "aws-cdk": {
       "command": "uvx",
       "args": [
-        "awslabs.cdk-mcp-server@latest"
+        "awslabs.aws-iac-mcp-server@latest"
       ],
       "env": {
         "FASTMCP_LOG_LEVEL": "ERROR"
@@ -36,7 +36,7 @@
       "env": {
         "FASTMCP_LOG_LEVEL": "ERROR"
       },
-      "disabled": false,
+      "disabled": true,
       "autoApprove": []
     },
     "awslabs.aws-documentation-mcp-server": {
