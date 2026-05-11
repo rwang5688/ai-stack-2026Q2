@@ -17,7 +17,14 @@ Usage:
 from typing import Any, Dict, Union
 
 from strands.models import BedrockModel
-from strands.models.sagemaker import SageMakerAIModel
+
+# SageMaker model is an optional dependency
+try:
+    from strands.models.sagemaker import SageMakerAIModel
+    SAGEMAKER_AVAILABLE = True
+except ImportError:
+    SageMakerAIModel = None
+    SAGEMAKER_AVAILABLE = False
 
 
 SUPPORTED_PROVIDERS = ["bedrock", "sagemaker"]
@@ -72,6 +79,11 @@ def create_model_from_config(model_config: Dict[str, Any]) -> Union[BedrockModel
         return BedrockModel(**kwargs)
 
     elif provider == "sagemaker":
+        if not SAGEMAKER_AVAILABLE:
+            raise ValueError(
+                "SageMaker provider requires the 'strands-agents[sagemaker]' extra. "
+                "Install with: pip install 'strands-agents[sagemaker]'"
+            )
         kwargs = {
             "endpoint_name": model_config.get("endpoint_name", model_id),
             "region_name": region,
