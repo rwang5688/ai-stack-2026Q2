@@ -1,1 +1,1 @@
-# Shared utilities across agents
+"""Shared utilities for the Student Services multi-agent application."""

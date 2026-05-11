@@ -74,15 +74,15 @@ This plan implements a monolithic Streamlit desktop application with a multi-age
   - Verify SageMaker Serverless Endpoint is accessible (pre-existing, user-deployed)
   - Ask the user if questions arise.
 
-- [ ] 3. Implement shared utilities and configuration
-  - [ ] 3.1 Implement `shared/cross_platform_tools.py`
+- [x] 3. Implement shared utilities and configuration
+  - [x] 3.1 Implement `shared/cross_platform_tools.py`
     - Adapt from `.kiro/references/workshop4/multi_agent/cross_platform_tools.py`
     - Provide `get_math_tools()` returning `[calculator]` from `strands_tools`
     - Handle Windows/Linux/macOS platform detection with graceful fallbacks
     - Export `get_platform_capabilities()` for debugging
     - _Requirements: 1.6_
 
-  - [ ] 3.2 Implement `shared/model_factory.py`
+  - [x] 3.2 Implement `shared/model_factory.py`
     - Adapt from `.kiro/references/workshop4/multi_agent/model_factory.py` and `.kiro/references/workshop4/multi_agent/bedrock_model.py`
     - Create `create_model_from_config(config: dict)` function
     - Support `"bedrock"` provider → `BedrockModel` and `"sagemaker"` provider → `SageMakerAIModel`
@@ -99,7 +99,7 @@ This plan implements a monolithic Streamlit desktop application with a multi-age
     - **Property 3: Invalid temperature raises ValueError** — For any float outside [0.0, 1.0] (excluding NaN/inf), raises ValueError. Use `st.floats().filter(lambda x: not math.isnan(x) and not math.isinf(x) and (x < 0.0 or x > 1.0))`.
     - **Validates: Requirements 3.3, 3.5, 3.6**
 
-  - [ ] 3.4 Implement `streamlit_app/config.py`
+  - [x] 3.4 Implement `streamlit_app/config.py`
     - Adapt from `.kiro/references/workshop4/multi_agent/config.py`
     - Implement getter functions: `get_model_config()`, `get_knowledge_base_id()`, `get_data_source_id()`, `get_xgboost_endpoint()`, `get_aws_region()`, `get_course_registration_table()`, `get_course_reviews_table()`
     - Implement `clear_parameter_cache()` to allow refreshing SSM params without restarting the app
@@ -110,11 +110,11 @@ This plan implements a monolithic Streamlit desktop application with a multi-age
     - Use `@lru_cache` for SSM parameter fetching
     - _Requirements: 3.4_
 
-- [ ] 4. Checkpoint - Ensure shared utilities and config work
+- [x] 4. Checkpoint - Ensure shared utilities and config work
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 5. Implement specialist agents
-  - [ ] 5.1 Implement `course_review_agent/agent.py`
+- [x] 5. Implement specialist agents
+  - [x] 5.1 Implement `course_review_agent/agent.py`
     - Adapt from `.kiro/references/bedrock-agents-workshop/workshop-labs/Code/courses-agent-group-courses-review.py`
     - Create `@tool` function `retrieve_course_catalog(query: str) -> str` that queries Bedrock Knowledge Base using `boto3` `bedrock-agent-runtime` client with `retrieve_and_generate` or `retrieve` API, returning top 5 results
     - Create `@tool` function `query_course_reviews(course_name: str) -> str` that queries DynamoDB `course_reviews` table by partition key `course_name`, returning up to 10 records
@@ -124,7 +124,7 @@ This plan implements a monolithic Streamlit desktop application with a multi-age
     - Use 30-second timeout on AWS SDK calls via `botocore.config.Config(read_timeout=30)`
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 10.2_
 
-  - [ ] 5.2 Implement `course_registration_agent/agent.py`
+  - [x] 5.2 Implement `course_registration_agent/agent.py`
     - Adapt from `.kiro/references/bedrock-agents-workshop/workshop-labs/Code/courses-agent-group-courses-registration.py`
     - Create `@tool` function `register_student(student_id: str, course_name: str, semester: str) -> str` that writes to DynamoDB `course_registration` table with UUID `reg_id`
     - Validate all three parameters are non-empty; return error listing missing params if any are absent
@@ -134,7 +134,7 @@ This plan implements a monolithic Streamlit desktop application with a multi-age
     - Use 30-second timeout on AWS SDK calls
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 10.2_
 
-  - [ ] 5.3 Implement `loan_application_agent/agent.py`
+  - [x] 5.3 Implement `loan_application_agent/agent.py`
     - Adapt from `.kiro/references/workshop4/multi_agent/loan_offering_assistant.py`
     - Create validation function `validate_csv_features(payload: str) -> tuple[bool, int]` that checks for exactly 59 comma-separated values
     - Create interpretation function `interpret_prediction(score: float) -> dict` returning `{"label": str, "confidence": float}` — "Accept" with `round(score*100, 1)` if score ≥ 0.5, "Reject" with `round((1-score)*100, 1)` if score < 0.5
@@ -150,18 +150,18 @@ This plan implements a monolithic Streamlit desktop application with a multi-age
     - **Property 6: Invalid feature count is rejected with correct counts** — For any N ≠ 59, verify error message states expected=59 and actual=N. Use `st.integers(min_value=0, max_value=200).filter(lambda n: n != 59)`.
     - **Validates: Requirements 7.2, 7.3, 7.5, 7.6**
 
-  - [ ] 5.5 Implement `math_teaching_agent/agent.py`
+  - [x] 5.5 Implement `math_teaching_agent/agent.py`
     - Adapt from `.kiro/references/workshop4/multi_agent/math_assistant.py`
     - Import `calculator` from `strands_tools` (via `shared/cross_platform_tools.py` `get_math_tools()`)
     - Create `@tool` function `math_assistant(query: str) -> str` that instantiates a `strands.Agent` with calculator tools and a system prompt instructing step-by-step solutions with intermediate calculations and real-world analogies
     - Handle non-math queries with a message suggesting how to rephrase
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5_
 
-- [ ] 6. Checkpoint - Ensure specialist agents are implemented
+- [x] 6. Checkpoint - Ensure specialist agents are implemented
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 7. Implement orchestrator and Streamlit UI
-  - [ ] 7.1 Implement `student_services_agent/agent.py`
+- [x] 7. Implement orchestrator and Streamlit UI
+  - [x] 7.1 Implement `student_services_agent/agent.py`
     - Create `create_orchestrator(model_config: dict) -> Agent` function
     - Import all specialist `@tool` functions: `course_registration_assistant`, `course_review_assistant`, `loan_offering_assistant`, `math_assistant`
     - Instantiate `strands.Agent` with tools list `[course_registration_assistant, course_review_assistant, loan_offering_assistant, math_assistant]`
@@ -174,7 +174,7 @@ This plan implements a monolithic Streamlit desktop application with a multi-age
     - **Property 8: Specialist exceptions are caught and reported** — For any specialist that raises an exception, verify the error message identifies the service without exposing stack traces. Use `st.sampled_from(["course_registration", "course_review", "loan_offering", "math"])`.
     - **Validates: Requirements 9.3, 10.1**
 
-  - [ ] 7.3 Implement `streamlit_app/app.py`
+  - [x] 7.3 Implement `streamlit_app/app.py`
     - Adapt from `.kiro/references/workshop4/multi_agent/app.py`
     - Set `os.environ["BYPASS_TOOL_CONSENT"] = "true"` at startup to suppress tool consent prompts
     - Sidebar with model selection dropdown (options: `us.amazon.nova-2-lite-v1:0`, `us.anthropic.claude-sonnet-4-6`)
@@ -191,7 +191,7 @@ This plan implements a monolithic Streamlit desktop application with a multi-age
     - Wrap orchestrator call in try/except; on error display message in chat and return to input-ready state
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6, 9.7, 10.3_
 
-- [ ] 8. Checkpoint - Ensure orchestrator and UI work end-to-end
+- [x] 8. Checkpoint - Ensure orchestrator and UI work end-to-end
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 9. Create README and documentation

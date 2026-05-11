@@ -22,6 +22,7 @@ All agents are instantiated as `strands.Agent` from the Strands Agents SDK. Spec
 | Directory structure grouped by runtime boundary | Enables direct copy to AgentCore runtimes in Phase 3 |
 | Environment variables with SSM fallback | Supports both local dev (env vars) and deployed environments (SSM) |
 | `strands_tools.calculator` for math | Cross-platform, no shell dependency |
+| "Routing to..." status in UI | Each specialist `@tool` prefixes its return value with `[Agent Name]` — callbacks and LLM instructions are unreliable |
 
 ## Architecture
 
@@ -269,7 +270,17 @@ import streamlit as st
 # Loading indicator during agent processing
 # Clear conversation button
 # Agent instantiation (once per session, recreated on model change)
+
+# Routing status feedback via callback_handler:
+# When orchestrator calls a specialist tool, the UI updates to show
+# "Routing to {Agent Name}..." before the specialist starts processing.
 ```
+
+#### Routing Status Feedback (Design Decision)
+
+Each specialist `@tool` function prefixes its return value with `[Agent Name]` (e.g., `[Course Review Agent]\n\n{response}`). The orchestrator is instructed to pass tool results through verbatim.
+
+Callback handlers and LLM system prompt instructions were tried and abandoned — callbacks hit Streamlit threading issues (`NoSessionContext`), and LLMs inconsistently follow formatting instructions. A string prefix in the tool return is deterministic and zero-complexity.
 
 ### Component: `streamlit_app/config.py`
 

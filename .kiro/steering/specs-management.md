@@ -6,9 +6,29 @@ Organize feature development using structured specifications that follow spec-dr
 ## Rules
 
 ### Directory Structure
-- Create feature-specific subdirectories under `.kiro/specs/`
-- Use naming convention: `.kiro/specs/$(feature-name)/`
-- Feature names should use kebab-case (e.g., `user-authentication`, `code-server-deployment`)
+- Specs are organized by major module under `.kiro/specs/`
+- Top-level directories: `code-server/`, `workshop2/`, `workshop3/`, `workshop4/`
+- Feature specs go under their module: `.kiro/specs/{module}/{feature-name}/`
+- Archive completed/obsolete specs under: `.kiro/specs/archive/{module}/{feature-name}/`
+- Feature names use kebab-case (e.g., `workshop4-phase1-monolithic-agents`)
+
+#### Structure
+```
+.kiro/specs/
+├── archive/
+│   ├── code-server/
+│   ├── workshop2/
+│   ├── workshop3/
+│   └── workshop4/
+├── code-server/
+│   └── code-server-deployment/
+├── workshop2/
+│   └── workshop2-transform-datasets/
+├── workshop3/
+│   └── workshop3-deploy-inference-endpoint/
+└── workshop4/
+    └── workshop4-phase1-monolithic-agents/
+```
 
 ### Required Files per Spec
 Each feature spec directory must contain:

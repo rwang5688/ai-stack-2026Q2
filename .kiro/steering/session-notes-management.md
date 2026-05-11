@@ -14,11 +14,14 @@ Maintain organized session notes to track daily progress, decisions, and learnin
 - User STRONGLY prefers streamlined documentation - extraneous files are wasteful and noisy
 
 ### File Structure
-- Create session notes under `.kiro/session-notes/`
-- Use naming convention: `yyyymmdd-session-notes.md`
-- Where `yyyymmdd` is the date in format: YYYYMMDD (e.g., 20260115)
-- **CORRECT**: `20260115-session-notes.md`
-- **WRONG**: `20260115-model-provider-fix.md`, `20260115-temperature-fix.md`, `20260115-comprehensive-review.md`
+- Create session notes under `.kiro/session-notes/yyyy/mm/`
+- Directory convention: `.kiro/session-notes/{year}/{month}/`
+  - e.g., `.kiro/session-notes/2026/05/`
+- File naming convention: `yyyymmdd-session-notes.md`
+- Full path example: `.kiro/session-notes/2026/05/20260511-session-notes.md`
+- **CORRECT**: `.kiro/session-notes/2026/01/20260115-session-notes.md`
+- **WRONG**: `.kiro/session-notes/20260115-session-notes.md` (flat, no year/month dirs)
+- **WRONG**: `.kiro/session-notes/2026/01/20260115-model-provider-fix.md` (topic-specific)
 
 ### Content Guidelines
 - **Session Overview**: Brief summary of what was accomplished
