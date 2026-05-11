@@ -6,7 +6,7 @@ This plan implements a monolithic Streamlit desktop application with a multi-age
 
 ## Tasks
 
-- [ ] 1. Set up project structure and deploy infrastructure
+- [x] 1. Set up project structure and deploy infrastructure
   - [x] 1.1 Create directory structure and initial files
     - Create all directories: `workshop4/phase1/cloudformation/`, `course_registration_agent/`, `course_review_agent/`, `data/`, `loan_application_agent/`, `math_teaching_agent/`, `shared/`, `streamlit_app/`, `student_services_agent/`, `tests/`, `tests/integration/`
     - Create `__init__.py` files in each agent directory, `shared/`, and `tests/`
@@ -41,7 +41,7 @@ This plan implements a monolithic Streamlit desktop application with a multi-age
     - Default region: `us-west-2`
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9_
 
-  - [ ] 1.4 Create `scripts/populate_seed_data.py`
+  - [x] 1.4 Create `scripts/populate_seed_data.py`
     - Accept `--xgboost-endpoint-name` as a required CLI argument (no default — user must provide)
     - Read CloudFormation stack outputs to get bucket name, table names, KB ID, data source ID
     - Upload `data/course_catalog.pdf` to `s3://{bucket}/kb-datasource/`
@@ -66,7 +66,7 @@ This plan implements a monolithic Streamlit desktop application with a multi-age
     - Verify DynamoDB table key schemas match design
     - _Requirements: 2.6, 2.7_
 
-- [ ] 2. Checkpoint - Deploy infrastructure and verify prerequisites
+- [x] 2. Checkpoint - Deploy infrastructure and verify prerequisites
   - Run `./deploy.sh` (deploys CloudFormation stack, uploads data to S3, seeds DynamoDB, triggers KB ingestion)
   - Verify S3 data bucket has files under `kb-datasource/` and `dynamodb/` prefixes
   - Verify DynamoDB tables are populated with sample data
