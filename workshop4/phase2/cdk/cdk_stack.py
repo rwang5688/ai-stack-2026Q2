@@ -139,6 +139,8 @@ class CdkStack(Stack):
             vpc_subnets=ec2.SubnetSelection(
                 subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS
             ),
+            circuit_breaker=ecs.DeploymentCircuitBreaker(rollback=True),
+            min_healthy_percent=100,
         )
 
         # IAM policy for task role: Bedrock, SageMaker, DynamoDB, SSM, S3 Vectors
