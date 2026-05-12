@@ -1,0 +1,425 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Student Services Identity - 5 Cognito User Pools for AgentCore Microservices (Phase 3)'
+
+Resources:
+
+  # -----------------------------------------------------------------------
+  # Cognito: Orchestrator
+  # -----------------------------------------------------------------------
+
+  OrchestratorUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: orchestrator-pool
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireUppercase: false
+          RequireLowercase: false
+          RequireNumbers: false
+          RequireSymbols: false
+      AutoVerifiedAttributes:
+        - email
+      Schema:
+        - Name: email
+          AttributeDataType: String
+          Required: true
+          Mutable: true
+
+  OrchestratorUserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      Domain: !Sub 'orchestrator-${AWS::AccountId}'
+      UserPoolId: !Ref OrchestratorUserPool
+
+  OrchestratorResourceServer:
+    Type: AWS::Cognito::UserPoolResourceServer
+    Properties:
+      UserPoolId: !Ref OrchestratorUserPool
+      Identifier: orchestrator
+      Name: Orchestrator Runtime
+      Scopes:
+        - ScopeName: access
+          ScopeDescription: Access Orchestrator Runtime
+
+  OrchestratorAppClient:
+    Type: AWS::Cognito::UserPoolClient
+    DependsOn: OrchestratorResourceServer
+    Properties:
+      UserPoolId: !Ref OrchestratorUserPool
+      ClientName: orchestrator-client
+      GenerateSecret: true
+      AllowedOAuthFlows:
+        - client_credentials
+      AllowedOAuthScopes:
+        - orchestrator/access
+      AllowedOAuthFlowsUserPoolClient: true
+
+  # -----------------------------------------------------------------------
+  # Cognito: Course Registration
+  # -----------------------------------------------------------------------
+
+  CourseRegistrationUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: course-registration-pool
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireUppercase: false
+          RequireLowercase: false
+          RequireNumbers: false
+          RequireSymbols: false
+      AutoVerifiedAttributes:
+        - email
+      Schema:
+        - Name: email
+          AttributeDataType: String
+          Required: true
+          Mutable: true
+
+  CourseRegistrationUserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      Domain: !Sub 'course-registration-${AWS::AccountId}'
+      UserPoolId: !Ref CourseRegistrationUserPool
+
+  CourseRegistrationResourceServer:
+    Type: AWS::Cognito::UserPoolResourceServer
+    Properties:
+      UserPoolId: !Ref CourseRegistrationUserPool
+      Identifier: course-registration
+      Name: Course Registration Runtime
+      Scopes:
+        - ScopeName: access
+          ScopeDescription: Access Course Registration Runtime
+
+  CourseRegistrationAppClient:
+    Type: AWS::Cognito::UserPoolClient
+    DependsOn: CourseRegistrationResourceServer
+    Properties:
+      UserPoolId: !Ref CourseRegistrationUserPool
+      ClientName: course-registration-client
+      GenerateSecret: true
+      AllowedOAuthFlows:
+        - client_credentials
+      AllowedOAuthScopes:
+        - course-registration/access
+      AllowedOAuthFlowsUserPoolClient: true
+
+  # -----------------------------------------------------------------------
+  # Cognito: Course Review
+  # -----------------------------------------------------------------------
+
+  CourseReviewUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: course-review-pool
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireUppercase: false
+          RequireLowercase: false
+          RequireNumbers: false
+          RequireSymbols: false
+      AutoVerifiedAttributes:
+        - email
+      Schema:
+        - Name: email
+          AttributeDataType: String
+          Required: true
+          Mutable: true
+
+  CourseReviewUserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      Domain: !Sub 'course-review-${AWS::AccountId}'
+      UserPoolId: !Ref CourseReviewUserPool
+
+  CourseReviewResourceServer:
+    Type: AWS::Cognito::UserPoolResourceServer
+    Properties:
+      UserPoolId: !Ref CourseReviewUserPool
+      Identifier: course-review
+      Name: Course Review Runtime
+      Scopes:
+        - ScopeName: access
+          ScopeDescription: Access Course Review Runtime
+
+  CourseReviewAppClient:
+    Type: AWS::Cognito::UserPoolClient
+    DependsOn: CourseReviewResourceServer
+    Properties:
+      UserPoolId: !Ref CourseReviewUserPool
+      ClientName: course-review-client
+      GenerateSecret: true
+      AllowedOAuthFlows:
+        - client_credentials
+      AllowedOAuthScopes:
+        - course-review/access
+      AllowedOAuthFlowsUserPoolClient: true
+
+  # -----------------------------------------------------------------------
+  # Cognito: Loan Application
+  # -----------------------------------------------------------------------
+
+  LoanApplicationUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: loan-application-pool
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireUppercase: false
+          RequireLowercase: false
+          RequireNumbers: false
+          RequireSymbols: false
+      AutoVerifiedAttributes:
+        - email
+      Schema:
+        - Name: email
+          AttributeDataType: String
+          Required: true
+          Mutable: true
+
+  LoanApplicationUserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      Domain: !Sub 'loan-application-${AWS::AccountId}'
+      UserPoolId: !Ref LoanApplicationUserPool
+
+  LoanApplicationResourceServer:
+    Type: AWS::Cognito::UserPoolResourceServer
+    Properties:
+      UserPoolId: !Ref LoanApplicationUserPool
+      Identifier: loan-application
+      Name: Loan Application Runtime
+      Scopes:
+        - ScopeName: access
+          ScopeDescription: Access Loan Application Runtime
+
+  LoanApplicationAppClient:
+    Type: AWS::Cognito::UserPoolClient
+    DependsOn: LoanApplicationResourceServer
+    Properties:
+      UserPoolId: !Ref LoanApplicationUserPool
+      ClientName: loan-application-client
+      GenerateSecret: true
+      AllowedOAuthFlows:
+        - client_credentials
+      AllowedOAuthScopes:
+        - loan-application/access
+      AllowedOAuthFlowsUserPoolClient: true
+
+  # -----------------------------------------------------------------------
+  # Cognito: Math Teaching
+  # -----------------------------------------------------------------------
+
+  MathTeachingUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: math-teaching-pool
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireUppercase: false
+          RequireLowercase: false
+          RequireNumbers: false
+          RequireSymbols: false
+      AutoVerifiedAttributes:
+        - email
+      Schema:
+        - Name: email
+          AttributeDataType: String
+          Required: true
+          Mutable: true
+
+  MathTeachingUserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      Domain: !Sub 'math-teaching-${AWS::AccountId}'
+      UserPoolId: !Ref MathTeachingUserPool
+
+  MathTeachingResourceServer:
+    Type: AWS::Cognito::UserPoolResourceServer
+    Properties:
+      UserPoolId: !Ref MathTeachingUserPool
+      Identifier: math-teaching
+      Name: Math Teaching Runtime
+      Scopes:
+        - ScopeName: access
+          ScopeDescription: Access Math Teaching Runtime
+
+  MathTeachingAppClient:
+    Type: AWS::Cognito::UserPoolClient
+    DependsOn: MathTeachingResourceServer
+    Properties:
+      UserPoolId: !Ref MathTeachingUserPool
+      ClientName: math-teaching-client
+      GenerateSecret: true
+      AllowedOAuthFlows:
+        - client_credentials
+      AllowedOAuthScopes:
+        - math-teaching/access
+      AllowedOAuthFlowsUserPoolClient: true
+
+# -----------------------------------------------------------------------
+# Outputs
+# -----------------------------------------------------------------------
+
+Outputs:
+
+  # Orchestrator
+  OrchestratorUserPoolId:
+    Description: 'Cognito User Pool ID for Orchestrator'
+    Value: !Ref OrchestratorUserPool
+    Export:
+      Name: !Sub '${AWS::StackName}-OrchestratorUserPoolId'
+
+  OrchestratorDiscoveryUrl:
+    Description: 'OIDC Discovery URL for Orchestrator'
+    Value: !Sub 'https://cognito-idp.${AWS::Region}.amazonaws.com/${OrchestratorUserPool}/.well-known/openid-configuration'
+    Export:
+      Name: !Sub '${AWS::StackName}-OrchestratorDiscoveryUrl'
+
+  OrchestratorClientId:
+    Description: 'App Client ID for Orchestrator'
+    Value: !Ref OrchestratorAppClient
+    Export:
+      Name: !Sub '${AWS::StackName}-OrchestratorClientId'
+
+  OrchestratorTokenEndpoint:
+    Description: 'Token endpoint for Orchestrator'
+    Value: !Sub 'https://orchestrator-${AWS::AccountId}.auth.${AWS::Region}.amazoncognito.com/oauth2/token'
+    Export:
+      Name: !Sub '${AWS::StackName}-OrchestratorTokenEndpoint'
+
+  OrchestratorScope:
+    Description: 'OAuth scope for Orchestrator'
+    Value: 'orchestrator/access'
+    Export:
+      Name: !Sub '${AWS::StackName}-OrchestratorScope'
+
+  # Course Registration
+  CourseRegistrationUserPoolId:
+    Description: 'Cognito User Pool ID for Course Registration'
+    Value: !Ref CourseRegistrationUserPool
+    Export:
+      Name: !Sub '${AWS::StackName}-CourseRegistrationUserPoolId'
+
+  CourseRegistrationDiscoveryUrl:
+    Description: 'OIDC Discovery URL for Course Registration'
+    Value: !Sub 'https://cognito-idp.${AWS::Region}.amazonaws.com/${CourseRegistrationUserPool}/.well-known/openid-configuration'
+    Export:
+      Name: !Sub '${AWS::StackName}-CourseRegistrationDiscoveryUrl'
+
+  CourseRegistrationClientId:
+    Description: 'App Client ID for Course Registration'
+    Value: !Ref CourseRegistrationAppClient
+    Export:
+      Name: !Sub '${AWS::StackName}-CourseRegistrationClientId'
+
+  CourseRegistrationTokenEndpoint:
+    Description: 'Token endpoint for Course Registration'
+    Value: !Sub 'https://course-registration-${AWS::AccountId}.auth.${AWS::Region}.amazoncognito.com/oauth2/token'
+    Export:
+      Name: !Sub '${AWS::StackName}-CourseRegistrationTokenEndpoint'
+
+  CourseRegistrationScope:
+    Description: 'OAuth scope for Course Registration'
+    Value: 'course-registration/access'
+    Export:
+      Name: !Sub '${AWS::StackName}-CourseRegistrationScope'
+
+  # Course Review
+  CourseReviewUserPoolId:
+    Description: 'Cognito User Pool ID for Course Review'
+    Value: !Ref CourseReviewUserPool
+    Export:
+      Name: !Sub '${AWS::StackName}-CourseReviewUserPoolId'
+
+  CourseReviewDiscoveryUrl:
+    Description: 'OIDC Discovery URL for Course Review'
+    Value: !Sub 'https://cognito-idp.${AWS::Region}.amazonaws.com/${CourseReviewUserPool}/.well-known/openid-configuration'
+    Export:
+      Name: !Sub '${AWS::StackName}-CourseReviewDiscoveryUrl'
+
+  CourseReviewClientId:
+    Description: 'App Client ID for Course Review'
+    Value: !Ref CourseReviewAppClient
+    Export:
+      Name: !Sub '${AWS::StackName}-CourseReviewClientId'
+
+  CourseReviewTokenEndpoint:
+    Description: 'Token endpoint for Course Review'
+    Value: !Sub 'https://course-review-${AWS::AccountId}.auth.${AWS::Region}.amazoncognito.com/oauth2/token'
+    Export:
+      Name: !Sub '${AWS::StackName}-CourseReviewTokenEndpoint'
+
+  CourseReviewScope:
+    Description: 'OAuth scope for Course Review'
+    Value: 'course-review/access'
+    Export:
+      Name: !Sub '${AWS::StackName}-CourseReviewScope'
+
+  # Loan Application
+  LoanApplicationUserPoolId:
+    Description: 'Cognito User Pool ID for Loan Application'
+    Value: !Ref LoanApplicationUserPool
+    Export:
+      Name: !Sub '${AWS::StackName}-LoanApplicationUserPoolId'
+
+  LoanApplicationDiscoveryUrl:
+    Description: 'OIDC Discovery URL for Loan Application'
+    Value: !Sub 'https://cognito-idp.${AWS::Region}.amazonaws.com/${LoanApplicationUserPool}/.well-known/openid-configuration'
+    Export:
+      Name: !Sub '${AWS::StackName}-LoanApplicationDiscoveryUrl'
+
+  LoanApplicationClientId:
+    Description: 'App Client ID for Loan Application'
+    Value: !Ref LoanApplicationAppClient
+    Export:
+      Name: !Sub '${AWS::StackName}-LoanApplicationClientId'
+
+  LoanApplicationTokenEndpoint:
+    Description: 'Token endpoint for Loan Application'
+    Value: !Sub 'https://loan-application-${AWS::AccountId}.auth.${AWS::Region}.amazoncognito.com/oauth2/token'
+    Export:
+      Name: !Sub '${AWS::StackName}-LoanApplicationTokenEndpoint'
+
+  LoanApplicationScope:
+    Description: 'OAuth scope for Loan Application'
+    Value: 'loan-application/access'
+    Export:
+      Name: !Sub '${AWS::StackName}-LoanApplicationScope'
+
+  # Math Teaching
+  MathTeachingUserPoolId:
+    Description: 'Cognito User Pool ID for Math Teaching'
+    Value: !Ref MathTeachingUserPool
+    Export:
+      Name: !Sub '${AWS::StackName}-MathTeachingUserPoolId'
+
+  MathTeachingDiscoveryUrl:
+    Description: 'OIDC Discovery URL for Math Teaching'
+    Value: !Sub 'https://cognito-idp.${AWS::Region}.amazonaws.com/${MathTeachingUserPool}/.well-known/openid-configuration'
+    Export:
+      Name: !Sub '${AWS::StackName}-MathTeachingDiscoveryUrl'
+
+  MathTeachingClientId:
+    Description: 'App Client ID for Math Teaching'
+    Value: !Ref MathTeachingAppClient
+    Export:
+      Name: !Sub '${AWS::StackName}-MathTeachingClientId'
+
+  MathTeachingTokenEndpoint:
+    Description: 'Token endpoint for Math Teaching'
+    Value: !Sub 'https://math-teaching-${AWS::AccountId}.auth.${AWS::Region}.amazoncognito.com/oauth2/token'
+    Export:
+      Name: !Sub '${AWS::StackName}-MathTeachingTokenEndpoint'
+
+  MathTeachingScope:
+    Description: 'OAuth scope for Math Teaching'
+    Value: 'math-teaching/access'
+    Export:
+      Name: !Sub '${AWS::StackName}-MathTeachingScope'

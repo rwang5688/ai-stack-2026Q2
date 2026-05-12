@@ -7,7 +7,7 @@ This plan decomposes the monolithic Student Services application into five indep
 ## Tasks
 
 - [ ] 1. Identity Infrastructure and Project Setup
-  - [ ] 1.1 Create CloudFormation identity stack with 5 Cognito pools
+  - [x] 1.1 Create CloudFormation identity stack with 5 Cognito pools
     - Create `workshop4/phase3/cloudformation/student-services-identity.yaml`
     - Define 5 Cognito User Pools (Orchestrator, Course Registration, Course Review, Loan Application, Math Teaching)
     - Each pool gets: UserPoolDomain (`{runtime-name}-{AccountId}`), ResourceServer (identifier = runtime-name, scope = `access`), AppClient (client_credentials grant, generated secret, scope = `{identifier}/access`)
@@ -15,7 +15,7 @@ This plan decomposes the monolithic Student Services application into five indep
     - Follow the pattern from `.kiro/references/agentcore-workshop/cloudformation/infra.yaml`
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6_
 
-  - [ ] 1.2 Create agentcore.json project configuration
+  - [~] 1.2 Create agentcore.json project configuration
     - Create `workshop4/phase3/agentcore/agentcore.json`
     - Define project name "student-services", schema v1, managedBy field
     - Declare 5 runtimes (Orchestrator HTTP + 4 Specialist HTTP with CUSTOM_JWT auth)
@@ -24,22 +24,25 @@ This plan decomposes the monolithic Student Services application into five indep
     - Declare 1 gateway "student-services-gateway" with 4 targets, outboundAuth per target, semantic search enabled
     - Declare 1 policy engine with Cedar policies, ENFORCE mode
     - All runtimes: PYTHON_3_13, CodeZip, entrypoint and codeLocation specified
+    - Do NOT initialize a separate Git repo — project lives within existing workspace repo
+    - Create `workshop4/phase3/agentcore/aws-targets.json` with account and region (us-west-2)
+    - Create project-level steering file at `workshop4/phase3/.kiro/steering/student-services-conventions.md` with conventions tailored to Student Services Agent (specialist names, routing rules, AWS services, model config, AgentCore patterns)
     - Follow the pattern from `.kiro/references/agentcore-workshop/travelplanner/agentcore/agentcore.json`
-    - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8_
+    - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6, 2.7, 2.8, 2.9, 2.10_
 
-  - [ ] 1.3 Create Cedar policy files
+  - [~] 1.3 Create Cedar policy files
     - Create `workshop4/phase3/agentcore/policies/permit_all_tools.cedar` — baseline permit for all tools on the gateway
     - Create `workshop4/phase3/agentcore/policies/content_safety.cedar` — forbid invocations when `context.input.containsAbusiveLanguage`
     - Create `workshop4/phase3/agentcore/policies/pii_masking.cedar` — mask PII (emails, phone numbers, student IDs) in inputs
     - Follow Cedar syntax from `.kiro/references/agentcore-workshop/travelplanner/policies/`
     - _Requirements: 10.1, 10.2, 10.5_
 
-  - [ ] 1.4 Create shared requirements.txt for agentcore runtimes
+  - [x] 1.4 Create shared requirements.txt for agentcore runtimes
     - Create `workshop4/phase3/agentcore/requirements.txt` with: strands-agents, bedrock-agentcore, boto3, httpx, mcp
     - _Requirements: 2.8_
 
 - [ ] 2. Specialist Runtimes — Pure Functions and Validation
-  - [ ] 2.1 Implement Course Registration specialist runtime
+  - [~] 2.1 Implement Course Registration specialist runtime
     - Create `workshop4/phase3/agentcore/course_registration/agent.py`
     - Implement BedrockAgentCoreApp with `@app.entrypoint` decorator
     - Extract `validate_registration(student_id, course_name, semester) -> list[str]` as a pure function
@@ -56,7 +59,7 @@ This plan decomposes the monolithic Student Services application into five indep
     - Assert: no false positives (valid fields never appear in error list)
     - **Validates: Requirements 4.2, 4.4**
 
-  - [ ] 2.3 Implement Loan Application specialist runtime
+  - [~] 2.3 Implement Loan Application specialist runtime
     - Create `workshop4/phase3/agentcore/loan_application/agent.py`
     - Implement BedrockAgentCoreApp with `@app.entrypoint` decorator
     - Extract `validate_csv_features(payload: str) -> tuple[bool, int]` as a pure function
@@ -90,7 +93,7 @@ This plan decomposes the monolithic Student Services application into five indep
     - Assert: non-sensitive portions of the string are preserved
     - **Validates: Requirements 4.5, 6.4**
 
-  - [ ] 2.7 Implement Course Review specialist runtime
+  - [~] 2.7 Implement Course Review specialist runtime
     - Create `workshop4/phase3/agentcore/course_review/agent.py`
     - Implement BedrockAgentCoreApp with `@app.entrypoint` decorator
     - Implement Bedrock KB retrieval tool (KB ID: NCGF0S9LJR, up to 5 results)
@@ -100,7 +103,7 @@ This plan decomposes the monolithic Student Services application into five indep
     - Adapt logic from `workshop4/phase1/course_review_agent/agent.py`
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6_
 
-  - [ ] 2.8 Implement Math Teaching specialist runtime
+  - [~] 2.8 Implement Math Teaching specialist runtime
     - Create `workshop4/phase3/agentcore/math_teaching/agent.py`
     - Implement BedrockAgentCoreApp with `@app.entrypoint` decorator
     - Implement calculator tools for step-by-step math solving
@@ -109,11 +112,11 @@ This plan decomposes the monolithic Student Services application into five indep
     - Adapt logic from `workshop4/phase1/math_teaching_agent/agent.py`
     - _Requirements: 7.1, 7.2, 7.3, 7.4, 7.5_
 
-- [ ] 3. Checkpoint — Specialist runtimes and property tests
+- [~] 3. Checkpoint — Specialist runtimes and property tests
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 4. Orchestrator Runtime and Memory Integration
-  - [ ] 4.1 Implement memory session manager module
+  - [~] 4.1 Implement memory session manager module
     - Create `workshop4/phase3/agentcore/orchestrator/memory/session.py`
     - Implement `get_memory_session_manager(session_id, actor_id)` returning `AgentCoreMemorySessionManager` or None
     - Configure retrieval namespaces: `/users/{actorId}/facts` and `/summaries/{actorId}/{sessionId}`
@@ -121,7 +124,7 @@ This plan decomposes the monolithic Student Services application into five indep
     - Follow pattern from `.kiro/references/agentcore-workshop/travelplanner/travel_agent/memory/session.py`
     - _Requirements: 3.6, 3.7, 9.1, 9.2, 9.5, 9.6_
 
-  - [ ] 4.2 Implement Orchestrator runtime with Gateway MCPClient
+  - [~] 4.2 Implement Orchestrator runtime with Gateway MCPClient
     - Create `workshop4/phase3/agentcore/orchestrator/agent.py`
     - Implement BedrockAgentCoreApp with `@app.entrypoint` decorator
     - Implement OAuth2 token caching with 300s pre-expiry refresh (`_token_cache` dict pattern)
@@ -149,11 +152,11 @@ This plan decomposes the monolithic Student Services application into five indep
     - Assert: if current_time >= expires_at → new token fetched
     - **Validates: Requirements 3.5**
 
-- [ ] 5. Checkpoint — Orchestrator and memory integration
+- [~] 5. Checkpoint — Orchestrator and memory integration
   - Ensure all tests pass, ask the user if questions arise.
 
 - [ ] 6. Thin Client and CDK Infrastructure
-  - [ ] 6.1 Implement thin client agent_client module
+  - [~] 6.1 Implement thin client agent_client module
     - Create `workshop4/phase3/thin_client/docker_app/agent_client.py`
     - Implement `get_config_errors() -> list[str]` to check STUDENT_SERVICES_AGENT_URL
     - Implement `invoke(prompt: str) -> str` with SigV4-signed HTTP POST
@@ -163,7 +166,7 @@ This plan decomposes the monolithic Student Services application into five indep
     - Follow pattern from `.kiro/references/agentcore-workshop/deploy-streamlit-app/docker_app/agent_client.py`
     - _Requirements: 11.3, 11.5, 11.7, 11.8_
 
-  - [ ] 6.2 Implement thin client Streamlit app
+  - [~] 6.2 Implement thin client Streamlit app
     - Create `workshop4/phase3/thin_client/docker_app/app.py`
     - Implement Streamlit chat UI with Cognito auth (streamlit-cognito-auth pattern)
     - On startup: check `get_config_errors()`, fail with logged error if STUDENT_SERVICES_AGENT_URL missing
@@ -171,12 +174,12 @@ This plan decomposes the monolithic Student Services application into five indep
     - On timeout/error: display error message, preserve conversation history
     - _Requirements: 11.1, 11.2, 11.4, 11.5, 11.8_
 
-  - [ ] 6.3 Create Dockerfile for thin client
+  - [~] 6.3 Create Dockerfile for thin client
     - Create `workshop4/phase3/thin_client/docker_app/Dockerfile`
     - ARM64 base image, install dependencies, expose port 8501
     - _Requirements: 11.1_
 
-  - [ ] 6.4 Implement CDK stack for thin client infrastructure
+  - [~] 6.4 Implement CDK stack for thin client infrastructure
     - Create `workshop4/phase3/thin_client/cdk/cdk_stack.py`
     - VPC with 2 AZs, public + private subnets, NAT gateway
     - ECS Fargate service (ARM64/Graviton) in private subnets
@@ -189,7 +192,7 @@ This plan decomposes the monolithic Student Services application into five indep
     - Follow pattern from `.kiro/references/agentcore-workshop/deploy-streamlit-app/cdk/cdk_stack.py`
     - _Requirements: 12.1, 12.2, 12.3, 12.4, 12.5, 12.6, 12.7, 12.8_
 
-  - [ ] 6.5 Create CDK app entry point and config
+  - [~] 6.5 Create CDK app entry point and config
     - Create `workshop4/phase3/thin_client/cdk/app.py` with CDK App instantiation
     - Create `workshop4/phase3/thin_client/docker_app/config_file.py` with stack name, header value, resource names
     - Create `workshop4/phase3/thin_client/cdk/requirements.txt` with CDK dependencies
@@ -225,7 +228,7 @@ This plan decomposes the monolithic Student Services application into five indep
     - Test: SigV4 end-to-end (thin client successfully invokes orchestrator)
     - _Requirements: 3.4, 4.3, 5.2, 6.2, 11.3_
 
-- [ ] 8. Final Checkpoint — All tests pass
+- [~] 8. Final Checkpoint — All tests pass
   - Ensure all tests pass, ask the user if questions arise.
 
 ## Notes

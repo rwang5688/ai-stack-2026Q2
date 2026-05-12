@@ -51,6 +51,8 @@ Phase 3 decomposes the monolithic Student Services application (Phase 1) into in
 6. THE agentcore.json SHALL declare one AgentCore Gateway named "student-services-gateway" with all four Specialist Runtimes registered as targets, where each target specifies a targetType, at least one toolDefinition, and an outboundAuth block referencing the corresponding OAuth credential provider by name
 7. THE agentcore.json SHALL declare a Policy Engine with at least one Cedar policy, a policyEngineConfiguration mode of either ENFORCE or MONITOR, and the Gateway SHALL reference this Policy Engine by name in its policyEngineConfiguration block
 8. THE agentcore.json SHALL set all five runtimes to use PYTHON_3_13 runtimeVersion, CodeZip build type, and each runtime SHALL specify an entrypoint file and a codeLocation directory path
+9. THE AgentCore project SHALL NOT initialize a separate Git repository; it resides within the existing workspace Git repo under `workshop4/phase3/`
+10. THE AgentCore project SHALL include a project-level steering file at `workshop4/phase3/.kiro/steering/student-services-conventions.md` with conventions tailored to the Student Services Agent (specialist names, AWS services, routing rules, model config)
 
 ### Requirement 3: Orchestrator Runtime Adaptation
 

@@ -118,6 +118,12 @@ Flat resource model following the TravelPlanner pattern:
 }
 ```
 
+**Project constraints:**
+- No separate Git repository — the AgentCore project lives within the existing workspace repo under `workshop4/phase3/`
+- Uses CodeZip build type (direct code deployment, no Docker) for all runtimes
+- Includes a project-level steering file at `workshop4/phase3/.kiro/steering/student-services-conventions.md` with conventions specific to the Student Services Agent (specialist names, routing rules, AWS services, model config)
+- The thin Streamlit client is a separate CDK project under `workshop4/phase3/thin_client/` requiring Docker build (deployed from code-server)
+
 ### 3. Orchestrator Runtime
 
 **File:** `workshop4/phase3/agentcore/orchestrator/agent.py`

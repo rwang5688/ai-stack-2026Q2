@@ -36,7 +36,26 @@ Three-step decomposition:
 
 ## Key Accomplishments
 - Reviewed Phase 3 architecture plan and reference implementations
-- Generated spec for Phase 3 implementation
+- Generated spec for Phase 3 implementation (requirements, design, tasks)
+- Deployed CloudFormation identity stack (`student-services-identity`) — 5 Cognito pools in us-west-2
+- Created all 5 AgentCore runtime agent.py files (orchestrator + 4 specialists)
+- Created agentcore.json (validated) — runtimes, memory, credentials
+- Created Cedar policy file (permit_all_tools.cedar)
+- Installed AgentCore CLI v0.13.1 and CDK v2.1121.0
+- Created PREREQUISITES.md and agentcore-conventions.md steering file
+- Confirmed Python 3.13.12, Node 24.15.0
+
+## Deployment Strategy
+AgentCore deploy is two-phase:
+1. **Phase A**: Deploy runtimes + memory + credentials (agentcore deploy -y)
+2. **Phase B**: After getting runtime URLs from `agentcore status`, add gateway + policy engine targets with actual endpoint URLs, then redeploy
+
+This matches the TravelPlanner reference pattern — gateway targets need real endpoint URLs.
 
 ## Next Steps
-- [ ] Implement Phase 3 per spec tasks
+- [ ] Run `agentcore deploy -y` from code-server (Phase A — runtimes only)
+- [ ] Run `agentcore status` to get runtime URLs
+- [ ] Add gateway + policy engine with real endpoint URLs
+- [ ] Redeploy with gateway (Phase B)
+- [ ] Update orchestrator agent.py with actual gateway URL + client secret
+- [ ] Test in AgentCore Playground
