@@ -55,7 +55,31 @@ Implemented all Phase 1 code: shared utilities, specialist agents, orchestrator,
 - **XGBoost endpoint ARN fix**: `invoke_endpoint` requires the endpoint name (max 63 chars), not the full ARN. Added extraction logic: `endpoint.split("/")[-1]` when value starts with `arn:`.
 
 ## Next Steps
-- [ ] Task 9: Create README documentation (deferred — can do in a future session)
+- [x] Task 9: Create README documentation (deferred — can do in a future session)
 - [x] Phase 1 implementation complete and tested on both platforms
-- [ ] Phase 2: Deploy to ECS Fargate
+- [x] Phase 2: Deploy to ECS Fargate — COMPLETE
 - [ ] Phase 3: AgentCore microservices
+
+## Phase 2 — ECS Fargate Deployment (Completed)
+
+### Accomplishments
+- Created full CDK stack deploying Phase 1 app to ECS Fargate (ARM64/Graviton)
+- Architecture: CloudFront → ALB (custom header restriction) → ECS Fargate (private subnet)
+- Cognito User Pool for authentication (streamlit-cognito-auth integration)
+- Secrets Manager stores Cognito credentials
+- IAM policy: Bedrock, SageMaker, DynamoDB, SSM, S3 Vectors
+- Deploy scripts: `deploy.sh` (bootstrap + deploy) and `force-deploy.sh` (rebuild + force ECS update)
+- Added circuit breaker + min_healthy_percent to ECS service (CDK warnings resolved)
+- README documentation generated
+
+### Issues & Resolutions
+- **Node v20 deprecation warning**: CDK/JSII warned about Node 20 EOL. Upgraded to Node 22 via NodeSource.
+- **Node upgrade didn't take effect**: Old Node v20 was manually installed at `/usr/local/bin/node` (from CloudFormation UserData), shadowing the apt-installed v22 at `/usr/bin/node`. Fixed by removing `/usr/local/bin/node` and running `hash -r`.
+- **CDK ECS warnings**: Added `circuit_breaker=DeploymentCircuitBreaker(rollback=True)` and `min_healthy_percent=100` to the Fargate service.
+- **65 feature flags not configured**: Informational only — newer CDK flags not in cdk.json context. Safe to ignore.
+
+### Decisions Made
+- Manual Cognito user creation (no default user in CDK stack) — matches reference implementation pattern
+- ARM64/Graviton for ~20% cost savings + native Docker builds on code-server
+- CDK handles Docker build + ECR push automatically via DockerImageAsset
+- Node 22 upgrade on code-server (code-server.yaml update deferred to later)

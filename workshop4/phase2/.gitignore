@@ -1,2 +1,3 @@
 # Exclude cdk.out
 cdk.out
+cdk-outputs.json

@@ -91,27 +91,27 @@ This plan deploys the Phase 1 monolithic Student Services Assistant to ECS Farga
     - Force ECS service update: `aws ecs update-service --force-new-deployment`
     - _Requirements: 5.4_
 
-- [ ] 5. Checkpoint - Verify CDK synth works locally
+- [x] 5. Checkpoint - Verify CDK synth works locally
   - Run `cdk synth` on code-server to verify template generation
   - Verify Docker image builds natively on ARM
   - Ask the user if questions arise.
 
-- [ ] 6. Deploy and test
-  - [ ] 6.1 Deploy CDK stack from code-server
+- [x] 6. Deploy and test
+  - [x] 6.1 Deploy CDK stack from code-server
     - Run `./deploy.sh` on code-server
     - Wait for deployment to complete (~10-15 minutes)
     - Note CloudFront URL and Cognito User Pool ID from outputs
     - _Requirements: 5.1, 5.5_
 
-  - [ ] 6.2 Create Cognito user and test
+  - [x] 6.2 Create Cognito user and test
     - Create a user in the Cognito User Pool via AWS Console
     - Access the CloudFront URL in a browser
     - Verify login page appears
     - Verify app works after authentication (test all 4 specialist agents)
     - _Requirements: 4.1, 4.2, 4.3_
 
-- [ ] 7. Create README documentation
-  - [ ] 7.1 Create `workshop4/phase2/README.md`
+- [x] 7. Create README documentation
+  - [x] 7.1 Create `workshop4/phase2/README.md`
     - Document prerequisites (code-server, CDK, Docker, AWS CLI)
     - Document deployment steps (deploy.sh, create Cognito user, access URL)
     - Document architecture (CloudFront → ALB → ECS Fargate ARM64)
