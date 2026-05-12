@@ -58,7 +58,7 @@ Implemented all Phase 1 code: shared utilities, specialist agents, orchestrator,
 - [x] Task 9: Create README documentation (deferred — can do in a future session)
 - [x] Phase 1 implementation complete and tested on both platforms
 - [x] Phase 2: Deploy to ECS Fargate — COMPLETE
-- [ ] Phase 3: AgentCore microservices
+- [ ] Phase 3: AgentCore microservices — NEXT (specs tomorrow)
 
 ## Phase 2 — ECS Fargate Deployment (Completed)
 
@@ -83,3 +83,35 @@ Implemented all Phase 1 code: shared utilities, specialist agents, orchestrator,
 - ARM64/Graviton for ~20% cost savings + native Docker builds on code-server
 - CDK handles Docker build + ECR push automatically via DockerImageAsset
 - Node 22 upgrade on code-server (code-server.yaml update deferred to later)
+
+## Phase 3 Planning Notes (for next session)
+
+### Architecture Overview
+Phase 3 decomposes the monolithic app into AgentCore microservices:
+
+**Step 1: Identity Infrastructure (CloudFormation)**
+- Individual Cognito User Pools + OAuth2 clients for each AgentCore Runtime
+- Backs AgentCore Inbound Identities for securing individual runtimes
+
+**Step 2: AgentCore Project ("student-services")**
+- Orchestrator: "Student Services Agent" as AgentCore Runtime
+- Specialists as AgentCore Runtimes:
+  - Course Registration Agent
+  - Course Review Agent
+  - Loan Application Agent
+  - Math Teaching Agent
+- AgentCore Gateway ("student-services-gateway") presents one endpoint for all downstream specialists
+- Specialist agents registered as Gateway Targets
+- AgentCore Memory: SEMANTIC, SUMMARIZATION (session ID), USER_PREFERENCES
+- AgentCore Policies: Block abusive language, mask PII
+
+**Step 3: Thin Streamlit App (CDK/ECS Fargate)**
+- "Microservices-based" Streamlit app on ECS Fargate behind CloudFront + ALB
+- Cognito User Pool for end-user authentication (same pattern as Phase 2)
+- Agent invocation via `agent_client.py` — stable SigV4Auth POST to STUDENT_SERVICES_AGENT_URL
+- Completely decoupled from backend agent layer — no agent code in the container
+- Backend changes (agent logic, routing, new specialists) don't require Streamlit redeployment
+
+**Key Benefit**: Thin client is very stable; all agent logic lives in AgentCore Runtimes behind the Gateway.
+
+**Reference**: `.kiro/references/agentcore-workshop/` (TravelPlanner pattern with Flights/Hotel MCP servers)
