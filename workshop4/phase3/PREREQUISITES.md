@@ -20,7 +20,86 @@ agentcore --version      # prints version
 cdk --version            # prints version
 ```
 
-## AgentCore CLI Quick Reference
+## AgentCore Project Scaffolding (Inside an Existing Git Repo)
+
+**⚠️ IMPORTANT: The AgentCore CLI (`agentcore create`) defaults to initializing a new Git repository. If you're working inside an existing repo, you MUST use `--skip-git` to avoid creating a nested `.git` directory.**
+
+The AgentCore CLI generates critical infrastructure files (CDK project, `.llm-context/` type definitions, `.cli/` state tracking) that are required for `agentcore deploy` to work. You cannot just create `agentcore.json` by hand — the CLI scaffolding is mandatory.
+
+### The Workflow
+
+```bash
+# 1. Scaffold the project — skip git, python venv, and npm install
+#    (we manage our own git repo and will install deps separately)
+agentcore create --name <projectname> --no-agent \
+  --skip-git --skip-python-setup --skip-install \
+  --output-dir <target-parent-directory>
+
+# 2. Install CDK dependencies (required for agentcore deploy)
+cd <target-parent-directory>/<projectname>/agentcore/cdk
+npm install
+
+# 3. Add your agent code as sibling directories of agentcore/
+#    e.g., my_agent/agent.py, another_agent/agent.py
+
+# 4. Edit agentcore/agentcore.json to declare your runtimes
+#    (codeLocation paths are relative to the project root)
+
+# 5. Edit agentcore/aws-targets.json with your account and region
+
+# 6. Validate
+cd <target-parent-directory>/<projectname>
+agentcore validate
+
+# 7. Deploy
+agentcore deploy -y
+```
+
+### What the Scaffold Creates
+
+```
+<projectname>/
+├── agentcore/                    # Config + infrastructure (DO NOT put agent code here)
+│   ├── .cli/                     # CLI state tracking (deployed-state.json)
+│   ├── .llm-context/             # TypeScript type defs for AI assistants
+│   ├── cdk/                      # CDK infrastructure project (TypeScript)
+│   │   ├── bin/cdk.ts
+│   │   ├── lib/cdk-stack.ts
+│   │   ├── package.json          # CDK dependencies
+│   │   └── ...
+│   ├── .env.local                # API keys (gitignored)
+│   ├── .gitignore
+│   ├── agentcore.json            # Project config (runtimes, memory, credentials, gateways, policies)
+│   └── aws-targets.json          # Deployment targets (account, region)
+├── AGENTS.md                     # Agent documentation (auto-generated)
+└── README.md                     # Project readme (auto-generated)
+```
+
+### Key Rules
+
+- **Agent code goes at the project root level** (siblings of `agentcore/`), NOT inside `agentcore/`
+- **`codeLocation` in agentcore.json** resolves relative to the project root (e.g., `"./my_agent/"`)
+- **`agentcore deploy` must be run from the project root** (the directory containing `agentcore/`)
+- **The `agentcore/cdk/` directory is mandatory** — without it, deploy fails with "CDK project not found"
+- **`node_modules/` inside `agentcore/cdk/`** should be in `.gitignore` — regenerate with `npm install`
+
+### Naming Constraints
+
+- **Project name**: Must start with a letter, alphanumeric only, max 23 chars (no hyphens, no underscores)
+- **Runtime names**: Start with letter, alphanumeric + underscores, max 48 chars
+- **Policy engine names**: Start with letter, alphanumeric + underscores, max 48 chars
+- **Credential names**: Alphanumeric + hyphens + underscores
+
+### If You Already Have Agent Code
+
+If you're adding AgentCore to an existing project (like we did):
+
+1. Scaffold to a temp directory: `agentcore create --name X --no-agent --skip-git --skip-python-setup --skip-install --output-dir /tmp`
+2. Copy the generated `<projectname>/` directory into your repo at the desired location
+3. Copy your existing agent code into the project root as sibling directories
+4. Edit `agentcore.json` to point `codeLocation` at your agent directories
+5. Run `npm install` in `agentcore/cdk/`
+6. Validate and deploy
 
 | Command | Description |
 |---------|-------------|

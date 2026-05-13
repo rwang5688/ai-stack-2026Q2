@@ -52,11 +52,33 @@ Key: `studentservices/` is the AgentCore project root — `agentcore deploy` run
 - 5 OAuth credentials
 - Gateway and policy engine arrays empty (to be added after first deploy provides runtime URLs)
 
+## AgentCore Project Scaffolding (Lesson Learned)
+
+**Problem**: `agentcore create` defaults to initializing a new Git repo. When working inside an existing repo, this creates a nested `.git` which is wrong. Also, `agentcore deploy` requires the `agentcore/cdk/` directory — you can't just hand-create `agentcore.json`.
+
+**Solution**: Use `--skip-git --skip-python-setup --skip-install` flags, then copy the scaffold into your repo:
+
+```bash
+# Scaffold to temp (or directly with --output-dir)
+agentcore create --name studentservices --no-agent --skip-git --skip-python-setup --skip-install --output-dir <parent>
+
+# Install CDK deps
+cd <parent>/studentservices/agentcore/cdk && npm install
+
+# Add your agent code as siblings of agentcore/
+# Edit agentcore.json, validate, deploy
+```
+
+**Key gotcha**: If the target directory already exists (even empty), `agentcore create` refuses. You must delete it first. File locks from IDEs (Kiro, VS Code) can prevent deletion — close the IDE first if needed.
+
+Documented in `workshop4/phase3/PREREQUISITES.md` for future reference.
+
 ## Next Steps
-- [ ] Set AWS credentials and run `agentcore deploy -y` from `studentservices/`
+- [ ] Zip and upload to code-server for commit/push
+- [ ] Run `agentcore deploy -y` from `studentservices/` (Deploy 1: runtimes only)
 - [ ] Get runtime URLs from `agentcore status`
-- [ ] Add gateway targets with actual endpoint URLs
+- [ ] Add gateway targets with actual endpoint URLs (Deploy 2)
 - [ ] Retrieve Cognito client secret for orchestrator gateway auth
 - [ ] Update orchestrator agent.py with real gateway URL + secret
-- [ ] Redeploy with gateway config
-- [ ] Test in AgentCore Playground
+- [ ] Add runtime identifier to each specialist response for demo visibility
+- [ ] Test individual runtimes in AgentCore Playground

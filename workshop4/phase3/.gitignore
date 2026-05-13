@@ -1,0 +1,17 @@
+# Transfer zip (used to upload to code-server for commit/push)
+phase3.zip
+
+# CDK output
+**/cdk.out/
+
+# Node modules (regenerate with npm install)
+**/node_modules/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# AgentCore local env
+agentcore/.env.local
