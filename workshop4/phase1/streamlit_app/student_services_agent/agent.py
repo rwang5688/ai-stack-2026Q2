@@ -13,7 +13,7 @@ import os
 
 from strands import Agent
 
-# Add parent directory to path for imports
+# Add streamlit_app directory to path for sibling imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from shared.model_factory import create_model_from_config
 

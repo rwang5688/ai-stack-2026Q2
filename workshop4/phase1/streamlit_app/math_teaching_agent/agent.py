@@ -10,9 +10,9 @@ import os
 
 from strands import Agent, tool
 
-# Add parent directory to path for imports
+# Add streamlit_app directory to path for sibling imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from streamlit_app.config import get_model_config
+from config import get_model_config
 from shared.cross_platform_tools import get_math_tools
 from shared.model_factory import create_model_from_config
 

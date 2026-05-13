@@ -13,9 +13,9 @@ import boto3
 from botocore.config import Config
 from strands import Agent, tool
 
-# Add parent directory to path for imports
+# Add docker_app directory to path for sibling imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from streamlit_app.config import (
+from config import (
     get_aws_region,
     get_course_reviews_table,
     get_knowledge_base_id,

@@ -19,7 +19,7 @@ All agents are instantiated as `strands.Agent` from the Strands Agents SDK. Spec
 | CloudFormation YAML (not CDK) | Workshop Studio compatibility requirement |
 | `strands.Agent` for all agents | SDK standard; enables agents-as-tools pattern natively |
 | `@tool` decorator for specialist wrappers | Gives full control over error handling and response formatting |
-| Directory structure grouped by runtime boundary | Enables direct copy to AgentCore runtimes in Phase 3 |
+| Directory structure as self-contained app | All agents and shared code inside `streamlit_app/` — the app is one deployable unit |
 | Environment variables with SSM fallback | Supports both local dev (env vars) and deployed environments (SSM) |
 | `strands_tools.calculator` for math | Cross-platform, no shell dependency |
 | "Routing to..." status in UI | Each specialist `@tool` prefixes its return value with `[Agent Name]` — callbacks and LLM instructions are unreliable |
@@ -87,57 +87,51 @@ graph TD
 
 ## Components and Interfaces
 
-### Project Directory Structure
+### Directory Structure
 
 ```
 workshop4/phase1/
 ├── cloudformation/
-│   └── student-services-infra.yaml    # CloudFormation IaC template (stack name = file name)
-├── course_registration_agent/         # → AgentCore Runtime in Phase 3
-│   ├── __init__.py
-│   └── agent.py                       # DynamoDB write specialist
-├── course_review_agent/               # → AgentCore Runtime in Phase 3
-│   ├── __init__.py
-│   └── agent.py                       # RAG specialist (KB + DynamoDB read)
+│   └── student-services-infra.yaml    # CloudFormation IaC template
 ├── data/
 │   ├── course_catalog.pdf             # Bedrock KB data source
 │   ├── course_registrations.csv       # Sample registration data for DynamoDB
 │   └── course_reviews.csv             # Sample review data for DynamoDB
-├── loan_application_agent/            # → AgentCore Runtime in Phase 3
-│   ├── __init__.py
-│   └── agent.py                       # SageMaker inference specialist
-├── math_teaching_agent/               # → AgentCore Runtime in Phase 3
-│   ├── __init__.py
-│   └── agent.py                       # Generative Bedrock specialist
 ├── scripts/
-│   └── populate_seed_data.py                   # Upload data to S3, seed DynamoDB, trigger KB ingestion
-├── shared/                            # Shared utilities across agents
+│   └── populate_seed_data.py          # Upload data to S3, seed DynamoDB, trigger KB ingestion
+├── streamlit_app/                     # Self-contained application package
 │   ├── __init__.py
-│   ├── cross_platform_tools.py        # Platform-specific tool imports (Windows/Linux/macOS)
-│   └── model_factory.py               # Model creation from config dict
-├── streamlit_app/                     # → ECS Fargate Task in Phase 2
 │   ├── app.py                         # Streamlit entry point
-│   └── config.py                      # Configuration (env vars + SSM fallback)
-├── student_services_agent/            # → AgentCore Runtime in Phase 3
-│   ├── __init__.py
-│   └── agent.py                       # Orchestrator agent
+│   ├── config.py                      # Configuration (env vars + SSM fallback)
+│   ├── course_registration_agent/     # DynamoDB write specialist
+│   │   ├── __init__.py
+│   │   └── agent.py
+│   ├── course_review_agent/           # RAG specialist (KB + DynamoDB read)
+│   │   ├── __init__.py
+│   │   └── agent.py
+│   ├── loan_application_agent/        # SageMaker inference specialist
+│   │   ├── __init__.py
+│   │   └── agent.py
+│   ├── math_teaching_agent/           # Generative Bedrock specialist
+│   │   ├── __init__.py
+│   │   └── agent.py
+│   ├── shared/                        # Shared utilities across agents
+│   │   ├── __init__.py
+│   │   ├── cross_platform_tools.py    # Platform-specific tool imports
+│   │   └── model_factory.py           # Model creation from config dict
+│   └── student_services_agent/        # Orchestrator agent
+│       ├── __init__.py
+│       └── agent.py
 ├── tests/
-│   ├── __init__.py
-│   ├── conftest.py
-│   ├── integration/
-│   │   ├── test_agents_e2e.py
-│   │   └── test_cloudformation.py
-│   ├── test_config.py
-│   ├── test_course_registration.py
-│   ├── test_course_review.py
-│   ├── test_loan_prediction.py
-│   ├── test_model_factory.py
-│   ├── test_orchestrator.py
-│   └── test_streamlit_app.py
-├── deploy.sh                          # Single deploy script (CloudFormation + populate_seed_data.py)
-├── README.md                          # Setup, prerequisites, deployment, usage
-└── requirements.txt                   # Pinned Python dependencies
+│   └── integration/
+├── .env / .env.example
+├── deploy-infra.sh                    # Deploy CloudFormation stack
+├── populate-seed-data.sh              # Seed data script wrapper
+├── README.md
+└── requirements.txt
 ```
+
+All application code (agents, shared modules, config) lives inside `streamlit_app/` as a self-contained package. Infrastructure, data, and scripts remain at the phase1 root. The Streamlit app is run from the phase1 root with `streamlit run streamlit_app/app.py`.
 
 ### Component: `cloudformation/student-services-infra.yaml` (CloudFormation)
 

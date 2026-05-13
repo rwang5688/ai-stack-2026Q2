@@ -6,4 +6,4 @@ RUN pip3 install --upgrade pip && pip3 install -r requirements.txt
 COPY . .
 ENV BYPASS_TOOL_CONSENT=true
 ENV OTEL_SDK_DISABLED=true
-CMD streamlit run streamlit_app/app.py --server.port 8501 --server.address 0.0.0.0
+CMD streamlit run app.py --server.port 8501 --server.address 0.0.0.0

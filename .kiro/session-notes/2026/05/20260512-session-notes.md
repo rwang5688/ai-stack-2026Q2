@@ -1,61 +1,143 @@
 # Session Notes - May 12, 2026
 
 ## Session Overview
-Starting Phase 3: Decomposing the monolithic Student Services app into AgentCore microservices. Generating specs based on the architecture plan from May 11 session notes and the TravelPlanner reference implementation.
 
-## Phase 3 Context
+Major project restructuring session. The workshop4 phases (1, 2, 3) all had incorrect directory structures that didn't match the reference implementation. The core mistake: agent code was scattered at the project root instead of being organized inside the application package.
 
-### Current State
-- Phase 1: Monolithic multi-agent app (Strands SDK, 4 specialists + orchestrator + Streamlit UI) — COMPLETE
-- Phase 2: Containerized Phase 1 on ECS Fargate (CloudFront → ALB → ECS, Cognito auth) — COMPLETE
-- Phase 3: AgentCore microservices decomposition — STARTING NOW
+## Key Issue
 
-### Architecture (from May 11 planning)
-Three-step decomposition:
+The reference implementation (`travelplanner`) shows:
+- `agentcore/` contains ONLY config files (agentcore.json, aws-targets.json, cdk/)
+- Application code lives at the project root in named directories
+- For Phase 1 (monolithic Streamlit app), all agent code belongs INSIDE `streamlit_app/` as a self-contained package
 
-**Step 1: Identity Infrastructure (CloudFormation)**
-- Individual Cognito User Pools + OAuth2 clients for each AgentCore Runtime
-- Backs AgentCore Inbound Identities for securing individual runtimes
+What we had wrong:
+- Phase 1: Agent directories (`course_review_agent/`, etc.) and `shared/` at the phase1 root, separate from `streamlit_app/`
+- Phase 2: Same structural error
+- Phase 3: Agent code nested inside `agentcore/` directory (should be at project root, with `agentcore/` containing only config)
 
-**Step 2: AgentCore Project ("student-services")**
-- Orchestrator: "Student Services Agent" as AgentCore Runtime
-- 4 Specialist AgentCore Runtimes (Course Registration, Course Review, Loan Application, Math Teaching)
-- AgentCore Gateway ("student-services-gateway") — single endpoint for all specialists
-- AgentCore Memory (SEMANTIC, SUMMARIZATION, USER_PREFERENCES)
-- AgentCore Policies (block abusive language, mask PII)
+## Phase 1 Fix (Completed)
 
-**Step 3: Thin Streamlit App (CDK/ECS Fargate)**
-- Microservices-based Streamlit on ECS Fargate behind CloudFront + ALB
-- Cognito User Pool for end-user auth
-- `agent_client.py` — SigV4Auth POST to STUDENT_SERVICES_AGENT_URL
-- Completely decoupled from backend agent layer
+### Structure Change
+All agent code and shared modules moved INTO `streamlit_app/`:
+```
+workshop4/phase1/
+├── streamlit_app/              # Self-contained application
+│   ├── app.py
+│   ├── config.py
+│   ├── shared/
+│   ├── student_services_agent/
+│   ├── course_review_agent/
+│   ├── course_registration_agent/
+│   ├── loan_application_agent/
+│   └── math_teaching_agent/
+├── cloudformation/
+├── data/
+├── scripts/
+└── tests/
+```
 
-### Reference Implementation
-- `.kiro/references/agentcore-workshop/travelplanner/` — TravelPlanner pattern
-- Key patterns: agentcore.json (flat resource model), OAuth2 via Cognito, Gateway with Cedar policies, SigV4 agent_client, CDK ECS deployment
+### Import Fixes
+All `sys.path` hacks and import statements updated:
+- `from streamlit_app.config import ...` → `from config import ...` (agents are now inside streamlit_app)
+- Path inserts point to `streamlit_app/` directory for sibling imports
 
-## Key Accomplishments
-- Reviewed Phase 3 architecture plan and reference implementations
-- Generated spec for Phase 3 implementation (requirements, design, tasks)
-- Deployed CloudFormation identity stack (`student-services-identity`) — 5 Cognito pools in us-west-2
-- Created all 5 AgentCore runtime agent.py files (orchestrator + 4 specialists)
-- Created agentcore.json (validated) — runtimes, memory, credentials
-- Created Cedar policy file (permit_all_tools.cedar)
-- Installed AgentCore CLI v0.13.1 and CDK v2.1121.0
-- Created PREREQUISITES.md and agentcore-conventions.md steering file
-- Confirmed Python 3.13.12, Node 24.15.0
+### Files Updated
+- `streamlit_app/app.py` — fixed imports
+- `streamlit_app/student_services_agent/agent.py` — fixed imports
+- `streamlit_app/course_review_agent/agent.py` — fixed imports
+- `streamlit_app/course_registration_agent/agent.py` — fixed imports
+- `streamlit_app/loan_application_agent/agent.py` — fixed imports
+- `streamlit_app/math_teaching_agent/agent.py` — fixed imports
+- `workshop4/phase1/README.md` — updated directory structure section
+- `.kiro/specs/workshop4/workshop4-phase1-monolithic-agents/design.md` — updated directory structure
 
-## Deployment Strategy
-AgentCore deploy is two-phase:
-1. **Phase A**: Deploy runtimes + memory + credentials (agentcore deploy -y)
-2. **Phase B**: After getting runtime URLs from `agentcore status`, add gateway + policy engine targets with actual endpoint URLs, then redeploy
+## Phase 2 Fix (Completed)
 
-This matches the TravelPlanner reference pattern — gateway targets need real endpoint URLs.
+### Structure Change
+All agent code and shared modules moved INTO `docker_app/` (the container boundary):
+```
+workshop4/phase2/
+├── deploy-streamlit-app/           # CDK project
+│   ├── app.py                      # CDK entry point
+│   ├── cdk.json
+│   ├── cdk/
+│   │   └── cdk_stack.py
+│   └── docker_app/                 # Self-contained containerized app
+│       ├── Dockerfile
+│       ├── app.py                  # Streamlit entry point
+│       ├── config.py
+│       ├── config_file.py
+│       ├── shared/
+│       ├── student_services_agent/
+│       ├── course_review_agent/
+│       ├── course_registration_agent/
+│       ├── loan_application_agent/
+│       ├── math_teaching_agent/
+│       └── utils/                  # Cognito auth
+├── deploy.sh
+├── force-deploy.sh
+├── requirements.txt
+└── README.md
+```
+
+### Import Fixes
+- All `from streamlit_app.config import ...` → `from config import ...`
+- Path inserts point to `docker_app/` directory for sibling imports
+- Dockerfile CMD: `streamlit run app.py` (not `streamlit_app/app.py`)
+- Deploy scripts: added `cd deploy-streamlit-app` since cdk.json lives there
+
+### Files Updated
+- `docker_app/app.py` — fixed imports
+- `docker_app/course_review_agent/agent.py` — fixed imports
+- `docker_app/course_registration_agent/agent.py` — fixed imports
+- `docker_app/loan_application_agent/agent.py` — fixed imports
+- `docker_app/math_teaching_agent/agent.py` — fixed imports
+- `docker_app/Dockerfile` — fixed CMD path
+- `docker_app/requirements.txt` — sorted alphabetically
+- `deploy.sh` — added cd to deploy-streamlit-app
+- `force-deploy.sh` — added cd to deploy-streamlit-app
+- `workshop4/phase2/README.md` — updated directory structure
+- `.kiro/specs/workshop4/workshop4-phase2-ecs-deployment/design.md` — updated structure + Dockerfile + deploy script
+
+### Convention: Alphabetical requirements.txt
+- Rationale: easier for humans to verify if something is missing
+- Applied to all requirements.txt files going forward
+
+## Phase 3 Fix (Completed)
+
+### Structure Change
+Created `studentservices/` as the AgentCore project boundary (like `travelplanner/` in reference):
+- `agentcore/` inside it contains ONLY config (agentcore.json, aws-targets.json)
+- Agent code directories are siblings of `agentcore/` at the project root
+- Renamed `orchestrator/` → `student_services/` (matches the agent's domain, not its role)
+- `cloudformation/`, `deploy-streamlit-app/`, `streamlit_app/` at phase3 root (consistent with Phase 1/2 pattern)
+
+### Credential Naming Fix
+- `CourseRegistrationAgentoauth` → `CourseRegistrationAgent-oauth`
+- `CourseReviewAgentoauth` → `CourseReviewAgent-oauth`
+- `LoanApplicationAgentoauth` → `LoanApplicationAgent-oauth`
+- `MathTeachingAgentoauth` → `MathTeachingAgent-oauth`
+- `studentservicesgatewayoauth` → `student-services-gateway-oauth`
+
+### Files Updated
+- Created `workshop4/phase3/studentservices/` with correct structure
+- Removed old `workshop4/phase3/agentcore/` (wrong structure)
+- Updated `agentcore.json` — credential names, codeLocation for student_services
+- Updated `PREREQUISITES.md` — correct project structure
+- Created `README.md` — clean student-facing documentation
+- Added `.gitkeep` for `deploy-streamlit-app/` and `streamlit_app/` (not yet built)
+
+## Decisions Made
+- All application code for Phase 1 lives inside `streamlit_app/` as one self-contained package
+- Phase 2: same code inside `docker_app/` (the container boundary)
+- Phase 3: `studentservices/` is the AgentCore project boundary; agent code at project root, `agentcore/` is config only
+- Infrastructure (cloudformation/), data, and scripts remain at the phase root
+- Alphabetical sorting for requirements.txt and directory structures in docs
+- `.gitkeep` only for empty placeholder directories; remove once real content exists
+- AgentCore project name must be `studentservices` (no underscores allowed by schema)
 
 ## Next Steps
-- [ ] Run `agentcore deploy -y` from code-server (Phase A — runtimes only)
-- [ ] Run `agentcore status` to get runtime URLs
-- [ ] Add gateway + policy engine with real endpoint URLs
-- [ ] Redeploy with gateway (Phase B)
-- [ ] Update orchestrator agent.py with actual gateway URL + client secret
-- [ ] Test in AgentCore Playground
+- [ ] Fix Phase 3 agent code (imports, gateway config, etc.)
+- [ ] Build thin client (streamlit_app/ and deploy-streamlit-app/)
+- [ ] Zip, upload, unpack, commit and push on code-server for each phase

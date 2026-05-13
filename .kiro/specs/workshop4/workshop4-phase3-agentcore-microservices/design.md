@@ -101,14 +101,14 @@ Each pool exports: User Pool ID, Discovery URL, App Client ID, Token Endpoint, O
 
 ### 2. AgentCore Project Configuration
 
-**File:** `workshop4/phase3/agentcore/agentcore.json`
+**File:** `workshop4/phase3/studentservices/agentcore/agentcore.json`
 
 Flat resource model following the TravelPlanner pattern:
 
 ```json
 {
   "$schema": "https://schema.agentcore.aws.dev/v1/agentcore.json",
-  "name": "student-services",
+  "name": "studentservices",
   "version": 1,
   "runtimes": [ /* 5 runtimes */ ],
   "memories": [ /* 1 memory */ ],
@@ -119,14 +119,14 @@ Flat resource model following the TravelPlanner pattern:
 ```
 
 **Project constraints:**
-- No separate Git repository — the AgentCore project lives within the existing workspace repo under `workshop4/phase3/`
+- No separate Git repository — the AgentCore project lives within the existing workspace repo under `workshop4/phase3/studentservices/`
 - Uses CodeZip build type (direct code deployment, no Docker) for all runtimes
-- Includes a project-level steering file at `workshop4/phase3/.kiro/steering/student-services-conventions.md` with conventions specific to the Student Services Agent (specialist names, routing rules, AWS services, model config)
-- The thin Streamlit client is a separate CDK project under `workshop4/phase3/thin_client/` requiring Docker build (deployed from code-server)
+- The thin Streamlit client is a separate CDK project under `workshop4/phase3/deploy-streamlit-app/` requiring Docker build (deployed from code-server)
+- Local dev thin client at `workshop4/phase3/streamlit_app/`
 
 ### 3. Orchestrator Runtime
 
-**File:** `workshop4/phase3/agentcore/orchestrator/agent.py`
+**File:** `workshop4/phase3/studentservices/student_services/agent.py`
 
 ```python
 # Entrypoint pattern
@@ -151,7 +151,7 @@ def invoke(payload: dict, context: dict | None = None) -> dict:
 
 ### 4. Course Registration Specialist Runtime
 
-**File:** `workshop4/phase3/agentcore/course_registration/agent.py`
+**File:** `workshop4/phase3/studentservices/course_registration/agent.py`
 
 **Interface:**
 - Input: `{"prompt": "Register STU001 for CS 441 in Fall 2026"}`
@@ -165,7 +165,7 @@ def validate_registration(student_id, course_name, semester) -> list[str]:
 
 ### 5. Course Review Specialist Runtime
 
-**File:** `workshop4/phase3/agentcore/course_review/agent.py`
+**File:** `workshop4/phase3/studentservices/course_review/agent.py`
 
 **Interface:**
 - Input: `{"prompt": "What are the reviews for CS 441?"}`
@@ -175,7 +175,7 @@ def validate_registration(student_id, course_name, semester) -> list[str]:
 
 ### 6. Loan Application Specialist Runtime
 
-**File:** `workshop4/phase3/agentcore/loan_application/agent.py`
+**File:** `workshop4/phase3/studentservices/loan_application/agent.py`
 
 **Interface:**
 - Input: `{"prompt": "Predict loan for: 29,2,999,..."}`
@@ -188,7 +188,7 @@ def validate_registration(student_id, course_name, semester) -> list[str]:
 
 ### 7. Math Teaching Specialist Runtime
 
-**File:** `workshop4/phase3/agentcore/math_teaching/agent.py`
+**File:** `workshop4/phase3/studentservices/math_teaching/agent.py`
 
 **Interface:**
 - Input: `{"prompt": "Solve 3x + 7 = 22"}`
@@ -204,7 +204,7 @@ Declared in `agentcore.json`. Single endpoint aggregating four specialist target
 
 ### 9. Thin Streamlit Client
 
-**File:** `workshop4/phase3/thin_client/docker_app/`
+**File:** `workshop4/phase3/deploy-streamlit-app/docker_app/`
 
 - `agent_client.py` — SigV4-signed HTTP POST to `STUDENT_SERVICES_AGENT_URL`
 - `app.py` — Streamlit chat UI with Cognito auth
@@ -212,7 +212,7 @@ Declared in `agentcore.json`. Single endpoint aggregating four specialist target
 
 ### 10. CDK Stack
 
-**File:** `workshop4/phase3/thin_client/cdk/cdk_stack.py`
+**File:** `workshop4/phase3/deploy-streamlit-app/cdk/cdk_stack.py`
 
 Provisions: VPC (2 AZs), ECS Fargate (ARM64, private subnets), ALB (custom header routing), CloudFront (HTTPS redirect, no cache), Cognito User Pool + Secrets Manager, IAM policies.
 

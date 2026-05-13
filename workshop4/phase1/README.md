@@ -89,9 +89,33 @@ Select from the sidebar dropdown:
 
 Each specialist agent uses Strands `@tool` decorators for its capabilities (DynamoDB reads/writes, KB retrieval, SageMaker invocation). MCP Servers are appropriate for wrapping reusable application interfaces (GitHub, Slack, Jira) that multiple agents could consume. For single-purpose operations tightly coupled to one agent's domain logic, `@tool` is simpler and more appropriate. MCP will be demonstrated in Phase 3 when agents communicate over AgentCore Gateway.
 
-### Directory Structure (Runtime Boundary)
+### Directory Structure
 
-Each agent has its own directory (`course_review_agent/`, `course_registration_agent/`, etc.). In Phase 3, each directory maps directly to an AgentCore Runtime — just copy the directory. This structure enables independent agent evolution and straightforward migration to microservices.
+```
+workshop4/phase1/
+├── cloudformation/                     # Infrastructure-as-code
+│   └── student-services-infra.yaml
+├── data/                               # Seed data (CSV, PDF)
+├── scripts/                            # Utility scripts
+│   └── populate_seed_data.py
+├── streamlit_app/                      # Self-contained application
+│   ├── app.py                          # Streamlit entry point
+│   ├── config.py                       # SSM + env var configuration
+│   ├── course_registration_agent/      # DynamoDB write specialist
+│   ├── course_review_agent/            # RAG specialist
+│   ├── loan_application_agent/         # SageMaker specialist
+│   ├── math_teaching_agent/            # Calculator specialist
+│   ├── shared/                         # Model factory, cross-platform tools
+│   └── student_services_agent/         # Orchestrator agent
+├── tests/
+├── .env / .env.example
+├── deploy-infra.sh
+├── populate-seed-data.sh
+├── README.md
+└── requirements.txt
+```
+
+All application code (agents, shared modules, config) lives inside `streamlit_app/` as a self-contained package. Infrastructure and data remain at the phase1 root. In Phase 3, each agent directory migrates to its own AgentCore Runtime.
 
 ### Routing Status Display
 

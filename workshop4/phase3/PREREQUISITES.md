@@ -42,19 +42,26 @@ cdk --version            # prints version
 
 ```
 workshop4/phase3/
-├── agentcore/
-│   ├── agentcore.json      # Resource specs (runtimes, memory, credentials, gateways, policies)
-│   ├── aws-targets.json    # Deployment targets (account, region)
-│   ├── .env.local          # API keys (gitignored)
-│   └── cdk/                # CDK infrastructure (auto-generated)
-├── orchestrator/           # Orchestrator agent code
-├── course_registration/    # Specialist runtime code
-├── course_review/          # Specialist runtime code
-├── loan_application/       # Specialist runtime code
-├── math_teaching/          # Specialist runtime code
-├── policies/               # Cedar policy files
-├── cloudformation/         # Identity stack (Cognito pools)
-└── thin_client/            # Streamlit app + CDK deployment
+├── cloudformation/                     # Identity stack (Cognito pools)
+│   ├── stack-outputs.json
+│   └── student-services-identity.yaml
+├── deploy-streamlit-app/               # Thin client ECS deployment
+├── streamlit_app/                      # Local dev thin client
+├── studentservices/                    # AgentCore project
+│   ├── agentcore/                      # Config ONLY
+│   │   ├── agentcore.json
+│   │   ├── aws-targets.json
+│   │   ├── .env.local                  # API keys (gitignored)
+│   │   └── cdk/                        # CDK infrastructure (auto-generated)
+│   ├── course_registration/            # Specialist agent runtime
+│   ├── course_review/                  # Specialist agent runtime
+│   ├── loan_application/               # Specialist agent runtime
+│   ├── math_teaching/                  # Specialist agent runtime
+│   ├── policies/                       # Cedar policy files
+│   └── student_services/               # Orchestrator agent runtime
+├── .gitignore
+├── PREREQUISITES.md
+└── README.md
 ```
 
 ## Agent Code Pattern (BedrockAgentCoreApp)

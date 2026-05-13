@@ -4,6 +4,8 @@ set -e
 echo "=== Student Services Phase 2 — ECS Fargate Deployment ==="
 echo ""
 
+cd "$(dirname "$0")/deploy-streamlit-app"
+
 # Bootstrap CDK (idempotent — safe to run multiple times)
 echo ">>> Bootstrapping CDK..."
 cdk bootstrap

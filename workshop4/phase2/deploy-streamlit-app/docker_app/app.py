@@ -15,14 +15,14 @@ os.environ["OTEL_SDK_DISABLED"] = "true"
 # Bypass tool consent for all Strands tool operations
 os.environ["BYPASS_TOOL_CONSENT"] = "true"
 
-# Add parent directory to path for imports
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Add this directory to path for sibling imports within docker_app
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import streamlit as st
 
 from config_file import Config
 from utils.auth import Auth
-from streamlit_app.config import clear_parameter_cache, get_all_config_values, get_model_config
+from config import clear_parameter_cache, get_all_config_values, get_model_config
 from student_services_agent.agent import create_orchestrator
 
 

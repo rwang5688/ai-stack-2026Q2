@@ -3,6 +3,8 @@ set -e
 
 echo "=== Force Deploy: Rebuilding and redeploying ECS service ==="
 
+cd "$(dirname "$0")/deploy-streamlit-app"
+
 # Step 1: CDK deploy (rebuilds Docker image, pushes to ECR, updates stack)
 echo "Running cdk deploy..."
 cdk deploy --require-approval never

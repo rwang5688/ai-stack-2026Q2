@@ -1,5 +1,0 @@
-strands-agents
-bedrock-agentcore
-boto3
-httpx
-mcp

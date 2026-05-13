@@ -46,35 +46,32 @@ graph TD
 
 ```
 workshop4/phase2/
-├── cdk/
-│   ├── __init__.py
-│   └── cdk_stack.py              # CDK stack definition
-├── docker_app/
-│   ├── Dockerfile                # ARM64 Python 3.12 base
-│   ├── requirements.txt          # Container dependencies
-│   ├── config_file.py            # CDK/Cognito config (stack name, secrets ID, region)
-│   ├── streamlit_app/            # Copied from phase1
-│   │   ├── app.py
-│   │   └── config.py
-│   ├── shared/
-│   │   ├── cross_platform_tools.py
-│   │   └── model_factory.py
-│   ├── course_review_agent/
-│   │   └── agent.py
-│   ├── course_registration_agent/
-│   │   └── agent.py
-│   ├── loan_application_agent/
-│   │   └── agent.py
-│   ├── math_teaching_agent/
-│   │   └── agent.py
-│   └── student_services_agent/
-│       └── agent.py
-├── app.py                        # CDK app entry point
-├── cdk.json                      # CDK configuration
-├── requirements.txt              # CDK dependencies (aws-cdk-lib)
-├── deploy.sh                     # One-command deploy script
-└── README.md
+├── deploy-streamlit-app/               # CDK project + containerized app
+│   ├── app.py                          # CDK app entry point
+│   ├── cdk.json                        # CDK configuration
+│   ├── cdk/
+│   │   ├── __init__.py
+│   │   └── cdk_stack.py               # CDK stack definition
+│   └── docker_app/                     # Self-contained containerized application
+│       ├── app.py                      # Streamlit entry point
+│       ├── config.py                   # SSM + env var configuration
+│       ├── config_file.py              # CDK/Cognito config (stack name, secrets ID, region)
+│       ├── course_registration_agent/  # DynamoDB write specialist
+│       ├── course_review_agent/        # RAG specialist
+│       ├── Dockerfile                  # ARM64 Python 3.12 base
+│       ├── loan_application_agent/     # SageMaker specialist
+│       ├── math_teaching_agent/        # Calculator specialist
+│       ├── requirements.txt            # Container dependencies
+│       ├── shared/                     # Model factory, cross-platform tools
+│       ├── student_services_agent/     # Orchestrator agent
+│       └── utils/                      # Auth utilities (Cognito)
+├── deploy.sh                           # One-command deploy
+├── force-deploy.sh                     # Force redeployment after code changes
+├── README.md
+└── requirements.txt                    # CDK dependencies (aws-cdk-lib)
 ```
+
+`docker_app/` is the deployment unit — everything inside it goes into the container. The agent code from Phase 1's `streamlit_app/` lives here, plus Cognito auth (`utils/auth.py`) and CDK config (`config_file.py`).
 
 ## Components
 
@@ -89,7 +86,7 @@ RUN pip3 install --upgrade pip && pip3 install -r requirements.txt
 COPY . .
 ENV BYPASS_TOOL_CONSENT=true
 ENV OTEL_SDK_DISABLED=true
-CMD streamlit run streamlit_app/app.py --server.port 8501 --server.address 0.0.0.0
+CMD streamlit run app.py --server.port 8501 --server.address 0.0.0.0
 ```
 
 ### CDK Stack (`cdk/cdk_stack.py`)
@@ -119,6 +116,7 @@ class Config:
 ```bash
 #!/bin/bash
 set -e
+cd "$(dirname "$0")/deploy-streamlit-app"
 # Bootstrap CDK (first time only)
 cdk bootstrap
 # Deploy (builds Docker, pushes to ECR, deploys stack)
