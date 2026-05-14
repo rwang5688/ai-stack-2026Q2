@@ -30,6 +30,16 @@ Phase 3 decomposes the monolithic Student Services app into AgentCore microservi
 - Invoke: `agentcore invoke "prompt"`
 - Logs: `agentcore logs --agent <name> --since 5m`
 
+## CRITICAL: After Recreating Cognito Pools
+When the CloudFormation infra stack is recreated (new pool IDs):
+1. Update `agentcore.json` — discoveryUrl + allowedClients on each runtime and gateway
+2. Update `agentcore.json` — discoveryUrl on each credential
+3. **Update `student_services/agent.py`** — GATEWAY_MCP_URL, GATEWAY_CLIENT_ID, GATEWAY_CLIENT_SECRET
+4. Re-register credentials: `bash register-credentials.sh`
+5. Redeploy: `agentcore deploy -y`
+
+The orchestrator has HARDCODED gateway credentials in agent.py. These MUST be updated whenever pools change.
+
 ## Agent Code Pattern (BedrockAgentCoreApp)
 
 ### Structure (in order)

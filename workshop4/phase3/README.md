@@ -160,6 +160,16 @@ agentcore invoke "What courses are available for Fall 2026?"
 
 Or test in the AgentCore Runtime Playground (AWS Console → Bedrock → AgentCore → Runtimes → StudentServicesAgent → Playground).
 
+### After Recreating Cognito Pools (Full Redeploy)
+
+If you tear down and recreate the CloudFormation stack, you MUST update these files with new pool IDs/secrets:
+
+1. `studentservices/agentcore/agentcore.json` — discoveryUrl + allowedClients on each runtime and gateway
+2. `studentservices/student_services/agent.py` — GATEWAY_MCP_URL, GATEWAY_CLIENT_ID, GATEWAY_CLIENT_SECRET (hardcoded defaults)
+3. Re-run `register-credentials.sh` to register new OAuth credentials
+
+The gateway URL also changes on every fresh deploy (random suffix). Update it in both `agentcore.json` (gateway targets) and `agent.py` (GATEWAY_MCP_URL).
+
 ## Identity & Authentication
 
 AgentCore uses OAuth2 (Cognito User Pools) to secure communication between runtimes. Each pool issues tokens via the `client_credentials` grant — no human users involved.

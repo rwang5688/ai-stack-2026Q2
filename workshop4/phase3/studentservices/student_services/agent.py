@@ -27,15 +27,15 @@ from strands.tools.mcp import MCPClient
 # ---------------------------------------------------------------------------
 GATEWAY_MCP_URL = os.environ.get(
     "GATEWAY_MCP_URL",
-    "https://studentservices-studentservicesgateway-qizxrsubb4.gateway.bedrock-agentcore.us-west-2.amazonaws.com/mcp",
+    "https://studentservices-studentservicesgateway-ts3cbbncol.gateway.bedrock-agentcore.us-west-2.amazonaws.com/mcp",
 )
 GATEWAY_CLIENT_ID = os.environ.get(
     "GATEWAY_CLIENT_ID",
-    "5520octlvdtcru9er9k9dsc9qk",
+    "3b48jg8f940sef71ldeetismr",
 )
 GATEWAY_CLIENT_SECRET = os.environ.get(
     "GATEWAY_CLIENT_SECRET",
-    "1ngb37kqfp1iqg45epn20pgeehh3dkfir1mb9kbd6n0ahm2uned6",
+    "7ecg2e78ni41s1r17kk0jd5akul0v28f1h3d7v7mrn7l21h6shh",
 )
 GATEWAY_TOKEN_ENDPOINT = os.environ.get(
     "GATEWAY_TOKEN_ENDPOINT",
