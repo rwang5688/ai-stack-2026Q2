@@ -1,3 +1,35 @@
 {
-  "targets": {}
+  "targets": {
+    "default": {
+      "resources": {
+        "credentials": {
+          "CourseRegistrationAgent-oauth": {
+            "credentialProviderArn": "arn:aws:bedrock-agentcore:us-west-2:149057604171:token-vault/default/oauth2credentialprovider/CourseRegistrationAgent-oauth",
+            "clientSecretArn": "arn:aws:secretsmanager:us-west-2:149057604171:secret:bedrock-agentcore-identity!default/oauth2/CourseRegistrationAgent-oauth-a73e523c-tmzFyk",
+            "callbackUrl": "https://bedrock-agentcore.us-west-2.amazonaws.com/identities/oauth2/callback/3ae717cb-8f5a-4a66-a2c8-50f460a661c7"
+          },
+          "CourseReviewAgent-oauth": {
+            "credentialProviderArn": "arn:aws:bedrock-agentcore:us-west-2:149057604171:token-vault/default/oauth2credentialprovider/CourseReviewAgent-oauth",
+            "clientSecretArn": "arn:aws:secretsmanager:us-west-2:149057604171:secret:bedrock-agentcore-identity!default/oauth2/CourseReviewAgent-oauth-744e8311-BOujhu",
+            "callbackUrl": "https://bedrock-agentcore.us-west-2.amazonaws.com/identities/oauth2/callback/7bf83359-2489-47cb-9842-b703529dd28c"
+          },
+          "LoanApplicationAgent-oauth": {
+            "credentialProviderArn": "arn:aws:bedrock-agentcore:us-west-2:149057604171:token-vault/default/oauth2credentialprovider/LoanApplicationAgent-oauth",
+            "clientSecretArn": "arn:aws:secretsmanager:us-west-2:149057604171:secret:bedrock-agentcore-identity!default/oauth2/LoanApplicationAgent-oauth-09c1d453-zsgsBi",
+            "callbackUrl": "https://bedrock-agentcore.us-west-2.amazonaws.com/identities/oauth2/callback/87941698-cf7e-4272-8430-aa1a766d2078"
+          },
+          "MathTeachingAgent-oauth": {
+            "credentialProviderArn": "arn:aws:bedrock-agentcore:us-west-2:149057604171:token-vault/default/oauth2credentialprovider/MathTeachingAgent-oauth",
+            "clientSecretArn": "arn:aws:secretsmanager:us-west-2:149057604171:secret:bedrock-agentcore-identity!default/oauth2/MathTeachingAgent-oauth-a4c4cf58-SBT2up",
+            "callbackUrl": "https://bedrock-agentcore.us-west-2.amazonaws.com/identities/oauth2/callback/68aefcbe-0d5c-4fc6-a735-df57451a030b"
+          },
+          "student-services-gateway-oauth": {
+            "credentialProviderArn": "arn:aws:bedrock-agentcore:us-west-2:149057604171:token-vault/default/oauth2credentialprovider/student-services-gateway-oauth",
+            "clientSecretArn": "arn:aws:secretsmanager:us-west-2:149057604171:secret:bedrock-agentcore-identity!default/oauth2/student-services-gateway-oauth-56972f0d-ptjzBN",
+            "callbackUrl": "https://bedrock-agentcore.us-west-2.amazonaws.com/identities/oauth2/callback/cbedabe9-0de3-44ae-bb99-1102d8bb3ea1"
+          }
+        }
+      }
+    }
+  }
 }

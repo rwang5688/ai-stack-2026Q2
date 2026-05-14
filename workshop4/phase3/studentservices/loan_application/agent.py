@@ -1,34 +1,32 @@
-"""Loan Application Agent — predicts loan acceptance via SageMaker XGBoost endpoint.
+"""Loan Application MCP Server — Strands Agent wrapped as MCP tool via FastMCP.
+
+The MCP tool delegates to an internal Strands Agent that handles loan prediction
+requests using the SageMaker XGBoost endpoint.
 
 Usage:
-    agentcore dev --runtime LoanApplicationAgent
+    agentcore dev --runtime LoanApplicationMcp
 """
 
 import os
 import re
-import sys
-
-if sys.platform == "win32":
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 import boto3
-from bedrock_agentcore import BedrockAgentCoreApp
+from fastmcp import FastMCP
 from strands import Agent, tool
 from strands.models import BedrockModel
+
+mcp = FastMCP("loan-application-mcp-server")
 
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
 AWS_REGION = os.environ.get("AWS_REGION", "us-west-2")
+RUNTIME_NAME = "LoanApplicationMcp"
 XGBOOST_ENDPOINT = os.environ.get(
     "XGBOOST_ENDPOINT",
     "arn:aws:sagemaker:us-west-2:149057604171:endpoint/xgboost-serverless-ep2026-05-10-06-08-28",
 )
 
-# ---------------------------------------------------------------------------
-# System prompt
-# ---------------------------------------------------------------------------
 SYSTEM_PROMPT = """You are the Loan Offering Assistant for Any University (any.edu).
 You help predict loan acceptance based on customer features.
 
@@ -39,39 +37,24 @@ Interpret the results:
 - Score >= 0.5: Loan likely to be ACCEPTED
 - Score < 0.5: Loan likely to be REJECTED
 - Confidence is based on how far the score is from the 0.5 threshold
+
+Always explain the prediction result clearly to the user.
 """
 
 
 # ---------------------------------------------------------------------------
 # Pure functions
 # ---------------------------------------------------------------------------
-def validate_csv_features(payload: str) -> tuple[bool, int]:
-    """Check that payload contains exactly 59 comma-separated values."""
-    values = [v.strip() for v in payload.split(",") if v.strip()]
-    return (len(values) == 59, len(values))
-
-
-def interpret_prediction(score: float) -> dict:
-    """Map prediction score to label and confidence."""
-    if score >= 0.5:
-        return {"label": "Accept", "confidence": round(score * 100, 1), "score": score}
-    else:
-        return {"label": "Reject", "confidence": round((1 - score) * 100, 1), "score": score}
-
-
-def sanitize_error(msg: str) -> str:
-    """Redact ARNs, 12-digit account IDs, and endpoint names from error messages."""
-    # Redact ARNs
+def _sanitize_error(msg: str) -> str:
+    """Redact ARNs, 12-digit account IDs, and endpoint names."""
     msg = re.sub(r"arn:aws[:\w\-/]*", "[REDACTED_ARN]", msg)
-    # Redact 12-digit account IDs
     msg = re.sub(r"\b\d{12}\b", "[REDACTED_ACCOUNT]", msg)
-    # Redact endpoint names after endpoint/
     msg = re.sub(r"endpoint/[\w\-]+", "endpoint/[REDACTED]", msg)
     return msg
 
 
 # ---------------------------------------------------------------------------
-# Tools
+# Inner Strands tool
 # ---------------------------------------------------------------------------
 @tool
 def predict_loan(features_csv: str) -> str:
@@ -80,12 +63,11 @@ def predict_loan(features_csv: str) -> str:
     Args:
         features_csv: Exactly 59 comma-separated numeric values
     """
-    is_valid, count = validate_csv_features(features_csv)
-    if not is_valid:
-        return f"[Loan Application Agent] Error: Expected exactly 59 feature values, got {count}."
+    values = [v.strip() for v in features_csv.split(",") if v.strip()]
+    if len(values) != 59:
+        return f"Error: Expected exactly 59 feature values, got {len(values)}."
 
     try:
-        # Extract endpoint name from ARN if needed
         endpoint_name = XGBOOST_ENDPOINT
         if endpoint_name.startswith("arn:"):
             endpoint_name = endpoint_name.split("/")[-1]
@@ -97,34 +79,39 @@ def predict_loan(features_csv: str) -> str:
             Body=features_csv.strip(),
         )
         score = float(response["Body"].read().decode("utf-8").strip())
-        result = interpret_prediction(score)
 
-        return (
-            f"[Loan Application Agent] Prediction Result:\n"
-            f"Score: {result['score']:.4f}\n"
-            f"Label: {result['label']}\n"
-            f"Confidence: {result['confidence']}%"
-        )
+        if score >= 0.5:
+            label = "Accept"
+            confidence = round(score * 100, 1)
+        else:
+            label = "Reject"
+            confidence = round((1 - score) * 100, 1)
+
+        return f"Score: {score:.4f}\nLabel: {label}\nConfidence: {confidence}%"
     except Exception as e:
-        safe_msg = sanitize_error(str(e))
-        return f"[Loan Application Agent] Prediction failed: {safe_msg}"
+        safe_msg = _sanitize_error(str(e))
+        return f"Prediction failed: {safe_msg}"
 
 
 # ---------------------------------------------------------------------------
-# BedrockAgentCoreApp entrypoint
+# MCP tool (exposed to the gateway — wraps the Strands Agent)
 # ---------------------------------------------------------------------------
-app = BedrockAgentCoreApp()
+@mcp.tool()
+def loan_offering_assistant(prompt: str) -> dict:
+    """Loan Application — predict loan acceptance based on customer features.
 
+    This agent handles loan prediction requests. Provide the 59 CSV feature values
+    or ask about loan acceptance likelihood.
 
-@app.entrypoint
-def invoke(payload: dict, context: dict | None = None) -> dict:
-    prompt = payload.get("prompt", "")
-    if not prompt or not prompt.strip():
-        return {"response": "Error: 'prompt' field is required."}
+    Args:
+        prompt: Natural language request with 59 CSV feature values for prediction.
 
+    Returns:
+        Dict with the agent's response and runtime identifier.
+    """
     model = BedrockModel(
         model_id="us.amazon.nova-2-lite-v1:0",
-        region_name="us-west-2",
+        region_name=AWS_REGION,
         max_tokens=4096,
     )
 
@@ -135,8 +122,11 @@ def invoke(payload: dict, context: dict | None = None) -> dict:
     )
 
     response = agent(prompt)
-    return {"response": str(response)}
+    return {"response": str(response), "runtime": RUNTIME_NAME}
 
 
 if __name__ == "__main__":
-    app.run()
+    if os.environ.get("MCP_TRANSPORT") == "streamable-http":
+        mcp.run(transport="streamable-http", host="0.0.0.0", stateless_http=True)
+    else:
+        mcp.run()

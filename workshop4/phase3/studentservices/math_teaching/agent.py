@@ -1,24 +1,27 @@
-"""Math Teaching Agent — step-by-step mathematical tutoring with calculator tools.
+"""Math Teaching MCP Server — Strands Agent wrapped as MCP tool via FastMCP.
+
+The MCP tool delegates to an internal Strands Agent that provides step-by-step
+mathematical tutoring using calculator tools.
 
 Usage:
-    agentcore dev --runtime MathTeachingAgent
+    agentcore dev --runtime MathTeachingMcp
 """
 
 import math
 import os
-import sys
 
-if sys.platform == "win32":
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
-
-from bedrock_agentcore import BedrockAgentCoreApp
+from fastmcp import FastMCP
 from strands import Agent, tool
 from strands.models import BedrockModel
 
+mcp = FastMCP("math-teaching-mcp-server")
+
 # ---------------------------------------------------------------------------
-# System prompt
+# Configuration
 # ---------------------------------------------------------------------------
+AWS_REGION = os.environ.get("AWS_REGION", "us-west-2")
+RUNTIME_NAME = "MathTeachingMcp"
+
 SYSTEM_PROMPT = """You are the Math Teaching Assistant for Any University (any.edu).
 You help students solve math problems with clear, step-by-step explanations.
 
@@ -34,47 +37,49 @@ Use the calculator tool for all arithmetic operations to ensure accuracy.
 
 
 # ---------------------------------------------------------------------------
-# Tools
+# Inner Strands tool
 # ---------------------------------------------------------------------------
 @tool
 def calculator(expression: str) -> str:
     """Evaluate a mathematical expression and return the result.
 
     Args:
-        expression: A mathematical expression to evaluate (e.g., "2 + 3 * 4", "math.sqrt(16)")
+        expression: A mathematical expression (e.g., "2 + 3 * 4", "math.sqrt(16)")
     """
     try:
-        # Allow math module functions
         allowed_names = {
-            "math": math,
             "abs": abs,
-            "round": round,
-            "min": min,
+            "math": math,
             "max": max,
-            "sum": sum,
+            "min": min,
             "pow": pow,
+            "round": round,
+            "sum": sum,
         }
         result = eval(expression, {"__builtins__": {}}, allowed_names)
-        return f"[Math Teaching Agent] {expression} = {result}"
+        return f"{expression} = {result}"
     except Exception as e:
-        return f"[Math Teaching Agent] Error evaluating '{expression}': {str(e)}"
+        return f"Error evaluating '{expression}': {str(e)}"
 
 
 # ---------------------------------------------------------------------------
-# BedrockAgentCoreApp entrypoint
+# MCP tool (exposed to the gateway — wraps the Strands Agent)
 # ---------------------------------------------------------------------------
-app = BedrockAgentCoreApp()
+@mcp.tool()
+def math_assistant(prompt: str) -> dict:
+    """Math Teaching — solve math problems with step-by-step explanations.
 
+    This agent provides pedagogical math tutoring with calculator-verified solutions.
 
-@app.entrypoint
-def invoke(payload: dict, context: dict | None = None) -> dict:
-    prompt = payload.get("prompt", "")
-    if not prompt or not prompt.strip():
-        return {"response": "Error: 'prompt' field is required."}
+    Args:
+        prompt: A math problem or question (e.g., "Solve x^2 + 5x + 6 = 0")
 
+    Returns:
+        Dict with the agent's step-by-step response and runtime identifier.
+    """
     model = BedrockModel(
         model_id="us.amazon.nova-2-lite-v1:0",
-        region_name="us-west-2",
+        region_name=AWS_REGION,
         max_tokens=4096,
     )
 
@@ -85,8 +90,11 @@ def invoke(payload: dict, context: dict | None = None) -> dict:
     )
 
     response = agent(prompt)
-    return {"response": str(response)}
+    return {"response": str(response), "runtime": RUNTIME_NAME}
 
 
 if __name__ == "__main__":
-    app.run()
+    if os.environ.get("MCP_TRANSPORT") == "streamable-http":
+        mcp.run(transport="streamable-http", host="0.0.0.0", stateless_http=True)
+    else:
+        mcp.run()

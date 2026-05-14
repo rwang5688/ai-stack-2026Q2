@@ -75,3 +75,61 @@ Thin Streamlit Client ──(SigV4 HTTP POST)──→ Orchestrator Runtime
 ## AWS Region
 
 All resources deploy to **us-west-2**.
+
+## Code Mapping: Phase 1 → Phase 3
+
+The core business logic is **identical** between phases. The difference is how specialist agents are exposed and invoked. Use `diff` to compare:
+
+```bash
+diff workshop4/phase1/streamlit_app/course_registration_agent/agent.py \
+     workshop4/phase3/studentservices/course_registration/agent.py
+```
+
+### Structural Comparison
+
+| Aspect | Phase 1 (Monolith) | Phase 3 (AgentCore MCP) |
+|--------|-------------------|------------------------|
+| **Entry point** | `@tool` decorator — called in-process by orchestrator | `@mcp.tool()` decorator — called remotely via MCP protocol through Gateway |
+| **Transport** | Direct function call (same process) | MCP streamable-http (network call) |
+| **Config** | Shared `config.py` (SSM-backed, imported) | `os.environ.get(...)` (env vars injected by AgentCore runtime) |
+| **Model creation** | `create_model_from_config()` (shared factory) | `BedrockModel(...)` (direct, self-contained per runtime) |
+| **Inner tools** | `@tool register_student(...)` | `@tool register_course_inner(...)` (same logic) |
+| **Response format** | Returns `str` prefixed with `[Agent Name]` | Returns `dict` with `{"response": str, "runtime": RUNTIME_NAME}` |
+| **Server bootstrap** | None (imported by orchestrator) | `mcp.run(transport="streamable-http", ...)` |
+| **Dependencies** | Shares code with other agents via imports | Self-contained — no cross-runtime imports |
+
+### The Two-Layer Tool Pattern (Preserved Across Phases)
+
+Both phases use the same two-layer pattern:
+
+```
+Phase 1:
+  Orchestrator calls → @tool course_registration_assistant(query)
+                            → creates inner Agent
+                            → inner Agent calls → @tool register_student(...)
+                            → returns string response
+
+Phase 3:
+  Orchestrator calls → Gateway → @mcp.tool() course_registration_assistant(prompt)
+                                      → creates inner Agent
+                                      → inner Agent calls → @tool register_course_inner(...)
+                                      → returns dict response
+```
+
+The inner agent reasoning (LLM call, tool selection, validation) is identical. The only difference is the **outer wrapper**: `@tool` (in-process) vs `@mcp.tool()` (network service).
+
+### What Changes When Moving to AgentCore
+
+1. **Replace `@tool` with `@mcp.tool()`** on the outer function (the one the orchestrator calls)
+2. **Add `FastMCP` server bootstrap** at the bottom of the file
+3. **Replace shared config imports** with `os.environ.get()` (each runtime is self-contained)
+4. **Replace shared model factory** with direct `BedrockModel(...)` instantiation
+5. **Add `RUNTIME_NAME`** to responses so the thin client can show which runtime handled the request
+6. **Return `dict` instead of `str`** from the outer MCP tool (MCP protocol uses structured data)
+
+### What Stays the Same
+
+- System prompts
+- Inner tool logic (validation, DynamoDB writes, KB queries, SageMaker invocations)
+- Error handling patterns
+- The Agent-inside-tool pattern (specialist agent with its own LLM reasoning)

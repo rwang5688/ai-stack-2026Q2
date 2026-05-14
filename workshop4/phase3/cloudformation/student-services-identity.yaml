@@ -1,16 +1,16 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'Student Services Identity - 5 Cognito User Pools for AgentCore Microservices (Phase 3)'
+Description: 'Student Services Identity - Cognito OAuth pools for AgentCore runtimes (Phase 3)'
 
 Resources:
 
   # -----------------------------------------------------------------------
-  # Cognito: Orchestrator
+  # Cognito: Student Services Gateway (Gateway inbound auth)
   # -----------------------------------------------------------------------
 
-  OrchestratorUserPool:
+  StudentServicesGatewayUserPool:
     Type: AWS::Cognito::UserPool
     Properties:
-      UserPoolName: orchestrator-pool
+      UserPoolName: student-services-gateway-pool
       Policies:
         PasswordPolicy:
           MinimumLength: 8
@@ -26,33 +26,33 @@ Resources:
           Required: true
           Mutable: true
 
-  OrchestratorUserPoolDomain:
+  StudentServicesGatewayUserPoolDomain:
     Type: AWS::Cognito::UserPoolDomain
     Properties:
-      Domain: !Sub 'orchestrator-${AWS::AccountId}'
-      UserPoolId: !Ref OrchestratorUserPool
+      Domain: !Sub 'student-services-gateway-${AWS::AccountId}'
+      UserPoolId: !Ref StudentServicesGatewayUserPool
 
-  OrchestratorResourceServer:
+  StudentServicesGatewayResourceServer:
     Type: AWS::Cognito::UserPoolResourceServer
     Properties:
-      UserPoolId: !Ref OrchestratorUserPool
-      Identifier: orchestrator
-      Name: Orchestrator Runtime
+      UserPoolId: !Ref StudentServicesGatewayUserPool
+      Identifier: student-services-gateway
+      Name: Student Services Gateway
       Scopes:
         - ScopeName: access
-          ScopeDescription: Access Orchestrator Runtime
+          ScopeDescription: Access Student Services Gateway
 
-  OrchestratorAppClient:
+  StudentServicesGatewayAppClient:
     Type: AWS::Cognito::UserPoolClient
-    DependsOn: OrchestratorResourceServer
+    DependsOn: StudentServicesGatewayResourceServer
     Properties:
-      UserPoolId: !Ref OrchestratorUserPool
-      ClientName: orchestrator-client
+      UserPoolId: !Ref StudentServicesGatewayUserPool
+      ClientName: student-services-gateway-client
       GenerateSecret: true
       AllowedOAuthFlows:
         - client_credentials
       AllowedOAuthScopes:
-        - orchestrator/access
+        - student-services-gateway/access
       AllowedOAuthFlowsUserPoolClient: true
 
   # -----------------------------------------------------------------------
@@ -89,10 +89,10 @@ Resources:
     Properties:
       UserPoolId: !Ref CourseRegistrationUserPool
       Identifier: course-registration
-      Name: Course Registration Runtime
+      Name: Course Registration
       Scopes:
         - ScopeName: access
-          ScopeDescription: Access Course Registration Runtime
+          ScopeDescription: Access Course Registration MCP Server
 
   CourseRegistrationAppClient:
     Type: AWS::Cognito::UserPoolClient
@@ -141,10 +141,10 @@ Resources:
     Properties:
       UserPoolId: !Ref CourseReviewUserPool
       Identifier: course-review
-      Name: Course Review Runtime
+      Name: Course Review
       Scopes:
         - ScopeName: access
-          ScopeDescription: Access Course Review Runtime
+          ScopeDescription: Access Course Review MCP Server
 
   CourseReviewAppClient:
     Type: AWS::Cognito::UserPoolClient
@@ -193,10 +193,10 @@ Resources:
     Properties:
       UserPoolId: !Ref LoanApplicationUserPool
       Identifier: loan-application
-      Name: Loan Application Runtime
+      Name: Loan Application
       Scopes:
         - ScopeName: access
-          ScopeDescription: Access Loan Application Runtime
+          ScopeDescription: Access Loan Application MCP Server
 
   LoanApplicationAppClient:
     Type: AWS::Cognito::UserPoolClient
@@ -245,10 +245,10 @@ Resources:
     Properties:
       UserPoolId: !Ref MathTeachingUserPool
       Identifier: math-teaching
-      Name: Math Teaching Runtime
+      Name: Math Teaching
       Scopes:
         - ScopeName: access
-          ScopeDescription: Access Math Teaching Runtime
+          ScopeDescription: Access Math Teaching MCP Server
 
   MathTeachingAppClient:
     Type: AWS::Cognito::UserPoolClient
@@ -269,36 +269,36 @@ Resources:
 
 Outputs:
 
-  # Orchestrator
-  OrchestratorUserPoolId:
-    Description: 'Cognito User Pool ID for Orchestrator'
-    Value: !Ref OrchestratorUserPool
+  # Student Services Gateway
+  StudentServicesGatewayUserPoolId:
+    Description: 'Cognito User Pool ID for Student Services Gateway'
+    Value: !Ref StudentServicesGatewayUserPool
     Export:
-      Name: !Sub '${AWS::StackName}-OrchestratorUserPoolId'
+      Name: !Sub '${AWS::StackName}-StudentServicesGatewayUserPoolId'
 
-  OrchestratorDiscoveryUrl:
-    Description: 'OIDC Discovery URL for Orchestrator'
-    Value: !Sub 'https://cognito-idp.${AWS::Region}.amazonaws.com/${OrchestratorUserPool}/.well-known/openid-configuration'
+  StudentServicesGatewayDiscoveryUrl:
+    Description: 'OIDC Discovery URL for Student Services Gateway'
+    Value: !Sub 'https://cognito-idp.${AWS::Region}.amazonaws.com/${StudentServicesGatewayUserPool}/.well-known/openid-configuration'
     Export:
-      Name: !Sub '${AWS::StackName}-OrchestratorDiscoveryUrl'
+      Name: !Sub '${AWS::StackName}-StudentServicesGatewayDiscoveryUrl'
 
-  OrchestratorClientId:
-    Description: 'App Client ID for Orchestrator'
-    Value: !Ref OrchestratorAppClient
+  StudentServicesGatewayClientId:
+    Description: 'App Client ID for Student Services Gateway'
+    Value: !Ref StudentServicesGatewayAppClient
     Export:
-      Name: !Sub '${AWS::StackName}-OrchestratorClientId'
+      Name: !Sub '${AWS::StackName}-StudentServicesGatewayClientId'
 
-  OrchestratorTokenEndpoint:
-    Description: 'Token endpoint for Orchestrator'
-    Value: !Sub 'https://orchestrator-${AWS::AccountId}.auth.${AWS::Region}.amazoncognito.com/oauth2/token'
+  StudentServicesGatewayTokenEndpoint:
+    Description: 'Token endpoint for Student Services Gateway'
+    Value: !Sub 'https://student-services-gateway-${AWS::AccountId}.auth.${AWS::Region}.amazoncognito.com/oauth2/token'
     Export:
-      Name: !Sub '${AWS::StackName}-OrchestratorTokenEndpoint'
+      Name: !Sub '${AWS::StackName}-StudentServicesGatewayTokenEndpoint'
 
-  OrchestratorScope:
-    Description: 'OAuth scope for Orchestrator'
-    Value: 'orchestrator/access'
+  StudentServicesGatewayScope:
+    Description: 'OAuth scope for Student Services Gateway'
+    Value: 'student-services-gateway/access'
     Export:
-      Name: !Sub '${AWS::StackName}-OrchestratorScope'
+      Name: !Sub '${AWS::StackName}-StudentServicesGatewayScope'
 
   # Course Registration
   CourseRegistrationUserPoolId:

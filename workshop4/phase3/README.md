@@ -5,21 +5,25 @@ Decomposes the Phase 1/2 monolithic Student Services app into independent AgentC
 ## Architecture
 
 ```
-Streamlit Thin Client → StudentServicesOrchestrator (AgentCore Runtime)
-                              ↓ (via AgentCore Gateway + OAuth2)
-              ┌───────────────┼───────────────┐───────────────┐
-              ↓               ↓               ↓               ↓
-    CourseRegistration   CourseReview    LoanApplication   MathTeaching
-      (Runtime)           (Runtime)       (Runtime)        (Runtime)
-         ↓                   ↓               ↓
-      DynamoDB         Bedrock KB +      SageMaker
-                       DynamoDB          XGBoost
+Thin Streamlit Client ──(SigV4 HTTP POST)──→ StudentServicesAgent (HTTP Runtime)
+                                                    │
+                                                    │ OAuth2 token (student-services-gateway-pool)
+                                                    ↓
+                                          AgentCore Gateway (validates token)
+                              ┌───────────────┼───────────────┐───────────────┐
+                              ↓               ↓               ↓               ↓
+                    CourseRegistration   CourseReview    LoanApplication   MathTeaching
+                       (MCP Server)      (MCP Server)    (MCP Server)     (MCP Server)
+                           ↓                 ↓               ↓
+                        DynamoDB       Bedrock KB +      SageMaker
+                                       DynamoDB          XGBoost
 ```
 
-- **5 AgentCore Runtimes** — 1 orchestrator + 4 specialists
+- **1 HTTP Runtime** — StudentServicesAgent (orchestrator with LLM reasoning)
+- **4 MCP Runtimes** — Specialist agents wrapped as MCP tool servers (each with its own LLM)
 - **1 AgentCore Gateway** — aggregates specialist tools, OAuth2-secured
 - **1 AgentCore Memory** — SEMANTIC, SUMMARIZATION, USER_PREFERENCE strategies
-- **Cedar Policies** — content safety and tool access control
+- **Cedar Policies** — content safety and tool access control (added after initial deploy)
 - **Thin Client** — Streamlit app (local dev + ECS Fargate deployment)
 
 ## Prerequisites
@@ -104,16 +108,52 @@ cd workshop4/phase3/studentservices
 agentcore invoke "What courses are available for Fall 2026?"
 ```
 
+## Identity & Authentication
+
+AgentCore uses OAuth2 (Cognito User Pools) to secure communication between runtimes. Each pool issues tokens via the `client_credentials` grant — no human users involved.
+
+### Auth Flow
+
+```
+Thin Client ──(SigV4/IAM)──→ StudentServicesAgent (HTTP runtime)
+                                    │
+                                    │ presents token from student-services-gateway-pool
+                                    ↓
+                              AgentCore Gateway (validates token)
+                                    │
+                                    │ presents tokens from specialist pools
+                                    ↓
+                              MCP Servers (validate tokens against their own pools)
+```
+
+### Pool Naming & Purpose
+
+| Pool Name | Protects | Used By (as client) |
+|-----------|----------|---------------------|
+| `student-services-gateway-pool` | Gateway inbound | StudentServicesAgent (orchestrator) |
+| `course-registration-pool` | CourseRegistrationMcp | Gateway (outbound to specialist) |
+| `course-review-pool` | CourseReviewMcp | Gateway (outbound to specialist) |
+| `loan-application-pool` | LoanApplicationMcp | Gateway (outbound to specialist) |
+| `math-teaching-pool` | MathTeachingMcp | Gateway (outbound to specialist) |
+
+### Key Points
+
+- The **orchestrator does NOT need its own inbound auth pool** — it's invoked via SigV4 (IAM-based) from the thin client
+- The **gateway pool** (`student-services-gateway-pool`) is the orchestrator's **outbound credential** to authenticate with the gateway
+- Each **specialist pool** protects that specialist's MCP server — the gateway authenticates outbound to each specialist using that specialist's pool credentials
+- Pool names match the directory/runtime names for consistency (e.g., `course_registration/` → `course-registration-pool`)
+
 ## Design Decisions
 
 | Decision | Rationale |
 |----------|-----------|
-| Agents (not MCP servers) for specialists | Each specialist has its own LLM reasoning — they're agents, not data servers |
+| Agent-inside-MCP for specialists | Each specialist has its own LLM reasoning wrapped in FastMCP — preserves Phase 1 behavior while exposing tools via MCP protocol |
 | AgentCore Gateway | Single entry point for orchestrator to reach all specialists via MCP protocol |
 | Cedar policies | Declarative access control; forbid-wins semantics for content safety |
-| OAuth2 per specialist | Each runtime has its own Cognito pool for independent identity |
+| OAuth2 per specialist | Each MCP server has its own Cognito pool for independent identity and rotation |
 | Memory with 3 strategies | SEMANTIC for facts, SUMMARIZATION for session context, USER_PREFERENCE for personalization |
 | `studentservices/` project boundary | Matches AgentCore CLI conventions; `agentcore deploy` runs from this directory |
+| File name `agent.py` preserved | Enables `diff` comparison between Phase 1 and Phase 3 to see the mapping |
 
 ## AWS Region
 

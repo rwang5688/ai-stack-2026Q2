@@ -1,31 +1,29 @@
-"""Course Registration Agent — registers students in courses via DynamoDB.
+"""Course Registration MCP Server — Strands Agent wrapped as MCP tool via FastMCP.
+
+The MCP tool delegates to an internal Strands Agent that handles course registration
+with validation, DynamoDB writes, and conversational responses.
 
 Usage:
-    agentcore dev --runtime CourseRegistrationAgent
+    agentcore dev --runtime CourseRegistrationMcp
 """
 
 import os
-import sys
 import uuid
 
-if sys.platform == "win32":
-    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-    sys.stderr.reconfigure(encoding="utf-8", errors="replace")
-
 import boto3
-from bedrock_agentcore import BedrockAgentCoreApp
-from strands import Agent
+from fastmcp import FastMCP
+from strands import Agent, tool
 from strands.models import BedrockModel
+
+mcp = FastMCP("course-registration-mcp-server")
 
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
 AWS_REGION = os.environ.get("AWS_REGION", "us-west-2")
 COURSE_REGISTRATION_TABLE = os.environ.get("COURSE_REGISTRATION_TABLE", "course_registration")
+RUNTIME_NAME = "CourseRegistrationMcp"
 
-# ---------------------------------------------------------------------------
-# System prompt
-# ---------------------------------------------------------------------------
 SYSTEM_PROMPT = """You are the Course Registration Assistant for Any University (any.edu).
 You help students register for courses.
 
@@ -36,32 +34,32 @@ To register a student, you need:
 
 Use the register_course tool to complete registrations.
 If any required field is missing, ask the student to provide it.
+Always confirm the registration details in your response.
 """
 
 
 # ---------------------------------------------------------------------------
-# Pure validation function
+# Inner Strands tool
 # ---------------------------------------------------------------------------
-def validate_registration(student_id, course_name, semester) -> list[str]:
-    """Returns list of field names that are missing or empty."""
+@tool
+def register_course(student_id: str, course_name: str, semester: str) -> str:
+    """Register a student for a course in DynamoDB.
+
+    Args:
+        student_id: The student's ID
+        course_name: The full course name
+        semester: The semester
+    """
     errors = []
-    if not student_id or not str(student_id).strip():
+    if not student_id or not student_id.strip():
         errors.append("student_id")
-    if not course_name or not str(course_name).strip():
+    if not course_name or not course_name.strip():
         errors.append("course_name")
-    if not semester or not str(semester).strip():
+    if not semester or not semester.strip():
         errors.append("semester")
-    return errors
 
-
-# ---------------------------------------------------------------------------
-# DynamoDB registration
-# ---------------------------------------------------------------------------
-def do_registration(student_id: str, course_name: str, semester: str) -> dict:
-    """Write registration record to DynamoDB. Returns result dict."""
-    invalid_fields = validate_registration(student_id, course_name, semester)
-    if invalid_fields:
-        return {"error": f"Missing or empty fields: {', '.join(invalid_fields)}"}
+    if errors:
+        return f"Error: Missing or empty fields: {', '.join(errors)}"
 
     reg_id = str(uuid.uuid4())
     try:
@@ -74,59 +72,36 @@ def do_registration(student_id: str, course_name: str, semester: str) -> dict:
             "semester": semester.strip(),
         })
     except Exception:
-        return {"error": "Registration failed due to a database error. Please try again later."}
+        return "Error: Registration failed due to a database error. Please try again later."
 
-    return {
-        "success": True,
-        "reg_id": reg_id,
-        "student_id": student_id.strip(),
-        "course_name": course_name.strip(),
-        "semester": semester.strip(),
-    }
-
-
-# ---------------------------------------------------------------------------
-# Tool function
-# ---------------------------------------------------------------------------
-from strands import tool
-
-
-@tool
-def register_course(student_id: str, course_name: str, semester: str) -> str:
-    """Register a student for a course.
-
-    Args:
-        student_id: The student's ID (e.g., STU001)
-        course_name: The full course name (e.g., CS 441 Machine Learning)
-        semester: The semester (e.g., Fall 2026)
-    """
-    result = do_registration(student_id, course_name, semester)
-    if "error" in result:
-        return f"[Course Registration Agent] Error: {result['error']}"
     return (
-        f"[Course Registration Agent] Registration successful!\n"
-        f"Registration ID: {result['reg_id']}\n"
-        f"Student: {result['student_id']}\n"
-        f"Course: {result['course_name']}\n"
-        f"Semester: {result['semester']}"
+        f"Registration successful!\n"
+        f"Registration ID: {reg_id}\n"
+        f"Student: {student_id.strip()}\n"
+        f"Course: {course_name.strip()}\n"
+        f"Semester: {semester.strip()}"
     )
 
 
 # ---------------------------------------------------------------------------
-# BedrockAgentCoreApp entrypoint
+# MCP tool (exposed to the gateway — wraps the Strands Agent)
 # ---------------------------------------------------------------------------
-app = BedrockAgentCoreApp()
+@mcp.tool()
+def course_registration_assistant(prompt: str) -> dict:
+    """Course Registration — register students in courses at Any University.
 
+    This agent handles course registration requests. Provide a natural language
+    request including student_id, course_name, and semester.
 
-@app.entrypoint
-def invoke(payload: dict, context: dict | None = None) -> dict:
-    prompt = payload.get("prompt", "")
-    if not prompt or not prompt.strip():
-        return {"response": "Error: 'prompt' field is required."}
+    Args:
+        prompt: Natural language registration request (e.g., "Register STU001 for CS 441 in Fall 2026")
 
+    Returns:
+        Dict with the agent's response and runtime identifier.
+    """
     model = BedrockModel(
         model_id="us.amazon.nova-2-lite-v1:0",
-        region_name="us-west-2",
+        region_name=AWS_REGION,
         max_tokens=4096,
     )
 
@@ -137,8 +112,11 @@ def invoke(payload: dict, context: dict | None = None) -> dict:
     )
 
     response = agent(prompt)
-    return {"response": str(response)}
+    return {"response": str(response), "runtime": RUNTIME_NAME}
 
 
 if __name__ == "__main__":
-    app.run()
+    if os.environ.get("MCP_TRANSPORT") == "streamable-http":
+        mcp.run(transport="streamable-http", host="0.0.0.0", stateless_http=True)
+    else:
+        mcp.run()

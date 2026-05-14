@@ -2,5 +2,5 @@
 permit (
   principal,
   action,
-  resource
+  resource is AgentCore::Gateway
 );

@@ -8,7 +8,7 @@
   },
   "runtimes": [
     {
-      "name": "StudentServicesOrchestrator",
+      "name": "StudentServicesAgent",
       "build": "CodeZip",
       "entrypoint": "agent.py",
       "codeLocation": "./student_services/",
@@ -18,73 +18,73 @@
       "protocol": "HTTP"
     },
     {
-      "name": "CourseRegistrationAgent",
+      "name": "CourseRegistrationMcp",
       "build": "CodeZip",
       "entrypoint": "agent.py",
       "codeLocation": "./course_registration/",
       "runtimeVersion": "PYTHON_3_13",
-      "envVars": [{"name": "PYTHONIOENCODING", "value": "utf-8"}],
+      "envVars": [{"name": "MCP_TRANSPORT", "value": "streamable-http"}, {"name": "PYTHONIOENCODING", "value": "utf-8"}],
       "networkMode": "PUBLIC",
-      "protocol": "HTTP",
+      "protocol": "MCP",
       "authorizerType": "CUSTOM_JWT",
       "authorizerConfiguration": {
         "customJwtAuthorizer": {
-          "discoveryUrl": "https://cognito-idp.us-west-2.amazonaws.com/us-west-2_1evp4iyxg/.well-known/openid-configuration",
-          "allowedClients": ["9kacnv72qgofoslno0m5kr114"],
+          "discoveryUrl": "PLACEHOLDER_AFTER_CFN_DEPLOY",
+          "allowedClients": ["PLACEHOLDER_AFTER_CFN_DEPLOY"],
           "allowedScopes": ["course-registration/access"]
         }
       }
     },
     {
-      "name": "CourseReviewAgent",
+      "name": "CourseReviewMcp",
       "build": "CodeZip",
       "entrypoint": "agent.py",
       "codeLocation": "./course_review/",
       "runtimeVersion": "PYTHON_3_13",
-      "envVars": [{"name": "PYTHONIOENCODING", "value": "utf-8"}],
+      "envVars": [{"name": "MCP_TRANSPORT", "value": "streamable-http"}, {"name": "PYTHONIOENCODING", "value": "utf-8"}],
       "networkMode": "PUBLIC",
-      "protocol": "HTTP",
+      "protocol": "MCP",
       "authorizerType": "CUSTOM_JWT",
       "authorizerConfiguration": {
         "customJwtAuthorizer": {
-          "discoveryUrl": "https://cognito-idp.us-west-2.amazonaws.com/us-west-2_dtsCFwhdd/.well-known/openid-configuration",
-          "allowedClients": ["jia2211inbeocvh385uj25dei"],
+          "discoveryUrl": "PLACEHOLDER_AFTER_CFN_DEPLOY",
+          "allowedClients": ["PLACEHOLDER_AFTER_CFN_DEPLOY"],
           "allowedScopes": ["course-review/access"]
         }
       }
     },
     {
-      "name": "LoanApplicationAgent",
+      "name": "LoanApplicationMcp",
       "build": "CodeZip",
       "entrypoint": "agent.py",
       "codeLocation": "./loan_application/",
       "runtimeVersion": "PYTHON_3_13",
-      "envVars": [{"name": "PYTHONIOENCODING", "value": "utf-8"}],
+      "envVars": [{"name": "MCP_TRANSPORT", "value": "streamable-http"}, {"name": "PYTHONIOENCODING", "value": "utf-8"}],
       "networkMode": "PUBLIC",
-      "protocol": "HTTP",
+      "protocol": "MCP",
       "authorizerType": "CUSTOM_JWT",
       "authorizerConfiguration": {
         "customJwtAuthorizer": {
-          "discoveryUrl": "https://cognito-idp.us-west-2.amazonaws.com/us-west-2_y3w8JQwQf/.well-known/openid-configuration",
-          "allowedClients": ["4aqhcu66dsh3ngv93r1g6q5dho"],
+          "discoveryUrl": "PLACEHOLDER_AFTER_CFN_DEPLOY",
+          "allowedClients": ["PLACEHOLDER_AFTER_CFN_DEPLOY"],
           "allowedScopes": ["loan-application/access"]
         }
       }
     },
     {
-      "name": "MathTeachingAgent",
+      "name": "MathTeachingMcp",
       "build": "CodeZip",
       "entrypoint": "agent.py",
       "codeLocation": "./math_teaching/",
       "runtimeVersion": "PYTHON_3_13",
-      "envVars": [{"name": "PYTHONIOENCODING", "value": "utf-8"}],
+      "envVars": [{"name": "MCP_TRANSPORT", "value": "streamable-http"}, {"name": "PYTHONIOENCODING", "value": "utf-8"}],
       "networkMode": "PUBLIC",
-      "protocol": "HTTP",
+      "protocol": "MCP",
       "authorizerType": "CUSTOM_JWT",
       "authorizerConfiguration": {
         "customJwtAuthorizer": {
-          "discoveryUrl": "https://cognito-idp.us-west-2.amazonaws.com/us-west-2_7ihC1aLAI/.well-known/openid-configuration",
-          "allowedClients": ["2rgkkb7a1iccn28o6pr3fil281"],
+          "discoveryUrl": "PLACEHOLDER_AFTER_CFN_DEPLOY",
+          "allowedClients": ["PLACEHOLDER_AFTER_CFN_DEPLOY"],
           "allowedScopes": ["math-teaching/access"]
         }
       }
@@ -102,11 +102,11 @@
     }
   ],
   "credentials": [
-    {"authorizerType": "OAuthCredentialProvider", "name": "CourseRegistrationAgent-oauth", "discoveryUrl": "https://cognito-idp.us-west-2.amazonaws.com/us-west-2_1evp4iyxg/.well-known/openid-configuration", "scopes": ["course-registration/access"], "vendor": "CustomOauth2"},
-    {"authorizerType": "OAuthCredentialProvider", "name": "CourseReviewAgent-oauth", "discoveryUrl": "https://cognito-idp.us-west-2.amazonaws.com/us-west-2_dtsCFwhdd/.well-known/openid-configuration", "scopes": ["course-review/access"], "vendor": "CustomOauth2"},
-    {"authorizerType": "OAuthCredentialProvider", "name": "LoanApplicationAgent-oauth", "discoveryUrl": "https://cognito-idp.us-west-2.amazonaws.com/us-west-2_y3w8JQwQf/.well-known/openid-configuration", "scopes": ["loan-application/access"], "vendor": "CustomOauth2"},
-    {"authorizerType": "OAuthCredentialProvider", "name": "MathTeachingAgent-oauth", "discoveryUrl": "https://cognito-idp.us-west-2.amazonaws.com/us-west-2_7ihC1aLAI/.well-known/openid-configuration", "scopes": ["math-teaching/access"], "vendor": "CustomOauth2"},
-    {"authorizerType": "OAuthCredentialProvider", "name": "student-services-gateway-oauth", "discoveryUrl": "https://cognito-idp.us-west-2.amazonaws.com/us-west-2_o49LwTTCH/.well-known/openid-configuration", "scopes": ["orchestrator/access"], "vendor": "CustomOauth2"}
+    {"authorizerType": "OAuthCredentialProvider", "name": "CourseRegistrationMcp-oauth", "discoveryUrl": "PLACEHOLDER_AFTER_CFN_DEPLOY", "scopes": ["course-registration/access"], "vendor": "CustomOauth2"},
+    {"authorizerType": "OAuthCredentialProvider", "name": "CourseReviewMcp-oauth", "discoveryUrl": "PLACEHOLDER_AFTER_CFN_DEPLOY", "scopes": ["course-review/access"], "vendor": "CustomOauth2"},
+    {"authorizerType": "OAuthCredentialProvider", "name": "LoanApplicationMcp-oauth", "discoveryUrl": "PLACEHOLDER_AFTER_CFN_DEPLOY", "scopes": ["loan-application/access"], "vendor": "CustomOauth2"},
+    {"authorizerType": "OAuthCredentialProvider", "name": "MathTeachingMcp-oauth", "discoveryUrl": "PLACEHOLDER_AFTER_CFN_DEPLOY", "scopes": ["math-teaching/access"], "vendor": "CustomOauth2"},
+    {"authorizerType": "OAuthCredentialProvider", "name": "StudentServicesGateway-oauth", "discoveryUrl": "PLACEHOLDER_AFTER_CFN_DEPLOY", "scopes": ["student-services-gateway/access"], "vendor": "CustomOauth2"}
   ],
   "evaluators": [],
   "onlineEvalConfigs": [],

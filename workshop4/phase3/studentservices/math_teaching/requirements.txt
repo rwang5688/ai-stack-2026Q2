@@ -1,2 +1,2 @@
+fastmcp>=3.0.0,<4
 strands-agents
-bedrock-agentcore
