@@ -21,7 +21,7 @@ cd "$SCRIPT_DIR/studentservices"
 echo "Working directory: $(pwd)"
 
 REGION="us-west-2"
-STACK_NAME="student-services-identity"
+STACK_NAME="student-services-agentcore-infra"
 
 echo "=== Registering AgentCore OAuth Credentials ==="
 echo "Region: $REGION"

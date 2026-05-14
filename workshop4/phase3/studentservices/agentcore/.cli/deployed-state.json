@@ -4,71 +4,71 @@
       "resources": {
         "runtimes": {
           "CourseRegistrationMcp": {
-            "runtimeId": "studentservices_CourseRegistrationMcp-fc9OM8EnnA",
-            "runtimeArn": "arn:aws:bedrock-agentcore:us-west-2:149057604171:runtime/studentservices_CourseRegistrationMcp-fc9OM8EnnA",
-            "roleArn": "arn:aws:iam::149057604171:role/AgentCore-studentservices-ApplicationAgentCourseReg-fKNnNyZWBA6w"
+            "runtimeId": "studentservices_CourseRegistrationMcp-Rwdj6Q4cXQ",
+            "runtimeArn": "arn:aws:bedrock-agentcore:us-west-2:149057604171:runtime/studentservices_CourseRegistrationMcp-Rwdj6Q4cXQ",
+            "roleArn": "arn:aws:iam::149057604171:role/CourseRegistration-execution-role"
           },
           "MathTeachingMcp": {
-            "runtimeId": "studentservices_MathTeachingMcp-SBJLNa4zEW",
-            "runtimeArn": "arn:aws:bedrock-agentcore:us-west-2:149057604171:runtime/studentservices_MathTeachingMcp-SBJLNa4zEW",
-            "roleArn": "arn:aws:iam::149057604171:role/AgentCore-studentservices-ApplicationAgentMathTeach-ogPoOCKvu19d"
+            "runtimeId": "studentservices_MathTeachingMcp-7yPOrTHrdY",
+            "runtimeArn": "arn:aws:bedrock-agentcore:us-west-2:149057604171:runtime/studentservices_MathTeachingMcp-7yPOrTHrdY",
+            "roleArn": "arn:aws:iam::149057604171:role/MathTeaching-execution-role"
           },
           "LoanApplicationMcp": {
-            "runtimeId": "studentservices_LoanApplicationMcp-km8B2G2zMx",
-            "runtimeArn": "arn:aws:bedrock-agentcore:us-west-2:149057604171:runtime/studentservices_LoanApplicationMcp-km8B2G2zMx",
-            "roleArn": "arn:aws:iam::149057604171:role/AgentCore-studentservices-ApplicationAgentLoanAppli-XBinLZsAssKo"
+            "runtimeId": "studentservices_LoanApplicationMcp-KeCOXqEuNJ",
+            "runtimeArn": "arn:aws:bedrock-agentcore:us-west-2:149057604171:runtime/studentservices_LoanApplicationMcp-KeCOXqEuNJ",
+            "roleArn": "arn:aws:iam::149057604171:role/LoanApplication-execution-role"
           },
           "CourseReviewMcp": {
-            "runtimeId": "studentservices_CourseReviewMcp-T1VwbM8olV",
-            "runtimeArn": "arn:aws:bedrock-agentcore:us-west-2:149057604171:runtime/studentservices_CourseReviewMcp-T1VwbM8olV",
-            "roleArn": "arn:aws:iam::149057604171:role/AgentCore-studentservices-ApplicationAgentCourseRev-6DUSaXsfKm9o"
+            "runtimeId": "studentservices_CourseReviewMcp-khZ92qAcrX",
+            "runtimeArn": "arn:aws:bedrock-agentcore:us-west-2:149057604171:runtime/studentservices_CourseReviewMcp-khZ92qAcrX",
+            "roleArn": "arn:aws:iam::149057604171:role/CourseReview-execution-role"
           },
           "StudentServicesAgent": {
-            "runtimeId": "studentservices_StudentServicesAgent-5PKaxz42VQ",
-            "runtimeArn": "arn:aws:bedrock-agentcore:us-west-2:149057604171:runtime/studentservices_StudentServicesAgent-5PKaxz42VQ",
-            "roleArn": "arn:aws:iam::149057604171:role/AgentCore-studentservices-ApplicationAgentStudentSe-PUqffavOaRa6"
+            "runtimeId": "studentservices_StudentServicesAgent-6O7q8v7Eqb",
+            "runtimeArn": "arn:aws:bedrock-agentcore:us-west-2:149057604171:runtime/studentservices_StudentServicesAgent-6O7q8v7Eqb",
+            "roleArn": "arn:aws:iam::149057604171:role/StudentServicesAgent-execution-role"
           }
         },
         "memories": {
           "StudentServicesMemory": {
-            "memoryId": "studentservices_StudentServicesMemory-Uu3gM85RCx",
-            "memoryArn": "arn:aws:bedrock-agentcore:us-west-2:149057604171:memory/studentservices_StudentServicesMemory-Uu3gM85RCx"
+            "memoryId": "studentservices_StudentServicesMemory-cDiKhEHbUy",
+            "memoryArn": "arn:aws:bedrock-agentcore:us-west-2:149057604171:memory/studentservices_StudentServicesMemory-cDiKhEHbUy"
           }
         },
         "mcp": {
           "gateways": {
             "studentservicesgateway": {
-              "gatewayId": "studentservices-studentservicesgateway-qizxrsubb4",
-              "gatewayArn": "arn:aws:bedrock-agentcore:us-west-2:149057604171:gateway/studentservices-studentservicesgateway-qizxrsubb4",
-              "gatewayUrl": "https://studentservices-studentservicesgateway-qizxrsubb4.gateway.bedrock-agentcore.us-west-2.amazonaws.com/mcp"
+              "gatewayId": "studentservices-studentservicesgateway-ts3cbbncol",
+              "gatewayArn": "arn:aws:bedrock-agentcore:us-west-2:149057604171:gateway/studentservices-studentservicesgateway-ts3cbbncol",
+              "gatewayUrl": "https://studentservices-studentservicesgateway-ts3cbbncol.gateway.bedrock-agentcore.us-west-2.amazonaws.com/mcp"
             }
           }
         },
         "credentials": {
           "CourseRegistrationMcp-oauth": {
             "credentialProviderArn": "arn:aws:bedrock-agentcore:us-west-2:149057604171:token-vault/default/oauth2credentialprovider/CourseRegistrationMcp-oauth",
-            "clientSecretArn": "arn:aws:secretsmanager:us-west-2:149057604171:secret:bedrock-agentcore-identity!default/oauth2/CourseRegistrationMcp-oauth-033f1823-mUYnHm",
-            "callbackUrl": "https://bedrock-agentcore.us-west-2.amazonaws.com/identities/oauth2/callback/8481a893-6335-4fa5-baff-9e64afa8b4ab"
+            "clientSecretArn": "arn:aws:secretsmanager:us-west-2:149057604171:secret:bedrock-agentcore-identity!default/oauth2/CourseRegistrationMcp-oauth-16d703c6-j2WJMA",
+            "callbackUrl": "https://bedrock-agentcore.us-west-2.amazonaws.com/identities/oauth2/callback/6d908eee-c59e-49c8-b18c-b10f353ed926"
           },
           "CourseReviewMcp-oauth": {
             "credentialProviderArn": "arn:aws:bedrock-agentcore:us-west-2:149057604171:token-vault/default/oauth2credentialprovider/CourseReviewMcp-oauth",
-            "clientSecretArn": "arn:aws:secretsmanager:us-west-2:149057604171:secret:bedrock-agentcore-identity!default/oauth2/CourseReviewMcp-oauth-add49313-ADCVAw",
-            "callbackUrl": "https://bedrock-agentcore.us-west-2.amazonaws.com/identities/oauth2/callback/96f6af43-0743-45dd-9356-7df82aa66db2"
+            "clientSecretArn": "arn:aws:secretsmanager:us-west-2:149057604171:secret:bedrock-agentcore-identity!default/oauth2/CourseReviewMcp-oauth-9ea51078-fgPSpa",
+            "callbackUrl": "https://bedrock-agentcore.us-west-2.amazonaws.com/identities/oauth2/callback/56ea7291-0755-4628-8624-9cf08969de48"
           },
           "LoanApplicationMcp-oauth": {
             "credentialProviderArn": "arn:aws:bedrock-agentcore:us-west-2:149057604171:token-vault/default/oauth2credentialprovider/LoanApplicationMcp-oauth",
-            "clientSecretArn": "arn:aws:secretsmanager:us-west-2:149057604171:secret:bedrock-agentcore-identity!default/oauth2/LoanApplicationMcp-oauth-19ac7805-JdtVzM",
-            "callbackUrl": "https://bedrock-agentcore.us-west-2.amazonaws.com/identities/oauth2/callback/6455c0c5-6ff5-4d2f-8a5f-e71df2dd90b6"
+            "clientSecretArn": "arn:aws:secretsmanager:us-west-2:149057604171:secret:bedrock-agentcore-identity!default/oauth2/LoanApplicationMcp-oauth-ae256ee0-xoWGGd",
+            "callbackUrl": "https://bedrock-agentcore.us-west-2.amazonaws.com/identities/oauth2/callback/3584d300-a522-49f1-9f84-4fdc0246105d"
           },
           "MathTeachingMcp-oauth": {
             "credentialProviderArn": "arn:aws:bedrock-agentcore:us-west-2:149057604171:token-vault/default/oauth2credentialprovider/MathTeachingMcp-oauth",
-            "clientSecretArn": "arn:aws:secretsmanager:us-west-2:149057604171:secret:bedrock-agentcore-identity!default/oauth2/MathTeachingMcp-oauth-c1d7dabf-2Xul0H",
-            "callbackUrl": "https://bedrock-agentcore.us-west-2.amazonaws.com/identities/oauth2/callback/459bf4b5-e0e2-4538-b066-3cef6ecec9b8"
+            "clientSecretArn": "arn:aws:secretsmanager:us-west-2:149057604171:secret:bedrock-agentcore-identity!default/oauth2/MathTeachingMcp-oauth-10645aed-nPT7iV",
+            "callbackUrl": "https://bedrock-agentcore.us-west-2.amazonaws.com/identities/oauth2/callback/2c6b85d7-2bbf-404d-8b87-96dac6747c53"
           },
           "StudentServicesGateway-oauth": {
             "credentialProviderArn": "arn:aws:bedrock-agentcore:us-west-2:149057604171:token-vault/default/oauth2credentialprovider/StudentServicesGateway-oauth",
-            "clientSecretArn": "arn:aws:secretsmanager:us-west-2:149057604171:secret:bedrock-agentcore-identity!default/oauth2/StudentServicesGateway-oauth-5e2399f4-kNGPj4",
-            "callbackUrl": "https://bedrock-agentcore.us-west-2.amazonaws.com/identities/oauth2/callback/d0bbcfec-c33e-4a48-8e53-1213bac3a3a6"
+            "clientSecretArn": "arn:aws:secretsmanager:us-west-2:149057604171:secret:bedrock-agentcore-identity!default/oauth2/StudentServicesGateway-oauth-f0f84c45-ErgRsH",
+            "callbackUrl": "https://bedrock-agentcore.us-west-2.amazonaws.com/identities/oauth2/callback/43dfa60a-f56d-44b8-bcdd-9dcca6614df8"
           }
         },
         "stackName": "AgentCore-studentservices-default"
