@@ -8,13 +8,17 @@
 #   - AWS credentials configured
 #   - CloudFormation stack "student-services-identity" deployed
 #   - agentcore CLI installed
-#   - Run from: workshop4/phase3/studentservices/
 #
 # Usage:
-#   cd workshop4/phase3/studentservices
-#   bash ../scripts/register-credentials.sh
+#   bash workshop4/phase3/register-credentials.sh
+#   (can be run from any directory)
 
 set -e
+
+# agentcore CLI must run from the agentcore project directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR/studentservices"
+echo "Working directory: $(pwd)"
 
 REGION="us-west-2"
 STACK_NAME="student-services-identity"
