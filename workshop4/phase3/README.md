@@ -215,60 +215,38 @@ All Phase 3 resources deploy to **us-west-2** (matching Phase 1 infrastructure).
 
 Use these in the AgentCore Runtime Playground or via `agentcore invoke`.
 
-### Course Review (catalog search, reviews, ratings)
-
-```
-What courses are available in the CS department?
-```
-
-```
-Show me reviews for CS 441
-```
-
-```
-Which course has the highest rating?
-```
-
-```
-What is the workload for CS 525 Advanced Distributed Systems?
-```
-
 ### Course Registration
 
 ```
-Register student 1111 for CS 498 for spring semester
+Register student STU001 for CS 441 in Fall 2026
+```
+
+### Course Reviews
+
+```
+What are the most challenging courses?
 ```
 
 ```
-Register student 2222 for CS 411 for spring semester
+Find courses about artificial intelligence
 ```
 
-### Loan Application (59 numeric features)
+```
+Tell me about CS 441 Machine Learning
+```
+
+### Loan Prediction
 
 ```
-Predict loan acceptance for these features: 1, 0, 0, 1, 1, 0, 500, 120, 360, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+Will a person with these features accept the loan: 29,2,999,0,1,0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0
 ```
 
 ### Math Tutoring
 
 ```
-Solve the integral of x^2 * e^x dx step by step
+Solve x^2 + 5x + 6 = 0
 ```
 
 ```
-Factor x^3 - 8
-```
-
-```
-What is the derivative of sin(x) * ln(x)?
-```
-
-### Out-of-Domain (should list available services)
-
-```
-What is the weather today?
-```
-
-```
-Write me a poem about campus life
+What is the derivative of x^3 + 2x?
 ```
