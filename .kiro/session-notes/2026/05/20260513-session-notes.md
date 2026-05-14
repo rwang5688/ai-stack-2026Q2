@@ -90,9 +90,23 @@ Phase 3 AgentCore microservices: completed full deployment from scratch. Resolve
 - **Git commit/push from code-server only** — no push capability from Windows PC
 
 ## Next Steps
-- [ ] Test StudentServicesAgent in AgentCore Runtime Playground
-- [ ] Update orchestrator agent.py with real gateway URL + client secret (currently PLACEHOLDER)
+- [x] Test StudentServicesAgent in AgentCore Runtime Playground
+- [x] Update orchestrator agent.py with real gateway URL + client secret
+- [ ] Fix IAM permissions for CourseRegistrationMcp (dynamodb:PutItem) and LoanApplicationMcp (sagemaker:InvokeEndpoint)
 - [ ] Build thin Streamlit client (streamlit_app/)
 - [ ] Deploy thin client to ECS Fargate (deploy-streamlit-app/)
 - [ ] Add Cedar policies (after end-to-end works)
 - [ ] Commit and push from code-server
+
+## IAM Permissions Fix Plan (Tonight)
+
+**Problem:** Two AgentCore runtimes lack IAM permissions:
+- `CourseRegistrationMcp` — needs `dynamodb:PutItem` on `arn:aws:dynamodb:us-west-2:149057604171:table/course_registration`
+- `LoanApplicationMcp` — needs `sagemaker:InvokeEndpoint` on the XGBoost endpoint
+
+**Plan:**
+1. Find IAM execution roles (IAM → Roles → search `studentservices_CourseRegistration` and `studentservices_LoanApplication`)
+2. Attach inline policies granting the specific permissions
+3. Test registration and loan prompts again
+4. Research whether `agentcore.json` supports declarative IAM policy attachment (so permissions survive redeployment)
+5. If not, create a post-deploy script or separate CloudFormation stack for IAM policies

@@ -51,8 +51,15 @@ This plan decomposes the monolithic Student Services application into five indep
   - _Requirements: 8_
 
 - [ ] 5. Remaining Work
-  - [ ] 5.1 Update orchestrator agent.py with real gateway URL + client secret
-  - [ ] 5.2 Test end-to-end via AgentCore Playground
+  - [x] 5.1 Update orchestrator agent.py with real gateway URL + client secret
+    - Gateway URL, client ID, client secret, token endpoint, scope all hardcoded as working defaults
+    - Secret fixed: was double 'n' (nn0ahm), corrected to single 'n' (n0ahm)
+  - [~] 5.2 Test end-to-end via AgentCore Playground
+    - ✅ Course Review — working (catalog search, reviews, ratings)
+    - ✅ Math Tutoring — working (derivatives, equations)
+    - ❌ Course Registration — AccessDeniedException: runtime role lacks dynamodb:PutItem
+    - ❌ Loan Application — AccessDeniedException: runtime role lacks sagemaker:InvokeEndpoint
+    - **Next step**: Add IAM permissions to CourseRegistrationMcp and LoanApplicationMcp runtime roles
   - [ ] 5.3 Build thin Streamlit client (streamlit_app/)
   - [ ] 5.4 Deploy thin client to ECS Fargate (deploy-streamlit-app/)
   - [ ] 5.5 Attach Cedar policy engine to gateway
