@@ -1,115 +1,326 @@
 {
-  "name": "studentservices",
-  "version": 1,
-  "managedBy": "CDK",
-  "tags": {
-    "agentcore:created-by": "agentcore-cli",
-    "agentcore:project-name": "studentservices"
-  },
-  "runtimes": [
-    {
-      "name": "StudentServicesAgent",
-      "build": "CodeZip",
-      "entrypoint": "agent.py",
-      "codeLocation": "./student_services/",
-      "runtimeVersion": "PYTHON_3_13",
-      "envVars": [{"name": "PYTHONIOENCODING", "value": "utf-8"}],
-      "networkMode": "PUBLIC",
-      "protocol": "HTTP"
-    },
-    {
-      "name": "CourseRegistrationMcp",
-      "build": "CodeZip",
-      "entrypoint": "agent.py",
-      "codeLocation": "./course_registration/",
-      "runtimeVersion": "PYTHON_3_13",
-      "envVars": [{"name": "MCP_TRANSPORT", "value": "streamable-http"}, {"name": "PYTHONIOENCODING", "value": "utf-8"}],
-      "networkMode": "PUBLIC",
-      "protocol": "MCP",
-      "authorizerType": "CUSTOM_JWT",
-      "authorizerConfiguration": {
-        "customJwtAuthorizer": {
-          "discoveryUrl": "PLACEHOLDER_AFTER_CFN_DEPLOY",
-          "allowedClients": ["PLACEHOLDER_AFTER_CFN_DEPLOY"],
-          "allowedScopes": ["course-registration/access"]
-        }
-      }
-    },
-    {
-      "name": "CourseReviewMcp",
-      "build": "CodeZip",
-      "entrypoint": "agent.py",
-      "codeLocation": "./course_review/",
-      "runtimeVersion": "PYTHON_3_13",
-      "envVars": [{"name": "MCP_TRANSPORT", "value": "streamable-http"}, {"name": "PYTHONIOENCODING", "value": "utf-8"}],
-      "networkMode": "PUBLIC",
-      "protocol": "MCP",
-      "authorizerType": "CUSTOM_JWT",
-      "authorizerConfiguration": {
-        "customJwtAuthorizer": {
-          "discoveryUrl": "PLACEHOLDER_AFTER_CFN_DEPLOY",
-          "allowedClients": ["PLACEHOLDER_AFTER_CFN_DEPLOY"],
-          "allowedScopes": ["course-review/access"]
-        }
-      }
-    },
-    {
-      "name": "LoanApplicationMcp",
-      "build": "CodeZip",
-      "entrypoint": "agent.py",
-      "codeLocation": "./loan_application/",
-      "runtimeVersion": "PYTHON_3_13",
-      "envVars": [{"name": "MCP_TRANSPORT", "value": "streamable-http"}, {"name": "PYTHONIOENCODING", "value": "utf-8"}],
-      "networkMode": "PUBLIC",
-      "protocol": "MCP",
-      "authorizerType": "CUSTOM_JWT",
-      "authorizerConfiguration": {
-        "customJwtAuthorizer": {
-          "discoveryUrl": "PLACEHOLDER_AFTER_CFN_DEPLOY",
-          "allowedClients": ["PLACEHOLDER_AFTER_CFN_DEPLOY"],
-          "allowedScopes": ["loan-application/access"]
-        }
-      }
-    },
-    {
-      "name": "MathTeachingMcp",
-      "build": "CodeZip",
-      "entrypoint": "agent.py",
-      "codeLocation": "./math_teaching/",
-      "runtimeVersion": "PYTHON_3_13",
-      "envVars": [{"name": "MCP_TRANSPORT", "value": "streamable-http"}, {"name": "PYTHONIOENCODING", "value": "utf-8"}],
-      "networkMode": "PUBLIC",
-      "protocol": "MCP",
-      "authorizerType": "CUSTOM_JWT",
-      "authorizerConfiguration": {
-        "customJwtAuthorizer": {
-          "discoveryUrl": "PLACEHOLDER_AFTER_CFN_DEPLOY",
-          "allowedClients": ["PLACEHOLDER_AFTER_CFN_DEPLOY"],
-          "allowedScopes": ["math-teaching/access"]
-        }
-      }
-    }
-  ],
-  "memories": [
-    {
-      "name": "StudentServicesMemory",
-      "eventExpiryDuration": 30,
-      "strategies": [
-        {"type": "SEMANTIC", "namespaces": ["/users/{actorId}/facts"]},
-        {"type": "SUMMARIZATION", "namespaces": ["/summaries/{actorId}/{sessionId}"]},
-        {"type": "USER_PREFERENCE", "namespaces": ["/users/{actorId}/preferences"]}
-      ]
-    }
-  ],
-  "credentials": [
-    {"authorizerType": "OAuthCredentialProvider", "name": "CourseRegistrationMcp-oauth", "discoveryUrl": "PLACEHOLDER_AFTER_CFN_DEPLOY", "scopes": ["course-registration/access"], "vendor": "CustomOauth2"},
-    {"authorizerType": "OAuthCredentialProvider", "name": "CourseReviewMcp-oauth", "discoveryUrl": "PLACEHOLDER_AFTER_CFN_DEPLOY", "scopes": ["course-review/access"], "vendor": "CustomOauth2"},
-    {"authorizerType": "OAuthCredentialProvider", "name": "LoanApplicationMcp-oauth", "discoveryUrl": "PLACEHOLDER_AFTER_CFN_DEPLOY", "scopes": ["loan-application/access"], "vendor": "CustomOauth2"},
-    {"authorizerType": "OAuthCredentialProvider", "name": "MathTeachingMcp-oauth", "discoveryUrl": "PLACEHOLDER_AFTER_CFN_DEPLOY", "scopes": ["math-teaching/access"], "vendor": "CustomOauth2"},
-    {"authorizerType": "OAuthCredentialProvider", "name": "StudentServicesGateway-oauth", "discoveryUrl": "PLACEHOLDER_AFTER_CFN_DEPLOY", "scopes": ["student-services-gateway/access"], "vendor": "CustomOauth2"}
-  ],
-  "evaluators": [],
-  "onlineEvalConfigs": [],
-  "agentCoreGateways": [],
-  "policyEngines": []
+    "name":  "studentservices",
+    "version":  1,
+    "managedBy":  "CDK",
+    "tags":  {
+                 "agentcore:created-by":  "agentcore-cli",
+                 "agentcore:project-name":  "studentservices"
+             },
+    "runtimes":  [
+                     {
+                         "name":  "StudentServicesAgent",
+                         "build":  "CodeZip",
+                         "entrypoint":  "agent.py",
+                         "codeLocation":  "./student_services/",
+                         "runtimeVersion":  "PYTHON_3_13",
+                         "envVars":  [
+                                         {
+                                             "name":  "PYTHONIOENCODING",
+                                             "value":  "utf-8"
+                                         }
+                                     ],
+                         "networkMode":  "PUBLIC",
+                         "protocol":  "HTTP"
+                     },
+                     {
+                         "name":  "CourseRegistrationMcp",
+                         "build":  "CodeZip",
+                         "entrypoint":  "agent.py",
+                         "codeLocation":  "./course_registration/",
+                         "runtimeVersion":  "PYTHON_3_13",
+                         "envVars":  [
+                                         {
+                                             "name":  "MCP_TRANSPORT",
+                                             "value":  "streamable-http"
+                                         },
+                                         {
+                                             "name":  "PYTHONIOENCODING",
+                                             "value":  "utf-8"
+                                         }
+                                     ],
+                         "networkMode":  "PUBLIC",
+                         "protocol":  "MCP",
+                         "authorizerType":  "CUSTOM_JWT",
+                         "authorizerConfiguration":  {
+                                                         "customJwtAuthorizer":  {
+                                                                                     "discoveryUrl":  "https://cognito-idp.us-west-2.amazonaws.com/us-west-2_GWmTz77Yw/.well-known/openid-configuration",
+                                                                                     "allowedClients":  [
+                                                                                                            "2d0n9b5vcpcie7eksovv83avu4"
+                                                                                                        ],
+                                                                                     "allowedScopes":  [
+                                                                                                           "course-registration/access"
+                                                                                                       ]
+                                                                                 }
+                                                     }
+                     },
+                     {
+                         "name":  "CourseReviewMcp",
+                         "build":  "CodeZip",
+                         "entrypoint":  "agent.py",
+                         "codeLocation":  "./course_review/",
+                         "runtimeVersion":  "PYTHON_3_13",
+                         "envVars":  [
+                                         {
+                                             "name":  "MCP_TRANSPORT",
+                                             "value":  "streamable-http"
+                                         },
+                                         {
+                                             "name":  "PYTHONIOENCODING",
+                                             "value":  "utf-8"
+                                         }
+                                     ],
+                         "networkMode":  "PUBLIC",
+                         "protocol":  "MCP",
+                         "authorizerType":  "CUSTOM_JWT",
+                         "authorizerConfiguration":  {
+                                                         "customJwtAuthorizer":  {
+                                                                                     "discoveryUrl":  "https://cognito-idp.us-west-2.amazonaws.com/us-west-2_BOVHqDyyy/.well-known/openid-configuration",
+                                                                                     "allowedClients":  [
+                                                                                                            "6gqqkbt0r4487nik1tdut0l58s"
+                                                                                                        ],
+                                                                                     "allowedScopes":  [
+                                                                                                           "course-review/access"
+                                                                                                       ]
+                                                                                 }
+                                                     }
+                     },
+                     {
+                         "name":  "LoanApplicationMcp",
+                         "build":  "CodeZip",
+                         "entrypoint":  "agent.py",
+                         "codeLocation":  "./loan_application/",
+                         "runtimeVersion":  "PYTHON_3_13",
+                         "envVars":  [
+                                         {
+                                             "name":  "MCP_TRANSPORT",
+                                             "value":  "streamable-http"
+                                         },
+                                         {
+                                             "name":  "PYTHONIOENCODING",
+                                             "value":  "utf-8"
+                                         }
+                                     ],
+                         "networkMode":  "PUBLIC",
+                         "protocol":  "MCP",
+                         "authorizerType":  "CUSTOM_JWT",
+                         "authorizerConfiguration":  {
+                                                         "customJwtAuthorizer":  {
+                                                                                     "discoveryUrl":  "https://cognito-idp.us-west-2.amazonaws.com/us-west-2_zWhuXg4K8/.well-known/openid-configuration",
+                                                                                     "allowedClients":  [
+                                                                                                            "1u49v5kajhdlk0percigfv6oml"
+                                                                                                        ],
+                                                                                     "allowedScopes":  [
+                                                                                                           "loan-application/access"
+                                                                                                       ]
+                                                                                 }
+                                                     }
+                     },
+                     {
+                         "name":  "MathTeachingMcp",
+                         "build":  "CodeZip",
+                         "entrypoint":  "agent.py",
+                         "codeLocation":  "./math_teaching/",
+                         "runtimeVersion":  "PYTHON_3_13",
+                         "envVars":  [
+                                         {
+                                             "name":  "MCP_TRANSPORT",
+                                             "value":  "streamable-http"
+                                         },
+                                         {
+                                             "name":  "PYTHONIOENCODING",
+                                             "value":  "utf-8"
+                                         }
+                                     ],
+                         "networkMode":  "PUBLIC",
+                         "protocol":  "MCP",
+                         "authorizerType":  "CUSTOM_JWT",
+                         "authorizerConfiguration":  {
+                                                         "customJwtAuthorizer":  {
+                                                                                     "discoveryUrl":  "https://cognito-idp.us-west-2.amazonaws.com/us-west-2_0v9KV3jDm/.well-known/openid-configuration",
+                                                                                     "allowedClients":  [
+                                                                                                            "d2oedj4keb2o1on9rpr1vq3g7"
+                                                                                                        ],
+                                                                                     "allowedScopes":  [
+                                                                                                           "math-teaching/access"
+                                                                                                       ]
+                                                                                 }
+                                                     }
+                     }
+                 ],
+    "memories":  [
+                     {
+                         "name":  "StudentServicesMemory",
+                         "eventExpiryDuration":  30,
+                         "strategies":  [
+                                            {
+                                                "type":  "SEMANTIC",
+                                                "namespaces":  [
+                                                                   "/users/{actorId}/facts"
+                                                               ]
+                                            },
+                                            {
+                                                "type":  "SUMMARIZATION",
+                                                "namespaces":  [
+                                                                   "/summaries/{actorId}/{sessionId}"
+                                                               ]
+                                            },
+                                            {
+                                                "type":  "USER_PREFERENCE",
+                                                "namespaces":  [
+                                                                   "/users/{actorId}/preferences"
+                                                               ]
+                                            }
+                                        ]
+                     }
+                 ],
+    "credentials":  [
+                        {
+                            "authorizerType":  "OAuthCredentialProvider",
+                            "name":  "CourseRegistrationMcp-oauth",
+                            "discoveryUrl":  "https://cognito-idp.us-west-2.amazonaws.com/us-west-2_GWmTz77Yw/.well-known/openid-configuration",
+                            "scopes":  [
+                                           "course-registration/access"
+                                       ],
+                            "vendor":  "CustomOauth2"
+                        },
+                        {
+                            "authorizerType":  "OAuthCredentialProvider",
+                            "name":  "CourseReviewMcp-oauth",
+                            "discoveryUrl":  "https://cognito-idp.us-west-2.amazonaws.com/us-west-2_BOVHqDyyy/.well-known/openid-configuration",
+                            "scopes":  [
+                                           "course-review/access"
+                                       ],
+                            "vendor":  "CustomOauth2"
+                        },
+                        {
+                            "authorizerType":  "OAuthCredentialProvider",
+                            "name":  "LoanApplicationMcp-oauth",
+                            "discoveryUrl":  "https://cognito-idp.us-west-2.amazonaws.com/us-west-2_zWhuXg4K8/.well-known/openid-configuration",
+                            "scopes":  [
+                                           "loan-application/access"
+                                       ],
+                            "vendor":  "CustomOauth2"
+                        },
+                        {
+                            "authorizerType":  "OAuthCredentialProvider",
+                            "name":  "MathTeachingMcp-oauth",
+                            "discoveryUrl":  "https://cognito-idp.us-west-2.amazonaws.com/us-west-2_0v9KV3jDm/.well-known/openid-configuration",
+                            "scopes":  [
+                                           "math-teaching/access"
+                                       ],
+                            "vendor":  "CustomOauth2"
+                        },
+                        {
+                            "authorizerType":  "OAuthCredentialProvider",
+                            "name":  "StudentServicesGateway-oauth",
+                            "discoveryUrl":  "https://cognito-idp.us-west-2.amazonaws.com/us-west-2_xWeSNSeqc/.well-known/openid-configuration",
+                            "scopes":  [
+                                           "student-services-gateway/access"
+                                       ],
+                            "vendor":  "CustomOauth2"
+                        }
+                    ],
+    "evaluators":  [
+
+                   ],
+    "onlineEvalConfigs":  [
+
+                          ],
+    "agentCoreGateways":  [
+                              {
+                                  "authorizerConfiguration":  {
+                                                                  "customJwtAuthorizer":  {
+                                                                                              "allowedScopes":  [
+                                                                                                                    "student-services-gateway/access"
+                                                                                                                ],
+                                                                                              "discoveryUrl":  "https://cognito-idp.us-west-2.amazonaws.com/us-west-2_xWeSNSeqc/.well-known/openid-configuration",
+                                                                                              "allowedClients":  [
+                                                                                                                     "5520octlvdtcru9er9k9dsc9qk"
+                                                                                                                 ]
+                                                                                          }
+                                                              },
+                                  "name":  "studentservicesgateway",
+                                  "description":  "Gateway aggregating all Student Services specialist MCP servers",
+                                  "targets":  [
+                                                  {
+                                                      "outboundAuth":  {
+                                                                           "type":  "OAUTH",
+                                                                           "credentialName":  "CourseRegistrationMcp-oauth"
+                                                                       },
+                                                      "endpoint":  "https://bedrock-agentcore.us-west-2.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-west-2%3A149057604171%3Aruntime%2Fstudentservices_CourseRegistrationMcp-fc9OM8EnnA/invocations",
+                                                      "targetType":  "mcpServer",
+                                                      "name":  "courseregistration",
+                                                      "toolDefinitions":  [
+                                                                              {
+                                                                                  "inputSchema":  {
+                                                                                                      "type":  "object"
+                                                                                                  },
+                                                                                  "description":  "Register students in courses",
+                                                                                  "name":  "course_registration"
+                                                                              }
+                                                                          ]
+                                                  },
+                                                  {
+                                                      "outboundAuth":  {
+                                                                           "type":  "OAUTH",
+                                                                           "credentialName":  "CourseReviewMcp-oauth"
+                                                                       },
+                                                      "endpoint":  "https://bedrock-agentcore.us-west-2.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-west-2%3A149057604171%3Aruntime%2Fstudentservices_CourseReviewMcp-T1VwbM8olV/invocations",
+                                                      "targetType":  "mcpServer",
+                                                      "name":  "coursereview",
+                                                      "toolDefinitions":  [
+                                                                              {
+                                                                                  "inputSchema":  {
+                                                                                                      "type":  "object"
+                                                                                                  },
+                                                                                  "description":  "Search course catalog and student reviews",
+                                                                                  "name":  "course_review"
+                                                                              }
+                                                                          ]
+                                                  },
+                                                  {
+                                                      "outboundAuth":  {
+                                                                           "type":  "OAUTH",
+                                                                           "credentialName":  "LoanApplicationMcp-oauth"
+                                                                       },
+                                                      "endpoint":  "https://bedrock-agentcore.us-west-2.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-west-2%3A149057604171%3Aruntime%2Fstudentservices_LoanApplicationMcp-km8B2G2zMx/invocations",
+                                                      "targetType":  "mcpServer",
+                                                      "name":  "loanapplication",
+                                                      "toolDefinitions":  [
+                                                                              {
+                                                                                  "inputSchema":  {
+                                                                                                      "type":  "object"
+                                                                                                  },
+                                                                                  "description":  "Predict loan acceptance based on features",
+                                                                                  "name":  "loan_application"
+                                                                              }
+                                                                          ]
+                                                  },
+                                                  {
+                                                      "outboundAuth":  {
+                                                                           "type":  "OAUTH",
+                                                                           "credentialName":  "MathTeachingMcp-oauth"
+                                                                       },
+                                                      "endpoint":  "https://bedrock-agentcore.us-west-2.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-west-2%3A149057604171%3Aruntime%2Fstudentservices_MathTeachingMcp-SBJLNa4zEW/invocations",
+                                                      "targetType":  "mcpServer",
+                                                      "name":  "mathteaching",
+                                                      "toolDefinitions":  [
+                                                                              {
+                                                                                  "inputSchema":  {
+                                                                                                      "type":  "object"
+                                                                                                  },
+                                                                                  "description":  "Solve math problems with step-by-step explanations",
+                                                                                  "name":  "math_teaching"
+                                                                              }
+                                                                          ]
+                                                  }
+                                              ],
+                                  "enableSemanticSearch":  true,
+                                  "exceptionLevel":  "NONE",
+                                  "authorizerType":  "CUSTOM_JWT"
+                              }
+                          ],
+    "policyEngines":  [
+
+                      ]
 }

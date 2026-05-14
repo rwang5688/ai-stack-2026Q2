@@ -27,21 +27,21 @@ from strands.tools.mcp import MCPClient
 # ---------------------------------------------------------------------------
 GATEWAY_MCP_URL = os.environ.get(
     "GATEWAY_MCP_URL",
-    "PLACEHOLDER_GATEWAY_URL",  # Updated after first deploy with agentcore status
+    "https://studentservices-studentservicesgateway-qizxrsubb4.gateway.bedrock-agentcore.us-west-2.amazonaws.com/mcp",
 )
 GATEWAY_CLIENT_ID = os.environ.get(
     "GATEWAY_CLIENT_ID",
-    "620muljimeltc2hk03u419d01v",
+    "5520octlvdtcru9er9k9dsc9qk",
 )
 GATEWAY_CLIENT_SECRET = os.environ.get(
     "GATEWAY_CLIENT_SECRET",
-    "PLACEHOLDER_SECRET",  # Retrieved from Cognito after deploy
+    "1ngb37kqfp1iqg45epn20pgeehh3dkfir1mb9kbd6n0ahm2uned6",
 )
 GATEWAY_TOKEN_ENDPOINT = os.environ.get(
     "GATEWAY_TOKEN_ENDPOINT",
-    "https://orchestrator-149057604171.auth.us-west-2.amazoncognito.com/oauth2/token",
+    "https://student-services-gateway-149057604171.auth.us-west-2.amazoncognito.com/oauth2/token",
 )
-GATEWAY_SCOPE = os.environ.get("GATEWAY_SCOPE", "orchestrator/access")
+GATEWAY_SCOPE = os.environ.get("GATEWAY_SCOPE", "student-services-gateway/access")
 
 # ---------------------------------------------------------------------------
 # System prompt

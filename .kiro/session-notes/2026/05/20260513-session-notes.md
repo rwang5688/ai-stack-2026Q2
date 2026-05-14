@@ -1,84 +1,98 @@
 # Session Notes - May 13, 2026
 
 ## Session Overview
-Resuming Phase 3 AgentCore microservices work. Verified refactored directory structure, confirmed Phase 1 code works on Windows PC, continuing with AgentCore deployment.
+Phase 3 AgentCore microservices: completed full deployment from scratch. Resolved multiple issues with naming, protocol types, CDK scaffolding, and credential registration. All 5 runtimes + gateway + memory + credentials deployed and READY.
 
-## Directory Structure Refactoring (done between sessions)
+## Key Accomplishments
 
-### Rationale
-Restructured all phases to match the reference implementation pattern and ensure self-contained directories:
+### Architecture Decisions Finalized
+- Specialists are **Agent-inside-MCP** pattern (Strands Agent wrapped in FastMCP `@mcp.tool()`)
+- Orchestrator is HTTP runtime (BedrockAgentCoreApp) — invoked via SigV4 from thin client
+- Gateway aggregates 4 MCP specialist servers
+- File names preserved as `agent.py` across Phase 1 and Phase 3 for easy `diff` comparison
 
-### Phase 1 Changes
-- Agent code duplicated into `streamlit_app/` as sibling directories
-- `streamlit_app/` is now self-contained — imports from sibling packages within its own directory
-- `app.py` adds its own directory to `sys.path` for clean imports
-- Original agent directories at phase1 root kept for reference/testing
+### Naming Cleanup (Complete Redo)
+- Orchestrator: `StudentServicesOrchestrator` → `StudentServicesAgent`
+- Specialists: `*Agent` → `*Mcp` (CourseRegistrationMcp, CourseReviewMcp, LoanApplicationMcp, MathTeachingMcp)
+- Gateway pool: `orchestrator-pool` → `student-services-gateway-pool`
+- All pool names now match their directory/service names consistently
 
-### Phase 2 Changes
-- Restructured to `deploy-streamlit-app/` (matching reference pattern)
-- CDK + Docker app lives under single directory
+### Deployment Completed
+- **CloudFormation stack** `student-services-identity` deployed (5 Cognito pools with proper naming)
+- **AgentCore Deploy 1**: 5 runtimes (1 HTTP + 4 MCP) + memory + credentials
+- **AgentCore Deploy 2**: Gateway with 4 MCP server targets
+- All resources READY in us-west-2
 
-### Phase 3 Structure
-```
-workshop4/phase3/
-├── cloudformation/              # Identity stack (deployed)
-├── deploy-streamlit-app/        # ECS Fargate thin client (placeholder)
-├── streamlit_app/               # Local dev thin client (placeholder)
-├── studentservices/             # AgentCore CLI project boundary
-│   ├── agentcore/               # Config only (agentcore.json, aws-targets.json)
-│   ├── course_registration/     # Specialist runtime
-│   ├── course_review/           # Specialist runtime
-│   ├── loan_application/        # Specialist runtime
-│   ├── math_teaching/           # Specialist runtime
-│   ├── policies/                # Cedar policy files
-│   └── student_services/        # Orchestrator runtime
-├── .gitignore
-├── PREREQUISITES.md
-└── README.md
-```
+### Documentation Created
+- `workshop4/README.md` — architecture evolution + Phase 1→3 code mapping section
+- `workshop4/phase3/README.md` — identity/auth explanation, full deployment runbook
+- `workshop4/phase3/deploy-student-services-identity.sh` — CloudFormation deploy script
+- `workshop4/phase3/register-credentials.sh` — OAuth credential registration script
+- `workshop4/phase3/PREREQUISITES.md` — AgentCore scaffolding workflow documented
+- `.kiro/steering/naming-conventions.md` — naming rules locked in
+- `.kiro/steering/git-workflow.md` — deployment locations documented
 
-Key: `studentservices/` is the AgentCore project root — `agentcore deploy` runs from here. Agent code directories are siblings of `agentcore/` (not inside it). `codeLocation` paths in agentcore.json resolve relative to this root.
+## Issues & Resolutions
 
-## Verification Results
-- Phase 1 orchestrator creates successfully with 4 tools on Windows PC
-- All imports resolve (strands, boto3, streamlit)
-- Config falls back to defaults when AWS credentials not set (expected)
-- Python 3.13.12, Node 24.15.0, AgentCore CLI 0.13.1, CDK 2.1121.0 confirmed
+### Protocol Change Requires Runtime Deletion
+- **Issue**: Deployed runtimes as HTTP, then tried to change to MCP. CDK can't update protocol in-place.
+- **Resolution**: Manually deleted runtimes from AgentCore console, redeployed fresh as MCP.
+- **Lesson**: Get the protocol right before first deploy. No in-place protocol changes.
 
-## Current State of agentcore.json
-- Validates successfully (`agentcore validate` → Valid)
-- 5 runtimes declared (orchestrator + 4 specialists)
-- 1 memory (StudentServicesMemory with 3 strategies)
-- 5 OAuth credentials
-- Gateway and policy engine arrays empty (to be added after first deploy provides runtime URLs)
+### CDK Scaffolding Required for agentcore deploy
+- **Issue**: `agentcore deploy` fails without `agentcore/cdk/` directory.
+- **Resolution**: Use `agentcore create --skip-git --skip-python-setup --skip-install` to scaffold, then copy agent code in.
+- **Lesson**: The CDK scaffold is mandatory infrastructure, not optional.
 
-## AgentCore Project Scaffolding (Lesson Learned)
+### Gateway Targets Need Real Endpoint URLs
+- **Issue**: Can't deploy gateway without runtime URLs (chicken-and-egg).
+- **Resolution**: Two-phase deploy — runtimes first, then gateway with real URLs.
+- **Lesson**: Initial bootstrap always requires 2 deploys. Subsequent deploys are single-step.
 
-**Problem**: `agentcore create` defaults to initializing a new Git repo. When working inside an existing repo, this creates a nested `.git` which is wrong. Also, `agentcore deploy` requires the `agentcore/cdk/` directory — you can't just hand-create `agentcore.json`.
+### Cedar Policy Wildcard Resource Rejected
+- **Issue**: `permit(principal, action, resource)` rejected — wildcard resource not allowed.
+- **Resolution**: Changed to `permit(principal, action, resource is AgentCore::Gateway)`.
+- **Lesson**: Cedar policies must scope to resource type or specific ARN.
 
-**Solution**: Use `--skip-git --skip-python-setup --skip-install` flags, then copy the scaffold into your repo:
+### Credential Registration Not Persisted
+- **Issue**: OAuth credentials showed "Local only" until gateway was deployed.
+- **Resolution**: Credentials get provisioned to AWS when the gateway (which references them) is deployed.
+- **Lesson**: Register credentials before Deploy 1 so they deploy with runtimes.
 
-```bash
-# Scaffold to temp (or directly with --output-dir)
-agentcore create --name studentservices --no-agent --skip-git --skip-python-setup --skip-install --output-dir <parent>
+## Deployed Resources
 
-# Install CDK deps
-cd <parent>/studentservices/agentcore/cdk && npm install
+| Resource | ARN/ID |
+|----------|--------|
+| StudentServicesAgent | studentservices_StudentServicesAgent-5PKaxz42VQ |
+| CourseRegistrationMcp | studentservices_CourseRegistrationMcp-fc9OM8EnnA |
+| CourseReviewMcp | studentservices_CourseReviewMcp-T1VwbM8olV |
+| LoanApplicationMcp | studentservices_LoanApplicationMcp-km8B2G2zMx |
+| MathTeachingMcp | studentservices_MathTeachingMcp-SBJLNa4zEW |
+| StudentServicesMemory | studentservices_StudentServicesMemory-Uu3gM85RCx |
+| Gateway | studentservices-studentservicesgateway-qizxrsubb4 |
 
-# Add your agent code as siblings of agentcore/
-# Edit agentcore.json, validate, deploy
-```
+## Cognito Pools (from student-services-identity stack)
 
-**Key gotcha**: If the target directory already exists (even empty), `agentcore create` refuses. You must delete it first. File locks from IDEs (Kiro, VS Code) can prevent deletion — close the IDE first if needed.
+| Pool Name | Pool ID | Client ID |
+|-----------|---------|-----------|
+| student-services-gateway-pool | us-west-2_xWeSNSeqc | 5520octlvdtcru9er9k9dsc9qk |
+| course-registration-pool | us-west-2_GWmTz77Yw | 2d0n9b5vcpcie7eksovv83avu4 |
+| course-review-pool | us-west-2_BOVHqDyyy | 6gqqkbt0r4487nik1tdut0l58s |
+| loan-application-pool | us-west-2_zWhuXg4K8 | 1u49v5kajhdlk0percigfv6oml |
+| math-teaching-pool | us-west-2_0v9KV3jDm | d2oedj4keb2o1on9rpr1vq3g7 |
 
-Documented in `workshop4/phase3/PREREQUISITES.md` for future reference.
+## Decisions Made
+- **Agent-inside-MCP** for specialists — preserves Phase 1 LLM reasoning behavior
+- **student-services-gateway-pool** naming — makes it clear this pool protects the gateway
+- **No "Agent" in infrastructure names** — pools, domains, resource servers are infrastructure
+- **Alphabetical ordering** enforced for imports, dependencies, config arrays
+- **`agentcore deploy` runs from Windows PC only** — CDK deploy (Streamlit) from code-server
+- **Git commit/push from code-server only** — no push capability from Windows PC
 
 ## Next Steps
-- [ ] Zip and upload to code-server for commit/push
-- [ ] Run `agentcore deploy -y` from `studentservices/` (Deploy 1: runtimes only)
-- [ ] Get runtime URLs from `agentcore status`
-- [ ] Add gateway targets with actual endpoint URLs (Deploy 2)
-- [ ] Retrieve Cognito client secret for orchestrator gateway auth
-- [ ] Update orchestrator agent.py with real gateway URL + secret
-- [ ] Add runtime identifier to each specialist response for demo visibility
-- [ ] Test individual runtimes in AgentCore Playground
+- [ ] Test StudentServicesAgent in AgentCore Runtime Playground
+- [ ] Update orchestrator agent.py with real gateway URL + client secret (currently PLACEHOLDER)
+- [ ] Build thin Streamlit client (streamlit_app/)
+- [ ] Deploy thin client to ECS Fargate (deploy-streamlit-app/)
+- [ ] Add Cedar policies (after end-to-end works)
+- [ ] Commit and push from code-server

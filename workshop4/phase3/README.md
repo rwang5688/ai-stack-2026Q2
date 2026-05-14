@@ -77,36 +77,88 @@ The `studentservices/` directory is the AgentCore CLI project boundary (equivale
 
 ## Deployment
 
-### 1. Deploy Identity Stack (Cognito Pools)
+### Bootstrap Sequence (First Time Only)
+
+The initial deployment requires multiple steps due to dependencies between resources:
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│ Step 1: CloudFormation (Cognito pools)                              │
+│   bash deploy-student-services-identity.sh                          │
+│                                                                     │
+│ Step 2: Register OAuth credentials (fetches secrets from Cognito)   │
+│   cd studentservices                                                │
+│   bash ../register-credentials.sh                                   │
+│                                                                     │
+│ Step 3: AgentCore Deploy 1 (runtimes + memory + credentials)        │
+│   agentcore deploy -y                                               │
+│   agentcore status  ← note runtime URLs                             │
+│                                                                     │
+│ Step 4: Add gateway to agentcore.json (with runtime endpoint URLs)  │
+│   [manual edit or script — gateway needs real runtime URLs]          │
+│                                                                     │
+│ Step 5: AgentCore Deploy 2 (gateway)                                │
+│   agentcore deploy -y                                               │
+│   agentcore status  ← verify gateway deployed                       │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+**Why two deploys?** The gateway targets need runtime endpoint URLs, which only exist after runtimes are deployed. This chicken-and-egg problem requires deploying runtimes first, then adding the gateway with real URLs.
+
+**After bootstrap:** Subsequent deploys are single-step (`agentcore deploy -y`) because runtimes already exist and the gateway references them.
+
+### Step-by-Step Commands
+
+#### 1. Deploy Identity Stack (Cognito Pools)
 
 ```bash
 cd workshop4/phase3
-aws cloudformation deploy \
-  --stack-name student-services-identity \
-  --template-file cloudformation/student-services-identity.yaml \
-  --region us-west-2
+bash deploy-student-services-identity.sh
 ```
 
-### 2. Deploy AgentCore Runtimes
+Creates 5 Cognito User Pools and captures outputs to `cloudformation/stack-outputs.json`.
+
+#### 2. Register OAuth Credentials
+
+```bash
+cd workshop4/phase3/studentservices
+bash ../register-credentials.sh
+```
+
+Fetches client secrets from Cognito and registers them with the AgentCore CLI. Must run AFTER Step 1 (needs pools to exist) and BEFORE Step 3 (so credentials deploy with runtimes).
+
+#### 3. AgentCore Deploy 1 (Runtimes)
 
 ```bash
 cd workshop4/phase3/studentservices
 agentcore deploy -y
-```
-
-### 3. Check Status
-
-```bash
-cd workshop4/phase3/studentservices
 agentcore status
 ```
 
-### 4. Invoke the Orchestrator
+Deploys 5 runtimes + memory + credentials. Note the runtime URLs from `agentcore status` output.
+
+#### 4. Add Gateway Configuration
+
+Update `agentcore/agentcore.json` to add the `agentCoreGateways` array with the real runtime endpoint URLs from Step 3. See the deployed `agentcore.json` for the complete gateway configuration.
+
+#### 5. AgentCore Deploy 2 (Gateway)
+
+```bash
+cd workshop4/phase3/studentservices
+agentcore deploy -y
+agentcore status
+```
+
+Deploys the gateway with 4 MCP server targets. Verify "Gateways: studentservicesgateway: Deployed (4 targets)" in status output.
+
+### Testing
 
 ```bash
 cd workshop4/phase3/studentservices
 agentcore invoke "What courses are available for Fall 2026?"
 ```
+
+Or test in the AgentCore Runtime Playground (AWS Console → Bedrock → AgentCore → Runtimes → StudentServicesAgent → Playground).
 
 ## Identity & Authentication
 
@@ -158,3 +210,65 @@ Thin Client ──(SigV4/IAM)──→ StudentServicesAgent (HTTP runtime)
 ## AWS Region
 
 All Phase 3 resources deploy to **us-west-2** (matching Phase 1 infrastructure).
+
+## Sample Test Prompts (Runtime Playground)
+
+Use these in the AgentCore Runtime Playground or via `agentcore invoke`.
+
+### Course Review (catalog search, reviews, ratings)
+
+```
+What courses are available in the CS department?
+```
+
+```
+Show me reviews for CS 441
+```
+
+```
+Which course has the highest rating?
+```
+
+```
+What is the workload for CS 525 Advanced Distributed Systems?
+```
+
+### Course Registration
+
+```
+Register student 1111 for CS 498 for spring semester
+```
+
+```
+Register student 2222 for CS 411 for spring semester
+```
+
+### Loan Application (59 numeric features)
+
+```
+Predict loan acceptance for these features: 1, 0, 0, 1, 1, 0, 500, 120, 360, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+```
+
+### Math Tutoring
+
+```
+Solve the integral of x^2 * e^x dx step by step
+```
+
+```
+Factor x^3 - 8
+```
+
+```
+What is the derivative of sin(x) * ln(x)?
+```
+
+### Out-of-Domain (should list available services)
+
+```
+What is the weather today?
+```
+
+```
+Write me a poem about campus life
+```

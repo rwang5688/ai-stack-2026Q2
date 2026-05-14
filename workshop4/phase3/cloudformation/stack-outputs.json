@@ -1,0 +1,152 @@
+[
+    {
+        "OutputKey": "CourseReviewClientId",
+        "OutputValue": "6gqqkbt0r4487nik1tdut0l58s",
+        "Description": "App Client ID for Course Review",
+        "ExportName": "student-services-identity-CourseReviewClientId"
+    },
+    {
+        "OutputKey": "CourseRegistrationDiscoveryUrl",
+        "OutputValue": "https://cognito-idp.us-west-2.amazonaws.com/us-west-2_GWmTz77Yw/.well-known/openid-configuration",
+        "Description": "OIDC Discovery URL for Course Registration",
+        "ExportName": "student-services-identity-CourseRegistrationDiscoveryUrl"
+    },
+    {
+        "OutputKey": "CourseRegistrationTokenEndpoint",
+        "OutputValue": "https://course-registration-149057604171.auth.us-west-2.amazoncognito.com/oauth2/token",
+        "Description": "Token endpoint for Course Registration",
+        "ExportName": "student-services-identity-CourseRegistrationTokenEndpoint"
+    },
+    {
+        "OutputKey": "StudentServicesGatewayUserPoolId",
+        "OutputValue": "us-west-2_xWeSNSeqc",
+        "Description": "Cognito User Pool ID for Student Services Gateway",
+        "ExportName": "student-services-identity-StudentServicesGatewayUserPoolId"
+    },
+    {
+        "OutputKey": "MathTeachingUserPoolId",
+        "OutputValue": "us-west-2_0v9KV3jDm",
+        "Description": "Cognito User Pool ID for Math Teaching",
+        "ExportName": "student-services-identity-MathTeachingUserPoolId"
+    },
+    {
+        "OutputKey": "CourseRegistrationScope",
+        "OutputValue": "course-registration/access",
+        "Description": "OAuth scope for Course Registration",
+        "ExportName": "student-services-identity-CourseRegistrationScope"
+    },
+    {
+        "OutputKey": "LoanApplicationDiscoveryUrl",
+        "OutputValue": "https://cognito-idp.us-west-2.amazonaws.com/us-west-2_zWhuXg4K8/.well-known/openid-configuration",
+        "Description": "OIDC Discovery URL for Loan Application",
+        "ExportName": "student-services-identity-LoanApplicationDiscoveryUrl"
+    },
+    {
+        "OutputKey": "CourseReviewDiscoveryUrl",
+        "OutputValue": "https://cognito-idp.us-west-2.amazonaws.com/us-west-2_BOVHqDyyy/.well-known/openid-configuration",
+        "Description": "OIDC Discovery URL for Course Review",
+        "ExportName": "student-services-identity-CourseReviewDiscoveryUrl"
+    },
+    {
+        "OutputKey": "MathTeachingDiscoveryUrl",
+        "OutputValue": "https://cognito-idp.us-west-2.amazonaws.com/us-west-2_0v9KV3jDm/.well-known/openid-configuration",
+        "Description": "OIDC Discovery URL for Math Teaching",
+        "ExportName": "student-services-identity-MathTeachingDiscoveryUrl"
+    },
+    {
+        "OutputKey": "LoanApplicationUserPoolId",
+        "OutputValue": "us-west-2_zWhuXg4K8",
+        "Description": "Cognito User Pool ID for Loan Application",
+        "ExportName": "student-services-identity-LoanApplicationUserPoolId"
+    },
+    {
+        "OutputKey": "CourseReviewScope",
+        "OutputValue": "course-review/access",
+        "Description": "OAuth scope for Course Review",
+        "ExportName": "student-services-identity-CourseReviewScope"
+    },
+    {
+        "OutputKey": "CourseReviewTokenEndpoint",
+        "OutputValue": "https://course-review-149057604171.auth.us-west-2.amazoncognito.com/oauth2/token",
+        "Description": "Token endpoint for Course Review",
+        "ExportName": "student-services-identity-CourseReviewTokenEndpoint"
+    },
+    {
+        "OutputKey": "LoanApplicationScope",
+        "OutputValue": "loan-application/access",
+        "Description": "OAuth scope for Loan Application",
+        "ExportName": "student-services-identity-LoanApplicationScope"
+    },
+    {
+        "OutputKey": "StudentServicesGatewayClientId",
+        "OutputValue": "5520octlvdtcru9er9k9dsc9qk",
+        "Description": "App Client ID for Student Services Gateway",
+        "ExportName": "student-services-identity-StudentServicesGatewayClientId"
+    },
+    {
+        "OutputKey": "LoanApplicationClientId",
+        "OutputValue": "1u49v5kajhdlk0percigfv6oml",
+        "Description": "App Client ID for Loan Application",
+        "ExportName": "student-services-identity-LoanApplicationClientId"
+    },
+    {
+        "OutputKey": "CourseRegistrationUserPoolId",
+        "OutputValue": "us-west-2_GWmTz77Yw",
+        "Description": "Cognito User Pool ID for Course Registration",
+        "ExportName": "student-services-identity-CourseRegistrationUserPoolId"
+    },
+    {
+        "OutputKey": "MathTeachingScope",
+        "OutputValue": "math-teaching/access",
+        "Description": "OAuth scope for Math Teaching",
+        "ExportName": "student-services-identity-MathTeachingScope"
+    },
+    {
+        "OutputKey": "CourseRegistrationClientId",
+        "OutputValue": "2d0n9b5vcpcie7eksovv83avu4",
+        "Description": "App Client ID for Course Registration",
+        "ExportName": "student-services-identity-CourseRegistrationClientId"
+    },
+    {
+        "OutputKey": "StudentServicesGatewayTokenEndpoint",
+        "OutputValue": "https://student-services-gateway-149057604171.auth.us-west-2.amazoncognito.com/oauth2/token",
+        "Description": "Token endpoint for Student Services Gateway",
+        "ExportName": "student-services-identity-StudentServicesGatewayTokenEndpoint"
+    },
+    {
+        "OutputKey": "MathTeachingClientId",
+        "OutputValue": "d2oedj4keb2o1on9rpr1vq3g7",
+        "Description": "App Client ID for Math Teaching",
+        "ExportName": "student-services-identity-MathTeachingClientId"
+    },
+    {
+        "OutputKey": "StudentServicesGatewayDiscoveryUrl",
+        "OutputValue": "https://cognito-idp.us-west-2.amazonaws.com/us-west-2_xWeSNSeqc/.well-known/openid-configuration",
+        "Description": "OIDC Discovery URL for Student Services Gateway",
+        "ExportName": "student-services-identity-StudentServicesGatewayDiscoveryUrl"
+    },
+    {
+        "OutputKey": "StudentServicesGatewayScope",
+        "OutputValue": "student-services-gateway/access",
+        "Description": "OAuth scope for Student Services Gateway",
+        "ExportName": "student-services-identity-StudentServicesGatewayScope"
+    },
+    {
+        "OutputKey": "CourseReviewUserPoolId",
+        "OutputValue": "us-west-2_BOVHqDyyy",
+        "Description": "Cognito User Pool ID for Course Review",
+        "ExportName": "student-services-identity-CourseReviewUserPoolId"
+    },
+    {
+        "OutputKey": "LoanApplicationTokenEndpoint",
+        "OutputValue": "https://loan-application-149057604171.auth.us-west-2.amazoncognito.com/oauth2/token",
+        "Description": "Token endpoint for Loan Application",
+        "ExportName": "student-services-identity-LoanApplicationTokenEndpoint"
+    },
+    {
+        "OutputKey": "MathTeachingTokenEndpoint",
+        "OutputValue": "https://math-teaching-149057604171.auth.us-west-2.amazoncognito.com/oauth2/token",
+        "Description": "Token endpoint for Math Teaching",
+        "ExportName": "student-services-identity-MathTeachingTokenEndpoint"
+    }
+]
