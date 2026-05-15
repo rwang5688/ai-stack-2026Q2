@@ -2,142 +2,199 @@
 
 ## Overview
 
-This document specifies the architecture for Workshop 4 Phase 3's thin client layer and runtime model selection. The system decomposes into three concerns:
-
-1. **Runtime modification** — Adding dynamic model selection to the existing `StudentServicesAgent` BedrockAgentCoreApp entrypoint
-2. **Local thin client** — A Streamlit chat UI that invokes the runtime via SigV4-signed HTTP
-3. **Production web deployment** — The same thin client packaged in Docker on ECS Fargate behind CloudFront + ALB with Cognito authentication
-
-All components use Python. The CDK stack uses `aws-cdk-lib` (Python). The runtime uses `strands` and `bedrock-agentcore`.
-
----
+This design describes the SSM-based model configuration system and thin client interfaces for the Phase 3 Student Services AgentCore microservices. The architecture centralizes model selection in a single SSM parameter, enabling administrators to switch models across all 5 runtimes without redeployment. Two Streamlit thin clients (local and production) provide chat UIs that invoke the orchestrator via SigV4-signed HTTP POST.
 
 ## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                        AgentCore Platform                            │
-│  ┌───────────────────────────────────────────────────────────────┐  │
-│  │  StudentServicesAgent Runtime (HTTP)                           │  │
-│  │  POST /invoke  {"prompt": "...", "model_id": "..."}           │  │
-│  │                                                               │  │
-│  │  ┌─────────────┐   ┌──────────────┐   ┌──────────────────┐  │  │
-│  │  │ Model       │   │ Agent Cache   │   │ MCP Gateway      │  │  │
-│  │  │ Validation  │──▶│ {sid/uid/mid} │──▶│ (Specialists)    │  │  │
-│  │  └─────────────┘   └──────────────┘   └──────────────────┘  │  │
-│  └───────────────────────────────────────────────────────────────┘  │
-└─────────────────────────────────────────────────────────────────────┘
-         ▲                                          ▲
-         │ SigV4 HTTP POST                          │ SigV4 HTTP POST
-         │                                          │
-┌────────┴────────┐                    ┌────────────┴────────────────┐
-│ Local Client    │                    │ Production Deployment        │
-│ (streamlit_app) │                    │                              │
-│                 │                    │  CloudFront → ALB → ECS     │
-│ • Model select  │                    │  Cognito auth                │
-│ • Chat UI       │                    │  docker_app/                 │
-│ • agent_client  │                    │  • app.py (Cognito + chat)  │
-└─────────────────┘                    │  • agent_client.py          │
-                                       │  • cognito_client.py        │
-                                       │  • config_file.py           │
-                                       └─────────────────────────────┘
+Admin updates SSM /student-services/model-id
+         │
+         ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  All 5 AgentCore Runtimes read SSM on agent creation            │
+│                                                                 │
+│  shared/config.py → get_model_config() → {"model_id": "...",   │
+│                                            "region": "...",     │
+│                                            "max_tokens": 4096}  │
+│                                                                 │
+│  StudentServicesAgent (orchestrator)                             │
+│  CourseRegistrationMcp (specialist)                              │
+│  CourseReviewMcp (specialist)                                    │
+│  LoanApplicationMcp (specialist)                                │
+│  MathTeachingMcp (specialist)                                   │
+└─────────────────────────────────────────────────────────────────┘
+         ▲
+         │ SigV4 HTTP POST {"prompt": "..."}
+         │
+┌────────┴────────┐              ┌─────────────────────────────┐
+│ Local Client    │              │ Production (ECS Fargate)     │
+│ streamlit_app/  │              │ deploy-streamlit-app/        │
+│ • Displays model│              │ • Cognito auth               │
+│   (read-only)   │              │ • Same chat UI               │
+└─────────────────┘              └─────────────────────────────┘
 ```
 
----
+### Key Design Decisions
+
+1. **No model_id in payload** — model is system-wide config, not per-request. The MCP protocol boundary between orchestrator → gateway → specialist means propagating model_id would require changing the tool contract at each hop.
+2. **SSM read per agent creation (no caching)** — ensures new sessions always get the current value. Since agents are cached per session, SSM is only read when a new session starts.
+3. **Shared config module** — DRY pattern, consistent across all 5 runtimes.
+4. **Cache key stays `{session_id}/{user_id}`** — model is not part of user identity; it's infrastructure config.
+5. **Fallback chain** — env var `MODEL_ID` → SSM → hardcoded default provides resilience during development and deployment.
 
 ## Components and Interfaces
 
-### Component 1: Runtime Model Selection (`agent.py`)
+### Component 1: Shared Config Module
 
-**File:** `workshop4/phase3/studentservices/student_services/agent.py`
-
-**Changes to existing file:**
+**File:** `workshop4/phase3/studentservices/shared/config.py`
 
 ```python
-# Module-level constant — add after existing constants
-ALLOWED_MODELS = [
-    "us.amazon.nova-2-lite-v1:0",
-    "us.anthropic.claude-sonnet-4-6",
-]
+"""
+Shared model configuration for all AgentCore runtimes.
+
+Reads the model ID from SSM Parameter Store with fallback to
+environment variable and hardcoded default.
+
+Resolution order: environment variable MODEL_ID → SSM → hardcoded default
+"""
+
+import os
+
+import boto3
 
 DEFAULT_MODEL_ID = "us.amazon.nova-2-lite-v1:0"
-```
+DEFAULT_REGION = "us-west-2"
+DEFAULT_MAX_TOKENS = 4096
+SSM_PARAMETER_NAME = "/student-services/model-id"
 
-**Modified entrypoint logic:**
 
-```python
-@app.entrypoint
-def invoke(payload: dict, context: dict | None = None) -> dict:
-    session_id = getattr(context, "session_id", None) or "default-session"
-    user_id = getattr(context, "user_id", None) or "default-user"
-    prompt = payload.get("prompt", "")
+def get_model_config() -> dict:
+    """
+    Get model configuration dictionary for creating BedrockModel instances.
 
-    if not prompt or not prompt.strip():
-        return {"response": "Error: 'prompt' field is required and cannot be empty."}
+    Reads the model ID from SSM Parameter Store on each call (no caching)
+    so that new sessions always pick up the current value.
 
-    # --- Model selection ---
-    model_id = payload.get("model_id", "").strip()
+    Returns:
+        Dictionary with model_id, region, and max_tokens keys.
+    """
+    # 1. Environment variable override (for local dev)
+    model_id = os.environ.get("MODEL_ID")
+
+    # 2. SSM Parameter Store
+    if not model_id:
+        try:
+            ssm = boto3.client("ssm", region_name=DEFAULT_REGION)
+            response = ssm.get_parameter(Name=SSM_PARAMETER_NAME)
+            model_id = response["Parameter"]["Value"]
+        except Exception:
+            model_id = None
+
+    # 3. Hardcoded default
     if not model_id:
         model_id = DEFAULT_MODEL_ID
-    elif model_id not in ALLOWED_MODELS:
-        return {
-            "response": f"Error: model_id '{model_id}' is not allowed. "
-            f"Permitted models: {ALLOWED_MODELS}"
-        }
 
-    # --- Agent caching with model_id in key ---
-    cache_key = f"{session_id}/{user_id}/{model_id}"
-    if cache_key not in _agent_cache:
-        mcp_client = get_mcp_client()
-
-        model = BedrockModel(
-            model_id=model_id,
-            region_name="us-west-2",
-            max_tokens=4096,
-        )
-
-        _agent_cache[cache_key] = Agent(
-            model=model,
-            system_prompt=SYSTEM_PROMPT,
-            tools=[mcp_client],
-        )
-
-    response = _agent_cache[cache_key](prompt)
-    return {"response": str(response)}
+    return {
+        "model_id": model_id,
+        "region": DEFAULT_REGION,
+        "max_tokens": DEFAULT_MAX_TOKENS,
+    }
 ```
 
-**Key design decisions:**
-- `payload.get("model_id")` works because BedrockAgentCoreApp passes the full payload dict to the entrypoint function — it does NOT strip unknown keys from the dict itself
-- Validation happens before agent creation to fail fast on invalid models
-- Cache key includes `model_id` so switching models creates a fresh Agent with separate conversation history
-- Default model is `us.amazon.nova-2-lite-v1:0` (matching Phase 1 behavior)
+**File:** `workshop4/phase3/studentservices/shared/__init__.py`
 
----
+```python
+"""Shared utilities for Student Services AgentCore runtimes."""
+```
 
-### Component 2: Agent Client Module (`agent_client.py`)
+### Component 2: Runtime Modifications (All 5 agent.py Files)
 
-**Shared between local and production deployments.** Both `workshop4/phase3/streamlit_app/agent_client.py` and `workshop4/phase3/deploy-streamlit-app/docker_app/agent_client.py` use the same implementation.
+Each agent.py replaces the hardcoded `BedrockModel(model_id="...", ...)` with a call to `get_model_config()`.
+
+**Pattern — Orchestrator (`student_services/agent.py`):**
+
+```python
+from shared.config import get_model_config
+
+# Inside the invoke entrypoint, when creating a new cached agent:
+if cache_key not in _agent_cache:
+    mcp_client = get_mcp_client()
+    model_config = get_model_config()
+    model = BedrockModel(
+        model_id=model_config["model_id"],
+        region_name=model_config["region"],
+        max_tokens=model_config["max_tokens"],
+    )
+    _agent_cache[cache_key] = Agent(
+        model=model,
+        system_prompt=SYSTEM_PROMPT,
+        tools=[mcp_client],
+    )
+```
+
+**Pattern — Specialist MCP Servers (e.g., `course_registration/agent.py`):**
+
+```python
+from shared.config import get_model_config
+
+# Inside the MCP tool function:
+@mcp.tool()
+def course_registration_assistant(prompt: str) -> dict:
+    model_config = get_model_config()
+    model = BedrockModel(
+        model_id=model_config["model_id"],
+        region_name=model_config["region"],
+        max_tokens=model_config["max_tokens"],
+    )
+    agent = Agent(model=model, system_prompt=SYSTEM_PROMPT, tools=[register_course])
+    response = agent(prompt)
+    return {"response": str(response), "runtime": RUNTIME_NAME}
+```
+
+**Files modified:**
+- `workshop4/phase3/studentservices/student_services/agent.py`
+- `workshop4/phase3/studentservices/course_registration/agent.py`
+- `workshop4/phase3/studentservices/course_review/agent.py`
+- `workshop4/phase3/studentservices/loan_application/agent.py`
+- `workshop4/phase3/studentservices/math_teaching/agent.py`
+
+### Component 3: IAM Permission Update
+
+**File:** `workshop4/phase3/cloudformation/student-services-agentcore-infra.yaml`
+
+Add to the `AgentCoreBasePolicy` PolicyDocument Statements:
+
+```yaml
+- Sid: SSMParameterAccess
+  Effect: Allow
+  Action:
+    - ssm:GetParameter
+  Resource:
+    - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/student-services/*'
+```
+
+This grants all 5 execution roles (which reference `AgentCoreBasePolicy` via `ManagedPolicyArns`) permission to read SSM parameters under the `/student-services/` path.
+
+### Component 4: Local Thin Client
+
+**Directory:** `workshop4/phase3/streamlit_app/`
+
+#### `agent_client.py`
 
 ```python
 """HTTP client for communicating with the StudentServicesAgent runtime on AgentCore.
 
-Sends prompts to the StudentServicesAgent runtime via SigV4-signed HTTP POST
-requests. Supports optional model_id parameter for dynamic model selection.
+Sends prompts via SigV4-signed HTTP POST requests.
 """
 
 import json
 import os
-from typing import Optional
 
 import boto3
 from botocore.auth import SigV4Auth
 from botocore.awsrequest import AWSRequest
 
 STUDENT_SERVICES_AGENT_URL = os.environ.get("STUDENT_SERVICES_AGENT_URL", "")
-
-_REQUIRED_VARS = [
-    "STUDENT_SERVICES_AGENT_URL",
-]
 
 
 def get_config_errors() -> list[str]:
@@ -148,33 +205,22 @@ def get_config_errors() -> list[str]:
     return missing
 
 
-def invoke(prompt: str, model_id: Optional[str] = None) -> str:
+def invoke(prompt: str) -> str:
     """Send prompt to StudentServicesAgent and return the response text.
 
-    Signs the request with SigV4 (service: bedrock-agentcore, region: us-west-2),
-    sends HTTP POST with JSON body, and returns the "response" field from the reply.
+    Signs the request with SigV4 using service name 'bedrock-agentcore'.
+    Sends HTTP POST with body {"prompt": prompt}.
+    Returns the "response" field from the JSON reply.
 
-    Args:
-        prompt: The user message to send to the agent.
-        model_id: Optional model identifier. If provided, included in the payload.
-
-    Returns:
-        The agent's response text.
-
-    Raises:
-        RuntimeError: On non-200 status or network errors.
+    Raises RuntimeError on non-200 status or network errors.
     """
     import httpx
 
-    # Build request body
-    body_dict: dict = {"prompt": prompt}
-    if model_id:
-        body_dict["model_id"] = model_id
-    body = json.dumps(body_dict)
+    body = json.dumps({"prompt": prompt})
 
-    # SigV4 signing
     session = boto3.Session()
     credentials = session.get_credentials().get_frozen_credentials()
+    region = session.region_name or "us-west-2"
 
     aws_request = AWSRequest(
         method="POST",
@@ -182,7 +228,7 @@ def invoke(prompt: str, model_id: Optional[str] = None) -> str:
         data=body,
         headers={"Content-Type": "application/json"},
     )
-    SigV4Auth(credentials, "bedrock-agentcore", "us-west-2").add_auth(aws_request)
+    SigV4Auth(credentials, "bedrock-agentcore", region).add_auth(aws_request)
 
     try:
         resp = httpx.post(
@@ -202,73 +248,53 @@ def invoke(prompt: str, model_id: Optional[str] = None) -> str:
     return resp.json()["response"]
 ```
 
-**Design decisions:**
-- `model_id` is `Optional[str]` — only included in body when truthy
-- SigV4 region hardcoded to `us-west-2` (all Phase 3 resources are in this region)
-- 120-second timeout accommodates agent tool-use chains that may take time
-- `httpx` used for HTTP (consistent with reference implementation)
-- Credentials sourced from `boto3.Session()` supporting IAM roles, env vars, and profiles
-
----
-
-### Component 3: Local Streamlit App (`streamlit_app/`)
-
-**Directory:** `workshop4/phase3/streamlit_app/`
-
-**Files:**
-- `app.py` — Streamlit chat UI with model selector
-- `agent_client.py` — (same as Component 2)
-- `requirements.txt` — `boto3`, `httpx`, `streamlit`
-- `run.ps1` / `run.sh` — Convenience scripts setting env vars
-
-**`app.py` structure:**
+#### `app.py`
 
 ```python
-"""Student Services Assistant — Local Streamlit thin client.
+"""Local Streamlit thin client for Student Services Agent.
 
-Chat interface that sends prompts to the StudentServicesAgent runtime
-on AgentCore with dynamic model selection.
-
-Run with: streamlit run app.py
+Provides a chat interface that sends prompts to the StudentServicesAgent
+runtime via SigV4-signed HTTP POST. Displays the configured model ID
+from SSM as read-only sidebar information.
 """
 
+import boto3
 import streamlit as st
-from agent_client import get_config_errors, invoke
 
-# Page config
-st.set_page_config(page_title="Student Services Assistant")
-st.title("🎓 Student Services Assistant")
-st.write("Ask about courses, register for classes, get loan predictions, or solve math problems.")
+import agent_client
 
-# Validate config
-errors = get_config_errors()
+# --- Page config ---
+st.set_page_config(page_title="Student Services Agent", page_icon="🎓")
+st.title("🎓 Student Services Agent")
+
+# --- Validate configuration ---
+errors = agent_client.get_config_errors()
 if errors:
-    st.error(f"Missing environment variables: {', '.join(errors)}")
+    st.error(f"Missing required environment variables: {', '.join(errors)}")
     st.stop()
 
-# Model options
-MODEL_OPTIONS = {
-    "Amazon Nova 2 Lite (us.amazon.nova-2-lite-v1:0)": "us.amazon.nova-2-lite-v1:0",
-    "Anthropic Claude Sonnet 4 (us.anthropic.claude-sonnet-4-6)": "us.anthropic.claude-sonnet-4-6",
-}
-
-# Sidebar: model selector, sample prompts, clear chat
+# --- Sidebar: model info and controls ---
 with st.sidebar:
-    st.header("🤖 Model Selection")
-    selected_model_key = st.selectbox(
-        "Choose Model:",
-        options=list(MODEL_OPTIONS.keys()),
-    )
-    selected_model_id = MODEL_OPTIONS[selected_model_key]
-
-    st.header("💡 Sample Prompts")
-    # ... sample prompts for each domain ...
+    st.header("Configuration")
+    try:
+        ssm = boto3.client("ssm", region_name="us-west-2")
+        param = ssm.get_parameter(Name="/student-services/model-id")
+        model_id = param["Parameter"]["Value"]
+    except Exception:
+        model_id = "(unable to read from SSM)"
+    st.text_input("Model ID", value=model_id, disabled=True)
 
     if st.button("Clear Chat"):
         st.session_state.messages = []
         st.rerun()
 
-# Chat history
+    st.markdown("---")
+    st.markdown("**Sample Prompts:**")
+    st.markdown("- What courses are available for Fall 2026?")
+    st.markdown("- Register STU001 for CS 441 in Fall 2026")
+    st.markdown("- Solve x² + 5x + 6 = 0")
+
+# --- Chat history ---
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
@@ -276,8 +302,8 @@ for msg in st.session_state.messages:
     with st.chat_message(msg["role"]):
         st.markdown(msg["content"])
 
-# Chat input
-if prompt := st.chat_input("Ask your question here..."):
+# --- Chat input ---
+if prompt := st.chat_input("Ask the Student Services Agent..."):
     st.session_state.messages.append({"role": "user", "content": prompt})
     with st.chat_message("user"):
         st.markdown(prompt)
@@ -285,155 +311,269 @@ if prompt := st.chat_input("Ask your question here..."):
     with st.chat_message("assistant"):
         with st.spinner("Thinking..."):
             try:
-                response = invoke(prompt, model_id=selected_model_id)
-                st.markdown(response)
-                st.session_state.messages.append(
-                    {"role": "assistant", "content": response}
-                )
-            except Exception as e:
-                st.error(str(e))
+                response = agent_client.invoke(prompt)
+            except RuntimeError as e:
+                response = f"⚠️ Error: {e}"
+        st.markdown(response)
+
+    st.session_state.messages.append({"role": "assistant", "content": response})
 ```
 
-**Convenience scripts:**
+#### `requirements.txt`
 
-`run.ps1`:
+```
+boto3
+httpx
+streamlit
+```
+
+#### `run.ps1`
+
 ```powershell
-$env:STUDENT_SERVICES_AGENT_URL = "<runtime-url>"
+# Run the local Streamlit thin client
+# Requires: STUDENT_SERVICES_AGENT_URL environment variable set
 streamlit run app.py
 ```
 
-`run.sh`:
+#### `run.sh`
+
 ```bash
-export STUDENT_SERVICES_AGENT_URL="<runtime-url>"
+#!/bin/bash
+# Run the local Streamlit thin client
+# Requires: STUDENT_SERVICES_AGENT_URL environment variable set
 streamlit run app.py
 ```
 
----
+### Component 5: Production Web App
 
-### Component 4: Production Docker App (`deploy-streamlit-app/docker_app/`)
+**Directory:** `workshop4/phase3/deploy-streamlit-app/`
 
-**Directory:** `workshop4/phase3/deploy-streamlit-app/docker_app/`
-
-**Files:**
-- `app.py` — Cognito auth + chat UI (same chat logic as local)
-- `agent_client.py` — (same as Component 2)
-- `cognito_client.py` — Reads Cognito params from Secrets Manager
-- `config_file.py` — Configuration constants
-- `Dockerfile` — ARM64 container image
-- `requirements.txt` — `boto3`, `httpx`, `streamlit`, `streamlit-cognito-auth`
-
-#### `config_file.py`
+#### `docker_app/config_file.py`
 
 ```python
+"""Configuration constants for the CDK stack and Docker app."""
+
+
 class Config:
     STACK_NAME = "StudentServicesPhase3"
-    CUSTOM_HEADER_VALUE = "student-services-phase3-cf-header-2026"
-    SECRETS_MANAGER_ID = f"{STACK_NAME}CognitoSecret"
-    DEPLOYMENT_REGION = "us-west-2"
+    SECRETS_MANAGER_ID = "student-services-phase3-cognito-secret"
+    CUSTOM_HEADER_VALUE = "StudentServicesPhase3SecureHeader2026"
+    VPC_NAME = f"{STACK_NAME}-stl-vpc"
+    ALB_NAME = f"{STACK_NAME}-stl"
+    ALB_SG_NAME = f"{STACK_NAME}-stl-alb-sg"
+    ECS_SG_NAME = f"{STACK_NAME}-stl-ecs-sg"
+    ECS_SERVICE_NAME = f"{STACK_NAME}-stl-front"
+    TARGET_GROUP_NAME = f"{STACK_NAME}-tg"
+    AWS_REGION = "us-west-2"
 ```
 
-#### `cognito_client.py`
+#### `docker_app/agent_client.py`
 
-```python
-"""Cognito authentication module.
+Same SigV4 HTTP client as the local version, reading `STUDENT_SERVICES_AGENT_URL` from environment.
 
-Retrieves Cognito User Pool parameters from AWS Secrets Manager
-and returns a configured CognitoAuthenticator instance.
-"""
+#### `docker_app/cognito_client.py`
 
-import json
+Handles Cognito user authentication using credentials from Secrets Manager. Provides login/logout/session management for the Streamlit app.
 
-import boto3
-from streamlit_cognito_auth import CognitoAuthenticator
+#### `docker_app/app.py`
 
+Production Streamlit app with Cognito authentication gate. After login, provides the same chat interface as the local client.
 
-def get_authenticator(secret_id: str, region: str) -> CognitoAuthenticator:
-    """Get a CognitoAuthenticator by reading pool params from Secrets Manager."""
-    secretsmanager_client = boto3.client("secretsmanager", region_name=region)
-    response = secretsmanager_client.get_secret_value(SecretId=secret_id)
-    secret = json.loads(response["SecretString"])
-
-    return CognitoAuthenticator(
-        pool_id=secret["pool_id"],
-        app_client_id=secret["app_client_id"],
-        app_client_secret=secret["app_client_secret"],
-    )
-```
-
-#### `app.py` (production)
-
-```python
-"""Student Services Assistant — Production Streamlit thin client with Cognito auth."""
-
-import streamlit as st
-import agent_client
-import cognito_client
-from config_file import Config
-
-st.set_page_config(page_title="Student Services Assistant")
-st.title("🎓 Student Services Assistant")
-
-# Cognito authentication
-authenticator = cognito_client.get_authenticator(
-    Config.SECRETS_MANAGER_ID, Config.DEPLOYMENT_REGION
-)
-is_logged_in = authenticator.login()
-if not is_logged_in:
-    st.stop()
-
-# Validate agent URL
-errors = agent_client.get_config_errors()
-if errors:
-    st.error(f"Missing environment variables: {', '.join(errors)}")
-    st.stop()
-
-# Model options (same as local)
-MODEL_OPTIONS = {
-    "Amazon Nova 2 Lite (us.amazon.nova-2-lite-v1:0)": "us.amazon.nova-2-lite-v1:0",
-    "Anthropic Claude Sonnet 4 (us.anthropic.claude-sonnet-4-6)": "us.anthropic.claude-sonnet-4-6",
-}
-
-# Sidebar with auth info, model selector, sample prompts
-with st.sidebar:
-    st.text(f"Welcome,\n{authenticator.get_username()}")
-    st.button("Logout", "logout_btn", on_click=authenticator.logout)
-
-    st.header("🤖 Model Selection")
-    selected_model_key = st.selectbox("Choose Model:", options=list(MODEL_OPTIONS.keys()))
-    selected_model_id = MODEL_OPTIONS[selected_model_key]
-
-    # ... sample prompts, clear chat button ...
-
-# Chat interface (identical to local version)
-# ...
-```
-
-#### `Dockerfile`
+#### `docker_app/Dockerfile`
 
 ```dockerfile
-FROM --platform=linux/arm64 python:3.13-slim
-
+FROM python:3.13-slim
 WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
-
 EXPOSE 8501
-ENTRYPOINT ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+CMD ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
 ```
 
----
+#### `docker_app/requirements.txt`
 
-### Component 5: CDK Stack (`deploy-streamlit-app/cdk/`)
+```
+boto3
+httpx
+streamlit
+```
 
-**Directory:** `workshop4/phase3/deploy-streamlit-app/`
+#### `cdk/cdk_stack.py`
 
-**Files:**
-- `cdk/cdk_stack.py` — Infrastructure stack
-- `cdk/app.py` — CDK app entry point
-- `cdk/__init__.py` — Empty
-- `cdk.json` — CDK configuration
-- `requirements.txt` — `aws-cdk-lib`, `constructs`
+CDK Python stack that deploys:
+- **VPC**: 2 AZs, public subnets (ALB), private subnets with NAT (ECS)
+- **ECS Fargate**: ARM64 task running the Streamlit container on port 8501
+- **ALB**: Internet-facing, routes to ECS with custom header validation
+- **CloudFront**: HTTPS distribution in front of ALB, caching disabled
+- **Cognito**: User Pool + client, credentials stored in Secrets Manager
+- **IAM**: Task role with `bedrock-agentcore:InvokeAgentRuntime`, `ssm:GetParameter`, `ssm:GetParametersByPath`, and Secrets Manager read
+
+```python
+from aws_cdk import (
+    Stack,
+    aws_ec2 as ec2,
+    aws_ecs as ecs,
+    aws_iam as iam,
+    aws_cognito as cognito,
+    aws_secretsmanager as secretsmanager,
+    aws_cloudfront as cloudfront,
+    aws_cloudfront_origins as origins,
+    aws_elasticloadbalancingv2 as elbv2,
+    CfnOutput,
+    SecretValue,
+)
+from constructs import Construct
+from docker_app.config_file import Config
+
+CUSTOM_HEADER_NAME = "X-Custom-Header"
+
+
+class CdkStack(Stack):
+    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+        super().__init__(scope, construct_id, **kwargs)
+
+        prefix = Config.STACK_NAME
+
+        # Cognito User Pool
+        user_pool = cognito.UserPool(self, f"{prefix}UserPool")
+        user_pool_client = cognito.UserPoolClient(
+            self, f"{prefix}UserPoolClient",
+            user_pool=user_pool,
+            generate_secret=True,
+        )
+
+        # Store Cognito credentials in Secrets Manager
+        secret = secretsmanager.Secret(
+            self, f"{prefix}ParamCognitoSecret",
+            secret_object_value={
+                "pool_id": SecretValue.unsafe_plain_text(user_pool.user_pool_id),
+                "app_client_id": SecretValue.unsafe_plain_text(
+                    user_pool_client.user_pool_client_id
+                ),
+                "app_client_secret": user_pool_client.user_pool_client_secret,
+            },
+            secret_name=Config.SECRETS_MANAGER_ID,
+        )
+
+        # VPC
+        vpc = ec2.Vpc(
+            self, f"{prefix}AppVpc",
+            ip_addresses=ec2.IpAddresses.cidr("10.0.0.0/16"),
+            max_azs=2,
+            vpc_name=Config.VPC_NAME,
+            nat_gateways=1,
+        )
+
+        # Security Groups
+        alb_security_group = ec2.SecurityGroup(
+            self, f"{prefix}SecurityGroupALB",
+            vpc=vpc, security_group_name=Config.ALB_SG_NAME,
+        )
+        ecs_security_group = ec2.SecurityGroup(
+            self, f"{prefix}SecurityGroupECS",
+            vpc=vpc, security_group_name=Config.ECS_SG_NAME,
+        )
+        ecs_security_group.add_ingress_rule(
+            peer=alb_security_group,
+            connection=ec2.Port.tcp(8501),
+            description="ALB traffic",
+        )
+
+        # ECS Cluster + Fargate Task
+        cluster = ecs.Cluster(
+            self, f"{prefix}Cluster",
+            enable_fargate_capacity_providers=True, vpc=vpc,
+        )
+        fargate_task_definition = ecs.FargateTaskDefinition(
+            self, f"{prefix}WebappTaskDef",
+            memory_limit_mib=512, cpu=256,
+            runtime_platform=ecs.RuntimePlatform(
+                cpu_architecture=ecs.CpuArchitecture.ARM64,
+                operating_system_family=ecs.OperatingSystemFamily.LINUX,
+            ),
+        )
+        image = ecs.ContainerImage.from_asset("docker_app")
+        fargate_task_definition.add_container(
+            f"{prefix}WebContainer",
+            image=image,
+            port_mappings=[ecs.PortMapping(container_port=8501, protocol=ecs.Protocol.TCP)],
+            environment={
+                "STUDENT_SERVICES_AGENT_URL": self.node.try_get_context("student_services_agent_url") or "",
+            },
+            logging=ecs.LogDrivers.aws_logs(stream_prefix="WebContainerLogs"),
+        )
+        service = ecs.FargateService(
+            self, f"{prefix}ECSService",
+            cluster=cluster,
+            task_definition=fargate_task_definition,
+            service_name=Config.ECS_SERVICE_NAME,
+            security_groups=[ecs_security_group],
+            vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS),
+        )
+
+        # ALB + CloudFront
+        alb = elbv2.ApplicationLoadBalancer(
+            self, f"{prefix}Alb",
+            vpc=vpc, internet_facing=True,
+            load_balancer_name=Config.ALB_NAME,
+            security_group=alb_security_group,
+            vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC),
+        )
+        origin = origins.LoadBalancerV2Origin(
+            alb,
+            custom_headers={CUSTOM_HEADER_NAME: Config.CUSTOM_HEADER_VALUE},
+            origin_shield_enabled=False,
+            protocol_policy=cloudfront.OriginProtocolPolicy.HTTP_ONLY,
+        )
+        cloudfront_distribution = cloudfront.Distribution(
+            self, f"{prefix}CfDist",
+            default_behavior=cloudfront.BehaviorOptions(
+                origin=origin,
+                viewer_protocol_policy=cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+                allowed_methods=cloudfront.AllowedMethods.ALLOW_ALL,
+                cache_policy=cloudfront.CachePolicy.CACHING_DISABLED,
+                origin_request_policy=cloudfront.OriginRequestPolicy.ALL_VIEWER,
+            ),
+        )
+        http_listener = alb.add_listener(f"{prefix}HttpListener", port=80, open=True)
+        http_listener.add_targets(
+            f"{prefix}TargetGroup",
+            target_group_name=Config.TARGET_GROUP_NAME,
+            port=8501, priority=1,
+            conditions=[elbv2.ListenerCondition.http_header(CUSTOM_HEADER_NAME, [Config.CUSTOM_HEADER_VALUE])],
+            protocol=elbv2.ApplicationProtocol.HTTP,
+            targets=[service],
+        )
+        http_listener.add_action(
+            "default-action",
+            action=elbv2.ListenerAction.fixed_response(
+                status_code=403, content_type="text/plain", message_body="Access denied",
+            ),
+        )
+
+        # IAM: Task role permissions
+        task_policy = iam.Policy(
+            self, f"{prefix}TaskPolicy",
+            statements=[
+                iam.PolicyStatement(
+                    actions=["bedrock-agentcore:InvokeAgentRuntime"],
+                    resources=["*"],
+                ),
+                iam.PolicyStatement(
+                    actions=["ssm:GetParameter", "ssm:GetParametersByPath"],
+                    resources=[f"arn:aws:ssm:{self.region}:{self.account}:parameter/student-services/*"],
+                ),
+            ],
+        )
+        task_role = fargate_task_definition.task_role
+        task_role.attach_inline_policy(task_policy)
+        secret.grant_read(task_role)
+
+        # Outputs
+        CfnOutput(self, "CloudFrontDistributionURL", value=cloudfront_distribution.domain_name)
+        CfnOutput(self, "CognitoPoolId", value=user_pool.user_pool_id)
+```
 
 #### `cdk/app.py`
 
@@ -441,197 +581,129 @@ ENTRYPOINT ["streamlit", "run", "app.py", "--server.port=8501", "--server.addres
 #!/usr/bin/env python3
 import aws_cdk as cdk
 from cdk_stack import CdkStack
-from docker_app.config_file import Config
 
 app = cdk.App()
-CdkStack(
-    app,
-    Config.STACK_NAME,
-    env=cdk.Environment(region=Config.DEPLOYMENT_REGION),
-)
+CdkStack(app, "StudentServicesPhase3")
 app.synth()
+```
+
+#### `cdk/__init__.py`
+
+```python
 ```
 
 #### `cdk.json`
 
 ```json
 {
-  "app": "python cdk/app.py"
+  "app": "python3 cdk/app.py"
 }
 ```
 
-#### `cdk/cdk_stack.py` — Resource Provisioning Order
+#### `requirements.txt`
 
-1. **Cognito + Secrets Manager** — User Pool, Client, Secret
-2. **VPC + Security Groups** — VPC (10.0.0.0/16, 2 AZs, 1 NAT), ALB SG, ECS SG
-3. **ECS Cluster + Fargate** — Task definition (ARM64, 256 CPU, 512 MiB), container with `STUDENT_SERVICES_AGENT_URL` env var, service in private subnets
-4. **ALB + CloudFront** — Internet-facing ALB, CloudFront with custom header, listener rules (header match → ECS, default → 403)
-5. **IAM** — `bedrock-agentcore:InvokeAgentRuntime` policy, Secrets Manager read grant
-6. **Outputs** — CloudFront URL, Cognito Pool ID
-
-The CDK stack follows the exact same pattern as Phase 2 (`workshop4/phase2/deploy-streamlit-app/cdk/cdk_stack.py`) with these differences:
-- Stack name: `StudentServicesPhase3` (was `StudentServicesPhase2`)
-- Context parameter: `student_services_agent_url` (was none — Phase 2 didn't need an agent URL env var since it ran the agent locally)
-- IAM policy: `bedrock-agentcore:InvokeAgentRuntime` (was Bedrock/SageMaker/DynamoDB/SSM/S3Vectors)
-- Config import path: `docker_app.config_file` (same pattern)
-
----
+```
+aws-cdk-lib>=2.100.0
+constructs>=10.0.0
+```
 
 ## Data Models
 
-### Request Payload (Runtime)
+### get_model_config Return Value
 
-```json
+```python
 {
-  "prompt": "string (required, non-empty)",
-  "model_id": "string (optional, must be in ALLOWED_MODELS if present)"
+    "model_id": str,      # e.g., "us.amazon.nova-2-lite-v1:0"
+    "region": str,        # Always "us-west-2"
+    "max_tokens": int,    # Always 4096
 }
 ```
 
-### Response Payload (Runtime)
+### Orchestrator Request/Response
 
-**Success:**
-```json
-{
-  "response": "string — the agent's text response"
-}
+```python
+# Request (HTTP POST body)
+{"prompt": str}
+
+# Response (HTTP 200 JSON body)
+{"response": str}
 ```
 
-**Error (invalid model):**
-```json
-{
-  "response": "Error: model_id 'bad-model' is not allowed. Permitted models: ['us.amazon.nova-2-lite-v1:0', 'us.anthropic.claude-sonnet-4-6']"
-}
+### Agent Cache Structure
+
+```python
+# Key: "{session_id}/{user_id}"
+# Value: Agent instance (with model configured at creation time)
+_agent_cache: dict[str, Agent] = {}
 ```
-
-**Error (empty prompt):**
-```json
-{
-  "response": "Error: 'prompt' field is required and cannot be empty."
-}
-```
-
-### Agent Cache Key Format
-
-```
-{session_id}/{user_id}/{model_id}
-```
-
-Example: `abc123/user42/us.amazon.nova-2-lite-v1:0`
-
-### Configuration Constants
-
-| Constant | Value |
-|----------|-------|
-| `STACK_NAME` | `StudentServicesPhase3` |
-| `DEPLOYMENT_REGION` | `us-west-2` |
-| `SECRETS_MANAGER_ID` | `StudentServicesPhase3CognitoSecret` |
-| `CUSTOM_HEADER_VALUE` | `student-services-phase3-cf-header-2026` |
-| `ALLOWED_MODELS[0]` | `us.amazon.nova-2-lite-v1:0` |
-| `ALLOWED_MODELS[1]` | `us.anthropic.claude-sonnet-4-6` |
-
----
 
 ## Error Handling
 
-| Scenario | Component | Behavior |
-|----------|-----------|----------|
-| Empty/missing prompt | Runtime | Returns error response (not HTTP error) |
-| Invalid model_id | Runtime | Returns error response listing allowed models |
-| Missing env var | Agent Client | `get_config_errors()` returns variable names |
-| Non-200 HTTP response | Agent Client | Raises `RuntimeError` with status + body |
-| Network failure | Agent Client | Raises `RuntimeError` with failure description |
-| Agent Client exception | Streamlit UI | Displays error in chat via `st.error()` |
-| Cognito not authenticated | Production UI | Shows login form, `st.stop()` |
-
----
-
-## Interfaces
-
-### Agent Client Interface
-
-```python
-def get_config_errors() -> list[str]:
-    """Returns list of missing required env var names. Empty list = all good."""
-
-def invoke(prompt: str, model_id: Optional[str] = None) -> str:
-    """Send prompt to runtime, return response text. Raises RuntimeError on failure."""
-```
-
-### Cognito Client Interface
-
-```python
-def get_authenticator(secret_id: str, region: str) -> CognitoAuthenticator:
-    """Read Cognito params from Secrets Manager, return configured authenticator."""
-```
-
-### Runtime Entrypoint Interface
-
-```python
-@app.entrypoint
-def invoke(payload: dict, context: dict | None = None) -> dict:
-    """Accept prompt + optional model_id, return {"response": "..."}."""
-```
-
----
+| Scenario | Behavior |
+|----------|----------|
+| SSM `get_parameter` fails (network, permissions) | `get_model_config` falls back to `MODEL_ID` env var, then hardcoded default |
+| `STUDENT_SERVICES_AGENT_URL` not set | Thin client displays error and calls `st.stop()` |
+| HTTP request to orchestrator fails | Thin client displays error message in chat, does not crash |
+| Empty prompt submitted | Orchestrator returns `{"response": "Error: 'prompt' field is required..."}` |
+| Invalid/unknown model_id from SSM | BedrockModel raises at invocation time; error propagates to response |
 
 ## Testing Strategy
 
-**Property-based tests** (6 properties below) cover the runtime model validation logic and agent client request/response handling — these are pure functions with clear input/output behavior where input variation reveals edge cases.
+### Unit Tests (Example-Based)
+- Verify each agent.py imports and calls `get_model_config()` (not hardcoded)
+- Verify `agent_client.invoke()` calls SigV4Auth with service `"bedrock-agentcore"`
+- Verify orchestrator rejects empty prompts with appropriate error
+- Verify thin client stops when `STUDENT_SERVICES_AGENT_URL` is unset
+- Verify CDK stack synthesizes with expected resources (CDK assertions)
 
-**Example-based unit tests** cover:
-- Static configuration values (ALLOWED_MODELS contents, Config constants)
-- BedrockModel instantiation parameters (region, max_tokens)
-- SigV4 signing with correct service name and region
-- Streamlit UI rendering (page title, sidebar components)
+### Edge Case Tests
+- `get_model_config()` returns hardcoded default when SSM raises `ClientError`
+- `get_model_config()` returns hardcoded default when SSM raises network timeout
+- Orchestrator ignores `model_id` field if present in request payload
+- Thin client displays error gracefully when HTTP request fails
 
-**Integration tests** (CDK assertion tests) cover:
-- All CDK stack resources (VPC, ECS, ALB, CloudFront, Cognito, IAM)
-- Resource property values and cross-resource references
+### Integration Tests
+- CloudFormation stack deploys and all 5 roles can call `ssm:GetParameter`
+- ECS Fargate container starts and serves on port 8501
+- End-to-end: thin client → orchestrator → gateway → specialist → response
 
-**Smoke tests** cover:
-- Dockerfile structure (ARM64 base, port 8501, entrypoint)
-- requirements.txt completeness
-- cdk.json pointing to correct app entry
-
----
+### Property-Based Tests
+- Config structure invariant (Property 1)
+- SSM freshness / no caching (Property 2)
+- Session cache isolation (Property 3)
+- API contract validation (Property 4)
+- Client request serialization (Property 5)
 
 ## Correctness Properties
 
 *A property is a characteristic or behavior that should hold true across all valid executions of a system — essentially, a formal statement about what the system should do. Properties serve as the bridge between human-readable specifications and machine-verifiable correctness guarantees.*
 
-### Property 1: Invalid model rejection
+### Property 1: Config Structure Invariant
 
-*For any* string that is not a member of the ALLOWED_MODELS list, when provided as `model_id` in the request payload, the runtime SHALL return a response containing an error message that lists the permitted models, and SHALL NOT create or invoke an Agent.
+*For any* value stored in the SSM parameter `/student-services/model-id` (including when SSM is unreachable), the `get_model_config()` function SHALL return a dictionary with exactly three keys (`model_id`, `region`, `max_tokens`) where `region` is always `"us-west-2"` and `max_tokens` is always `4096`.
 
-**Validates: Requirements 1.3**
+**Validates: Requirements 1.1, 1.2, 1.3**
 
-### Property 2: Default model fallback
+### Property 2: SSM Freshness (No Caching)
 
-*For any* request payload where `model_id` is absent, empty, or whitespace-only, the runtime SHALL resolve the model to `us.amazon.nova-2-lite-v1:0` and use it for agent creation.
+*For any* two consecutive calls to `get_model_config()` where the SSM parameter value changes between calls, the second call SHALL return the updated `model_id` value — demonstrating that no stale cached value is returned.
 
-**Validates: Requirements 1.2**
+**Validates: Requirements 8.1, 8.3**
 
-### Property 3: Cache key incorporates model selection
+### Property 3: Session Cache Isolation
 
-*For any* combination of session_id, user_id, and valid model_id, the agent cache key SHALL equal `{session_id}/{user_id}/{model_id}`, ensuring that the same user switching models gets a distinct Agent instance.
+*For any* orchestrator agent cache and any sequence of SSM parameter updates, an Agent instance cached under key `{session_id}/{user_id}` SHALL continue using the `model_id` that was current when that cache entry was created, while a new cache entry created after the update SHALL use the new `model_id`.
 
-**Validates: Requirements 1.4**
+**Validates: Requirements 2.2, 8.2**
 
-### Property 4: Request body construction reflects model_id presence
+### Property 4: Orchestrator API Contract
 
-*For any* prompt string and optional model_id, the Agent Client SHALL construct a JSON body where: (a) if model_id is truthy, the body contains both `"prompt"` and `"model_id"` keys with their respective values; (b) if model_id is falsy or absent, the body contains only the `"prompt"` key.
+*For any* non-empty string `s`, invoking the orchestrator with payload `{"prompt": s}` SHALL return a JSON object containing exactly a `"response"` key with a string value. No `model_id` field in the request payload SHALL influence the model used.
 
-**Validates: Requirements 2.4, 2.5**
+**Validates: Requirements 2.3, 2.4**
 
-### Property 5: Successful response extraction
+### Property 5: Client Request Serialization
 
-*For any* HTTP 200 response containing a JSON object with a `"response"` field, the Agent Client SHALL return the exact string value of that field without modification.
+*For any* non-empty string `prompt`, the `agent_client.invoke(prompt)` function SHALL send an HTTP POST request with body exactly equal to `json.dumps({"prompt": prompt})` and the request SHALL be signed with SigV4 using service name `"bedrock-agentcore"`.
 
-**Validates: Requirements 2.6**
-
-### Property 6: Error propagation on non-200 status
-
-*For any* HTTP response with a status code other than 200, the Agent Client SHALL raise a RuntimeError whose message contains both the numeric status code and the response body text.
-
-**Validates: Requirements 2.8**
+**Validates: Requirements 5.2, 5.3**

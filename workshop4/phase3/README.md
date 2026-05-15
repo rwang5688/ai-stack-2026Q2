@@ -221,85 +221,76 @@ Thin Client ──(SigV4/IAM)──→ StudentServicesAgent (HTTP runtime)
 
 All Phase 3 resources deploy to **us-west-2** (matching Phase 1 infrastructure).
 
+## Model Configuration
+
+All runtimes (orchestrator + 4 specialists) read the model ID from SSM Parameter Store at agent creation time:
+
+```
+/student-services/model-id → us.amazon.nova-2-lite-v1:0  (default, set by Phase 1 infra stack)
+```
+
+**To change the model for all agents:**
+
+```bash
+aws ssm put-parameter \
+  --name /student-services/model-id \
+  --value "us.anthropic.claude-sonnet-4-6" \
+  --type String \
+  --overwrite \
+  --region us-west-2
+```
+
+Then redeploy runtimes (`agentcore deploy -y`) for the change to take effect on next cold start.
+
+**Resolution order** (same as Phase 1): environment variable `MODEL_ID` → SSM `/student-services/model-id` → hardcoded default `us.amazon.nova-2-lite-v1:0`
+
+### Why No Dynamic Model Selection?
+
+In Phase 1/2 (monolithic), the orchestrator creates specialist agents locally and can pass the model config directly. In Phase 3 (microservices), the orchestrator communicates with specialists via MCP protocol through the gateway — there's no mechanism to propagate a model choice from the thin client through the orchestrator, through the gateway, to each specialist's internal agent.
+
+Dynamic per-request model selection in a distributed architecture would require:
+1. Adding `model_id` as a parameter to every MCP tool
+2. Each specialist's MCP handler accepting and forwarding it to its internal agent
+3. Breaking the independence of each microservice's configuration
+
+The SSM approach gives you centralized, consistent model configuration across all runtimes without coupling them at the protocol level. The thin client displays the configured model as read-only information.
+
 ## Sample Test Prompts (Runtime Playground)
 
 Use these in the AgentCore Runtime Playground or via `agentcore invoke`.
 
-### Request Payload Format
-
-```json
-{
-  "model_id": "us.anthropic.claude-sonnet-4-6",
-  "prompt": "What courses are available for Fall 2026?"
-}
-```
-
-The `model_id` field is optional. If omitted, defaults to `us.amazon.nova-2-lite-v1:0`.
-
-Allowed models:
-- `us.amazon.nova-2-lite-v1:0` (default)
-- `us.anthropic.claude-sonnet-4-6`
-
 ### Course Registration
 
-```json
-{"prompt": "Register student STU001 for CS 441 in Fall 2026"}
 ```
-
-```json
-{"model_id": "us.anthropic.claude-sonnet-4-6", "prompt": "Register student STU001 for CS 441 in Fall 2026"}
+Register student STU001 for CS 441 in Fall 2026
 ```
 
 ### Course Reviews
 
-```json
-{"prompt": "What are the most challenging courses?"}
+```
+What are the most challenging courses?
 ```
 
-```json
-{"model_id": "us.anthropic.claude-sonnet-4-6", "prompt": "What are the most challenging courses?"}
+```
+Find courses about artificial intelligence
 ```
 
-```json
-{"prompt": "Find courses about artificial intelligence"}
 ```
-
-```json
-{"model_id": "us.anthropic.claude-sonnet-4-6", "prompt": "Find courses about artificial intelligence"}
-```
-
-```json
-{"prompt": "Tell me about CS 441 Machine Learning"}
-```
-
-```json
-{"model_id": "us.anthropic.claude-sonnet-4-6", "prompt": "Tell me about CS 441 Machine Learning"}
+Tell me about CS 441 Machine Learning
 ```
 
 ### Loan Prediction
 
-```json
-{"prompt": "Will a person with these features accept the loan: 29,2,999,0,1,0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0"}
 ```
-
-```json
-{"model_id": "us.anthropic.claude-sonnet-4-6", "prompt": "Will a person with these features accept the loan: 29,2,999,0,1,0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0"}
+Will a person with these features accept the loan: 29,2,999,0,1,0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0
 ```
 
 ### Math Tutoring
 
-```json
-{"prompt": "Solve x^2 + 5x + 6 = 0"}
+```
+Solve x^2 + 5x + 6 = 0
 ```
 
-```json
-{"model_id": "us.anthropic.claude-sonnet-4-6", "prompt": "Solve x^2 + 5x + 6 = 0"}
 ```
-
-```json
-{"prompt": "What is the derivative of x^3 + 2x?"}
-```
-
-```json
-{"model_id": "us.anthropic.claude-sonnet-4-6", "prompt": "What is the derivative of x^3 + 2x?"}
+What is the derivative of x^3 + 2x?
 ```

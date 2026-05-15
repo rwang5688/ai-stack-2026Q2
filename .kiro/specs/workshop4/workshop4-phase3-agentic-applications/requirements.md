@@ -2,185 +2,136 @@
 
 ## Introduction
 
-This specification defines the backend runtime modification and thin client applications for Workshop 4 Phase 3 — the AgentCore microservices architecture. The backend change adds dynamic model selection to the StudentServicesAgent runtime, allowing thin clients to specify which foundation model powers the agent. Two thin client deployment targets are covered: a local development Streamlit app and a production web deployment on ECS Fargate with CloudFront, ALB, and Cognito authentication. Both thin clients invoke the StudentServicesAgent HTTP runtime on AgentCore via SigV4-signed HTTP POST requests.
+Phase 3 adds SSM-based model configuration and thin client interfaces to the Student Services AgentCore microservices architecture. All 5 AgentCore runtimes (1 orchestrator + 4 MCP specialists) read their model configuration from a shared SSM parameter (`/student-services/model-id`) at agent creation time, replacing hardcoded model IDs. A local Streamlit thin client and a production ECS Fargate deployment provide chat UIs that invoke the orchestrator via SigV4-signed HTTP POST. The model is a system-wide parameter — not a per-user or per-request choice — enabling administrators to switch models by updating a single SSM parameter without redeploying any runtime.
 
 ## Glossary
 
-- **StudentServicesAgent_Runtime**: The AgentCore HTTP runtime hosting the orchestrator agent at `workshop4/phase3/studentservices/student_services/agent.py`, accepting `{"prompt": "...", "model_id": "..."}` payloads and returning `{"response": "..."}`
-- **Thin_Client**: A Streamlit-based chat UI that sends user prompts to the StudentServicesAgent_Runtime and displays responses without performing any agent logic locally
-- **Agent_Client**: A Python module that constructs SigV4-signed HTTP POST requests to the StudentServicesAgent_Runtime URL and parses JSON responses
-- **SigV4**: AWS Signature Version 4 request signing protocol used to authenticate HTTP requests to AWS services, with service name `bedrock-agentcore`
-- **CDK_Stack**: An AWS CDK (Python) infrastructure-as-code stack that provisions cloud resources for the production deployment
-- **ECS_Fargate**: AWS Elastic Container Service serverless compute for running Docker containers without managing servers
-- **CloudFront**: AWS content delivery network providing HTTPS termination in front of the ALB
-- **ALB**: Application Load Balancer routing HTTP traffic to ECS Fargate tasks
-- **Cognito**: AWS Cognito User Pool providing user authentication for the production web deployment
-- **Secrets_Manager**: AWS Secrets Manager storing Cognito pool parameters for runtime retrieval
-- **Config_Module**: A Python configuration class defining stack name, region, secrets ID, and custom header values
-- **Allowed_Models**: The set of model identifiers permitted for use: `us.amazon.nova-2-lite-v1:0` (default) and `us.anthropic.claude-sonnet-4-6`
+- **AgentCore_Runtime**: A Bedrock AgentCore Direct Deploy runtime hosting a Strands Agent or FastMCP server
+- **Orchestrator**: The StudentServicesAgent runtime that routes user prompts to specialist MCP tools via the AgentCore Gateway
+- **Specialist_MCP_Server**: One of the 4 MCP runtimes (CourseRegistrationMcp, CourseReviewMcp, LoanApplicationMcp, MathTeachingMcp)
+- **SSM_Parameter**: An AWS Systems Manager Parameter Store parameter at path `/student-services/model-id`
+- **get_model_config**: A helper function that reads model configuration from SSM and returns a dictionary with model_id, region, and max_tokens
+- **Thin_Client**: A Streamlit web application that sends prompts to the Orchestrator and displays responses
+- **Local_Thin_Client**: The Streamlit app in `workshop4/phase3/streamlit_app/` run locally via `streamlit run`
+- **Production_Web_App**: The Streamlit app deployed on ECS Fargate behind CloudFront + ALB with Cognito authentication in `workshop4/phase3/deploy-streamlit-app/`
+- **SigV4**: AWS Signature Version 4 request signing for authenticating HTTP requests to AgentCore runtimes
+- **AgentCoreBasePolicy**: The shared IAM managed policy attached to all 5 execution roles in the CloudFormation stack
+- **CDK_Stack**: The AWS CDK Python stack that deploys the Production_Web_App infrastructure
 
 ## Requirements
 
-### Requirement 1: Runtime Model Selection
+### Requirement 1: SSM Model Configuration Helper
 
-**User Story:** As a developer, I want the StudentServicesAgent runtime to accept an optional model_id in the request payload, so that thin clients can dynamically select which foundation model powers the agent without redeploying the runtime.
-
-#### Acceptance Criteria
-
-1. WHEN the request payload contains a `model_id` field with a non-empty string value from the Allowed_Models list, THE StudentServicesAgent_Runtime SHALL use that model_id for BedrockModel creation instead of the hardcoded default
-2. WHEN the request payload does not contain a `model_id` field or the field is empty, THE StudentServicesAgent_Runtime SHALL use the default model_id `us.amazon.nova-2-lite-v1:0`
-3. IF the request payload contains a `model_id` value that is not in the Allowed_Models list, THEN THE StudentServicesAgent_Runtime SHALL return an error response indicating the model is not allowed and listing the permitted models
-4. THE StudentServicesAgent_Runtime SHALL cache Agent instances by the composite key `{session_id}/{user_id}/{model_id}` so that switching models creates a new Agent instance
-5. THE StudentServicesAgent_Runtime SHALL pass the resolved model_id to BedrockModel with region_name `us-west-2` and max_tokens 4096
-6. THE StudentServicesAgent_Runtime SHALL define the Allowed_Models list as a module-level constant containing `us.amazon.nova-2-lite-v1:0` and `us.anthropic.claude-sonnet-4-6`
-
-### Requirement 2: Agent Client Module
-
-**User Story:** As a developer, I want a reusable HTTP client module that signs requests to the StudentServicesAgent runtime and supports model selection, so that both local and deployed thin clients can communicate with AgentCore securely.
+**User Story:** As a workshop developer, I want all AgentCore runtimes to read their model configuration from SSM Parameter Store, so that I can change the model for all runtimes by updating a single parameter without redeploying.
 
 #### Acceptance Criteria
 
-1. THE Agent_Client SHALL send HTTP POST requests to the URL specified by the STUDENT_SERVICES_AGENT_URL environment variable
-2. THE Agent_Client SHALL sign each request using SigV4 with service name `bedrock-agentcore` and region `us-west-2`
-3. THE Agent_Client SHALL send a JSON body with Content-Type header `application/json`
-4. WHEN a model_id parameter is provided to the invoke function, THE Agent_Client SHALL include it in the JSON body as `{"prompt": "<user_message>", "model_id": "<model_id>"}`
-5. WHEN no model_id parameter is provided to the invoke function, THE Agent_Client SHALL send only `{"prompt": "<user_message>"}`
-6. THE Agent_Client SHALL extract and return the `response` field from the JSON reply on HTTP 200 status
-7. IF the STUDENT_SERVICES_AGENT_URL environment variable is empty or unset, THEN THE Agent_Client SHALL report the missing variable via a configuration error check function
-8. IF the HTTP response status code is not 200, THEN THE Agent_Client SHALL raise a RuntimeError containing the status code and response body
-9. IF a network error occurs during the HTTP request, THEN THE Agent_Client SHALL raise a RuntimeError describing the failure
-10. THE Agent_Client SHALL use boto3 Session credentials for SigV4 signing to support IAM roles, environment credentials, and AWS profiles
-11. THE Agent_Client SHALL set an HTTP request timeout of 120 seconds
+1. WHEN an AgentCore_Runtime creates a new Agent instance, THE get_model_config function SHALL read the `/student-services/model-id` SSM parameter and return a dictionary containing `model_id`, `region`, and `max_tokens` keys.
+2. THE get_model_config function SHALL return `region` as `us-west-2` and `max_tokens` as `4096` as fixed values in the returned dictionary.
+3. IF the SSM parameter read fails, THEN THE get_model_config function SHALL fall back to the hardcoded default model ID `us.amazon.nova-2-lite-v1:0`.
+4. THE get_model_config function SHALL use `boto3.client("ssm")` with `get_parameter` to read the single parameter `/student-services/model-id`.
+5. THE get_model_config function SHALL be defined in a shared module at `workshop4/phase3/studentservices/shared/config.py` importable by all 5 agent.py files.
 
-### Requirement 3: Local Streamlit Chat UI
+### Requirement 2: Orchestrator SSM Integration
 
-**User Story:** As a developer, I want a local Streamlit chat application for testing the StudentServicesAgent runtime with model selection, so that I can verify agent behavior during development without deploying infrastructure.
+**User Story:** As a workshop developer, I want the StudentServicesAgent orchestrator to use get_model_config instead of hardcoding the model ID, so that model changes propagate to the orchestrator automatically.
 
 #### Acceptance Criteria
 
-1. THE Thin_Client SHALL display a page title of "Student Services Assistant" and a university-themed header
-2. THE Thin_Client SHALL validate required environment variables on startup and display an error message with the missing variable names when validation fails
-3. THE Thin_Client SHALL display a model selection dropdown in the sidebar with display names and model IDs matching the Allowed_Models list
-4. WHEN a user submits a non-empty message via the chat input, THE Thin_Client SHALL invoke the Agent_Client with the message text and the currently selected model_id
-5. WHILE the Agent_Client request is in progress, THE Thin_Client SHALL display a spinner with the text "Thinking..."
-6. IF the Agent_Client raises an exception, THEN THE Thin_Client SHALL display the error message in the chat interface
-7. THE Thin_Client SHALL maintain chat history in session state and render all previous messages on page load
-8. THE Thin_Client SHALL provide a "Clear Chat" button in the sidebar that resets the conversation history
-9. THE Thin_Client SHALL display sample prompts in the sidebar covering course registration, course reviews, loan prediction, and math tutoring domains
-10. THE Thin_Client SHALL reside in the directory `workshop4/phase3/streamlit_app/`
+1. WHEN the StudentServicesAgent Orchestrator creates a cached Agent instance, THE Orchestrator SHALL call get_model_config and use the returned `model_id` value to construct the BedrockModel.
+2. THE Orchestrator SHALL continue to cache agents keyed by `{session_id}/{user_id}` so that new sessions pick up SSM parameter changes while existing sessions retain their model.
+3. THE Orchestrator SHALL accept only `{"prompt": "..."}` as the request payload format and SHALL return `{"response": "..."}` as the response format.
+4. THE Orchestrator SHALL NOT accept a `model_id` field in the request payload.
 
-### Requirement 4: Production Streamlit App with Cognito Authentication
+### Requirement 3: Specialist MCP Servers SSM Integration
 
-**User Story:** As a developer, I want a production-ready Streamlit app that adds Cognito user authentication to the thin client with model selection, so that the deployed web application restricts access to authenticated users and provides full feature parity with the local version.
+**User Story:** As a workshop developer, I want all 4 specialist MCP servers to use get_model_config instead of hardcoding the model ID, so that model changes propagate to all specialists automatically.
 
 #### Acceptance Criteria
 
-1. THE Thin_Client SHALL authenticate users via Cognito before displaying the chat interface, using the streamlit-cognito-auth library
-2. THE Thin_Client SHALL retrieve Cognito pool parameters (pool_id, app_client_id, app_client_secret) from Secrets_Manager using the secret ID defined in Config_Module
-3. WHEN a user is not authenticated, THE Thin_Client SHALL display the Cognito login form and stop rendering the chat interface
-4. WHEN a user is authenticated, THE Thin_Client SHALL display the username in the sidebar and provide a Logout button
-5. THE Thin_Client SHALL include the same chat functionality, model selection, sample prompts, and error handling as the local development version
-6. THE Thin_Client SHALL read the STUDENT_SERVICES_AGENT_URL from an environment variable injected by the ECS task definition
-7. THE Thin_Client SHALL reside in the directory `workshop4/phase3/deploy-streamlit-app/docker_app/`
+1. WHEN the CourseRegistrationMcp Specialist_MCP_Server creates an Agent instance, THE CourseRegistrationMcp SHALL call get_model_config and use the returned `model_id` to construct the BedrockModel.
+2. WHEN the CourseReviewMcp Specialist_MCP_Server creates an Agent instance, THE CourseReviewMcp SHALL call get_model_config and use the returned `model_id` to construct the BedrockModel.
+3. WHEN the LoanApplicationMcp Specialist_MCP_Server creates an Agent instance, THE LoanApplicationMcp SHALL call get_model_config and use the returned `model_id` to construct the BedrockModel.
+4. WHEN the MathTeachingMcp Specialist_MCP_Server creates an Agent instance, THE MathTeachingMcp SHALL call get_model_config and use the returned `model_id` to construct the BedrockModel.
+5. THE Specialist_MCP_Server agent.py files SHALL import get_model_config from the shared config module rather than duplicating SSM logic.
 
-### Requirement 5: Configuration Module
+### Requirement 4: IAM Permission for SSM Access
 
-**User Story:** As a developer, I want a centralized configuration module for the CDK stack and Docker app, so that resource naming and deployment parameters are consistent and easy to update.
+**User Story:** As a workshop developer, I want all AgentCore execution roles to have permission to read SSM parameters, so that the get_model_config function can access `/student-services/model-id` at runtime.
 
 #### Acceptance Criteria
 
-1. THE Config_Module SHALL define STACK_NAME as `StudentServicesPhase3`
-2. THE Config_Module SHALL define DEPLOYMENT_REGION as `us-west-2`
-3. THE Config_Module SHALL define SECRETS_MANAGER_ID derived from the STACK_NAME for Cognito secret storage
-4. THE Config_Module SHALL define CUSTOM_HEADER_VALUE as a unique string for CloudFront-to-ALB request validation
-5. THE Config_Module SHALL reside in the directory `workshop4/phase3/deploy-streamlit-app/docker_app/`
+1. THE AgentCoreBasePolicy in `student-services-agentcore-infra.yaml` SHALL include an `ssm:GetParameter` permission statement.
+2. THE SSM permission resource scope SHALL be limited to `arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/student-services/*`.
+3. WHEN the CloudFormation stack is deployed, THE AgentCoreBasePolicy SHALL grant all 5 execution roles the ability to read SSM parameters under the `/student-services/` path.
 
-### Requirement 6: Docker Container Image
+### Requirement 5: Local Thin Client
 
-**User Story:** As a developer, I want a Docker image that packages the production Streamlit app for deployment on ECS Fargate, so that the application runs consistently in the cloud environment.
+**User Story:** As a workshop participant, I want a local Streamlit chat application that sends prompts to the StudentServicesAgent runtime, so that I can test the agentic system from my development machine.
 
 #### Acceptance Criteria
 
-1. THE Docker image SHALL be built from the `docker_app/` directory within `workshop4/phase3/deploy-streamlit-app/`
-2. THE Docker image SHALL target the ARM64 architecture for Graviton-based Fargate tasks
-3. THE Docker image SHALL expose port 8501 for Streamlit's default HTTP server
-4. THE Docker image SHALL install all Python dependencies including streamlit, boto3, httpx, and streamlit-cognito-auth
-5. THE Docker image SHALL run the Streamlit application as the container entrypoint
+1. THE Local_Thin_Client SHALL provide a Streamlit chat interface with a text input field and message history display.
+2. WHEN the user submits a prompt, THE Local_Thin_Client SHALL send an HTTP POST request to the StudentServicesAgent runtime URL with body `{"prompt": "<user_message>"}`.
+3. THE Local_Thin_Client SHALL sign all HTTP requests to the Orchestrator using SigV4 with service name `bedrock-agentcore` and the configured AWS region.
+4. THE Local_Thin_Client SHALL display the `response` field from the JSON reply in the chat message area.
+5. THE Local_Thin_Client SHALL read the runtime URL from the `STUDENT_SERVICES_AGENT_URL` environment variable.
+6. THE Local_Thin_Client SHALL display the currently configured model ID (read from SSM parameter `/student-services/model-id`) as read-only information in the sidebar.
+7. THE Local_Thin_Client SHALL provide a "Clear Chat" button in the sidebar that resets the conversation history.
+8. IF the `STUDENT_SERVICES_AGENT_URL` environment variable is not set, THEN THE Local_Thin_Client SHALL display an error message and stop execution.
+9. IF the HTTP request to the Orchestrator fails, THEN THE Local_Thin_Client SHALL display the error message in the chat area without crashing.
+10. THE Local_Thin_Client SHALL be located at `workshop4/phase3/streamlit_app/` with an `app.py` entry point, `agent_client.py` for HTTP logic, and `requirements.txt` for dependencies.
 
-### Requirement 7: CDK Stack — VPC and Networking
+### Requirement 6: Production Web App Infrastructure
 
-**User Story:** As a developer, I want the CDK stack to provision a VPC with public and private subnets, so that the ALB is internet-accessible while ECS tasks run in private subnets with NAT egress.
-
-#### Acceptance Criteria
-
-1. THE CDK_Stack SHALL create a VPC with CIDR `10.0.0.0/16`, 2 availability zones, and 1 NAT gateway
-2. THE CDK_Stack SHALL create an ALB security group allowing inbound HTTP traffic on port 80
-3. THE CDK_Stack SHALL create an ECS security group allowing inbound traffic on port 8501 only from the ALB security group
-4. THE CDK_Stack SHALL place the ALB in public subnets and ECS tasks in private subnets with egress
-
-### Requirement 8: CDK Stack — ECS Fargate Service
-
-**User Story:** As a developer, I want the CDK stack to deploy the Streamlit Docker container on ECS Fargate, so that the application runs serverlessly with automatic scaling and health management.
+**User Story:** As a workshop developer, I want the thin client deployed on ECS Fargate behind CloudFront with Cognito authentication, so that the application is accessible over HTTPS with user login.
 
 #### Acceptance Criteria
 
-1. THE CDK_Stack SHALL create a Fargate task definition with 256 CPU units and 512 MiB memory on ARM64 runtime platform
-2. THE CDK_Stack SHALL build the Docker image from the `docker_app/` directory and add it as the task container
-3. THE CDK_Stack SHALL map container port 8501 with TCP protocol
-4. THE CDK_Stack SHALL pass the STUDENT_SERVICES_AGENT_URL as an environment variable to the container via CDK context parameter `student_services_agent_url`
-5. THE CDK_Stack SHALL create a Fargate service in private subnets with the ECS security group attached
-6. THE CDK_Stack SHALL enable AWS CloudWatch logging with a stream prefix for container logs
+1. THE CDK_Stack SHALL deploy an ECS Fargate service running the Streamlit Thin_Client container on ARM64 (Graviton).
+2. THE CDK_Stack SHALL create a VPC with 2 availability zones, public subnets for the ALB, and private subnets with NAT gateway for ECS tasks.
+3. THE CDK_Stack SHALL create an Application Load Balancer that routes traffic to the ECS service on port 8501.
+4. THE CDK_Stack SHALL create a CloudFront distribution in front of the ALB with a custom header to restrict direct ALB access.
+5. THE CDK_Stack SHALL create a Cognito User Pool and store pool credentials in Secrets Manager for the application to use.
+6. THE CDK_Stack SHALL grant the ECS task role `bedrock-agentcore:InvokeAgentRuntime` permission to invoke the Orchestrator runtime.
+7. THE CDK_Stack SHALL grant the ECS task role `ssm:GetParameter` and `ssm:GetParametersByPath` permissions to read model configuration from SSM.
+8. THE CDK_Stack SHALL grant the ECS task role read access to the Cognito secret in Secrets Manager.
+9. THE CDK_Stack SHALL use a `config_file.py` with stack name `StudentServicesPhase3` and a unique custom header value.
+10. THE CDK_Stack SHALL output the CloudFront distribution URL and Cognito User Pool ID.
+11. THE CDK_Stack SHALL be located at `workshop4/phase3/deploy-streamlit-app/` following the same structure as the Phase 2 CDK deployment.
 
-### Requirement 9: CDK Stack — ALB and CloudFront
+### Requirement 7: Production Web App Container
 
-**User Story:** As a developer, I want the CDK stack to provision CloudFront in front of an ALB, so that users access the application over HTTPS while the ALB validates requests originate from CloudFront.
-
-#### Acceptance Criteria
-
-1. THE CDK_Stack SHALL create an internet-facing ALB in public subnets
-2. THE CDK_Stack SHALL create a CloudFront distribution with the ALB as origin, using HTTP-only origin protocol and caching disabled
-3. THE CDK_Stack SHALL configure CloudFront to inject a custom header (X-Custom-Header) with the value from Config_Module on all origin requests
-4. THE CDK_Stack SHALL configure the ALB listener on port 80 to route requests containing the custom header to the ECS target group on port 8501
-5. THE CDK_Stack SHALL configure the ALB listener default action to return HTTP 403 for requests missing the custom header
-6. THE CDK_Stack SHALL configure CloudFront to redirect viewers to HTTPS and allow all HTTP methods
-
-### Requirement 10: CDK Stack — Cognito and Secrets Manager
-
-**User Story:** As a developer, I want the CDK stack to create a Cognito User Pool and store its parameters in Secrets Manager, so that the Streamlit app can authenticate users without hardcoded credentials.
+**User Story:** As a workshop developer, I want the production Docker container to run the same thin client logic as the local version, so that behavior is consistent between local and deployed environments.
 
 #### Acceptance Criteria
 
-1. THE CDK_Stack SHALL create a Cognito User Pool for end-user authentication
-2. THE CDK_Stack SHALL create a Cognito User Pool Client with a generated secret
-3. THE CDK_Stack SHALL store pool_id, app_client_id, and app_client_secret in a Secrets Manager secret with the ID defined in Config_Module
-4. THE CDK_Stack SHALL grant the ECS task role read access to the Cognito secret in Secrets_Manager
+1. THE Production_Web_App container SHALL run the Streamlit application on port 8501.
+2. THE Production_Web_App SHALL read the `STUDENT_SERVICES_AGENT_URL` from an environment variable passed by the CDK stack or set at deploy time.
+3. THE Production_Web_App SHALL implement Cognito-based user authentication using the credentials stored in Secrets Manager.
+4. THE Production_Web_App SHALL use the same SigV4 signing logic as the Local_Thin_Client for requests to the Orchestrator.
+5. THE Production_Web_App SHALL include a Dockerfile that installs dependencies and runs `streamlit run app.py --server.port=8501`.
+6. THE Production_Web_App docker application SHALL be located at `workshop4/phase3/deploy-streamlit-app/docker_app/`.
 
-### Requirement 11: CDK Stack — IAM Permissions
+### Requirement 8: Model Switch Without Redeployment
 
-**User Story:** As a developer, I want the ECS task role to have permission to invoke the AgentCore runtime, so that the containerized thin client can communicate with the StudentServicesAgent.
-
-#### Acceptance Criteria
-
-1. THE CDK_Stack SHALL attach an inline IAM policy to the ECS task role granting `bedrock-agentcore:InvokeAgentRuntime` action on all resources
-2. THE CDK_Stack SHALL grant the ECS task role read access to the Secrets_Manager secret containing Cognito parameters
-
-### Requirement 12: CDK Stack — Outputs
-
-**User Story:** As a developer, I want the CDK stack to output the CloudFront URL and Cognito Pool ID, so that I can access the deployed application and configure user accounts.
+**User Story:** As an administrator, I want to change the model used by all runtimes by updating a single SSM parameter, so that new sessions use the updated model without requiring any redeployment.
 
 #### Acceptance Criteria
 
-1. THE CDK_Stack SHALL output the CloudFront distribution domain name as `CloudFrontDistributionURL`
-2. THE CDK_Stack SHALL output the Cognito User Pool ID as `CognitoPoolId`
+1. WHEN an administrator updates the SSM parameter `/student-services/model-id` to a new value, THE AgentCore_Runtime SHALL use the new model ID for all subsequently created Agent instances.
+2. WHILE an existing cached Agent session is active, THE AgentCore_Runtime SHALL continue using the model ID that was configured when that session was created.
+3. THE get_model_config function SHALL read from SSM on each invocation without caching the parameter value, so that new sessions always get the current value.
 
-### Requirement 13: CDK Project Structure
+### Requirement 9: README Documentation
 
-**User Story:** As a developer, I want the CDK project to follow the established Phase 2 directory layout, so that the deployment is consistent and familiar.
+**User Story:** As a workshop participant, I want documentation explaining the SSM-based model configuration pattern and deployment steps, so that I understand the architectural decisions and can follow the workshop.
 
 #### Acceptance Criteria
 
-1. THE CDK_Stack SHALL reside at `workshop4/phase3/deploy-streamlit-app/cdk/cdk_stack.py`
-2. THE CDK_Stack SHALL use the stack name `StudentServicesPhase3` matching Config_Module
-3. THE CDK_Stack SHALL include a CDK app entry point at `workshop4/phase3/deploy-streamlit-app/cdk/app.py`
-4. THE CDK_Stack SHALL include `cdk.json` at `workshop4/phase3/deploy-streamlit-app/` pointing to the app entry point
-5. THE CDK_Stack SHALL accept the StudentServicesAgent runtime URL via CDK context parameter `student_services_agent_url`
+1. THE README SHALL explain why dynamic per-request model propagation is difficult in microservices architectures with multiple hops (UI → orchestrator → gateway → MCP server → inner agent).
+2. THE README SHALL explain that propagating model_id through MCP tool calls would require changing the MCP protocol contract at each hop.
+3. THE README SHALL explain that SSM provides "one model everywhere" via shared configuration — change once, all runtimes pick it up on next session creation.
+4. THE README SHALL document the steps to deploy the local thin client including setting the `STUDENT_SERVICES_AGENT_URL` environment variable.
+5. THE README SHALL document the steps to deploy the production web app using CDK.
+6. THE README SHALL document how to switch models by updating the SSM parameter via AWS CLI.
