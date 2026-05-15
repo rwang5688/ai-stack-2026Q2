@@ -225,38 +225,81 @@ All Phase 3 resources deploy to **us-west-2** (matching Phase 1 infrastructure).
 
 Use these in the AgentCore Runtime Playground or via `agentcore invoke`.
 
+### Request Payload Format
+
+```json
+{
+  "model_id": "us.anthropic.claude-sonnet-4-6",
+  "prompt": "What courses are available for Fall 2026?"
+}
+```
+
+The `model_id` field is optional. If omitted, defaults to `us.amazon.nova-2-lite-v1:0`.
+
+Allowed models:
+- `us.amazon.nova-2-lite-v1:0` (default)
+- `us.anthropic.claude-sonnet-4-6`
+
 ### Course Registration
 
+```json
+{"prompt": "Register student STU001 for CS 441 in Fall 2026"}
 ```
-Register student STU001 for CS 441 in Fall 2026
+
+```json
+{"model_id": "us.anthropic.claude-sonnet-4-6", "prompt": "Register student STU001 for CS 441 in Fall 2026"}
 ```
 
 ### Course Reviews
 
-```
-What are the most challenging courses?
-```
-
-```
-Find courses about artificial intelligence
+```json
+{"prompt": "What are the most challenging courses?"}
 ```
 
+```json
+{"model_id": "us.anthropic.claude-sonnet-4-6", "prompt": "What are the most challenging courses?"}
 ```
-Tell me about CS 441 Machine Learning
+
+```json
+{"prompt": "Find courses about artificial intelligence"}
+```
+
+```json
+{"model_id": "us.anthropic.claude-sonnet-4-6", "prompt": "Find courses about artificial intelligence"}
+```
+
+```json
+{"prompt": "Tell me about CS 441 Machine Learning"}
+```
+
+```json
+{"model_id": "us.anthropic.claude-sonnet-4-6", "prompt": "Tell me about CS 441 Machine Learning"}
 ```
 
 ### Loan Prediction
 
+```json
+{"prompt": "Will a person with these features accept the loan: 29,2,999,0,1,0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0"}
 ```
-Will a person with these features accept the loan: 29,2,999,0,1,0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0
+
+```json
+{"model_id": "us.anthropic.claude-sonnet-4-6", "prompt": "Will a person with these features accept the loan: 29,2,999,0,1,0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0"}
 ```
 
 ### Math Tutoring
 
-```
-Solve x^2 + 5x + 6 = 0
+```json
+{"prompt": "Solve x^2 + 5x + 6 = 0"}
 ```
 
+```json
+{"model_id": "us.anthropic.claude-sonnet-4-6", "prompt": "Solve x^2 + 5x + 6 = 0"}
 ```
-What is the derivative of x^3 + 2x?
+
+```json
+{"prompt": "What is the derivative of x^3 + 2x?"}
+```
+
+```json
+{"model_id": "us.anthropic.claude-sonnet-4-6", "prompt": "What is the derivative of x^3 + 2x?"}
 ```
