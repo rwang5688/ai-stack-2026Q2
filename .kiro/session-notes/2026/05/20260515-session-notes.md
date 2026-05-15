@@ -22,5 +22,5 @@ Reorganized the repository structure to position code-server CloudFormation cont
 - Workshop 4 theme formalized: "Agentic AI Application Development - From Monolith to Agents as Microservices"
 
 ## Next Steps
-- [ ] Upload changed files to code-server, commit, and push
+- [X] Upload changed files to code-server, commit, and push
 - [ ] Prepare PowerPoint slides for workshop presentation
