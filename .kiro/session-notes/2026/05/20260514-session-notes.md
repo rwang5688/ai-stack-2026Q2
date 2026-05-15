@@ -34,14 +34,23 @@ Thin Client ──(SigV4 POST {"model_id": "...", "prompt": "..."})──→ Stu
 ```
 
 ## Next Steps
-- [ ] Checkpoint: zip specs + README changes, upload to code-server, commit/push
-- [ ] Execute Task 1.1: Modify `student_services/agent.py` to add model selection
-- [ ] Execute Task 1.2: Write property tests for model validation
-- [ ] Redeploy runtime: `agentcore deploy -y` (manual, from Windows PC)
-- [ ] Test in Runtime Playground with model_id payloads
-- [ ] Execute Task 3: Build local thin client (streamlit_app/)
-- [ ] Execute Tasks 5-6: Build production web app (deploy-streamlit-app/)
+- [ ] ~~Checkpoint: zip specs + README changes, upload to code-server, commit/push~~
+- [x] Execute Task 1.1–1.7: Backend changes (shared config inlined into all 5 agent.py files)
+- [x] Deploy CloudFormation stack update (ssm:GetParameter permission added)
+- [ ] Redeploy runtimes: `agentcore deploy -y` (from studentservices/ directory)
+- [ ] Test in Runtime Playground to confirm SSM model config works
+- [ ] Execute Task 3: Build local thin client (streamlit_app/) — DONE (files created)
+- [ ] Test local thin client: set STUDENT_SERVICES_AGENT_URL and run streamlit
+- [ ] Execute Tasks 5-6: Build production web app (deploy-streamlit-app/) — DONE (files created)
 - [ ] Deploy CDK stack from code-server (requires Docker)
+- [ ] Update README with model config teaching point
+
+## Design Pivot: Shared Module → Inline
+- Originally planned `shared/config.py` importable by all runtimes
+- Discovered AgentCore CodeZip only packages the `codeLocation` directory (e.g., `./student_services/`)
+- `shared/` as a sibling directory would NOT be included in the zip
+- Solution: inline `get_model_config()` directly in each agent.py (~20 lines, acceptable duplication)
+- The `shared/` directory still exists but is NOT used by the deployed runtimes
 
 ## Resources
 - Spec: `.kiro/specs/workshop4/workshop4-phase3-agentic-applications/`

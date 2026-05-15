@@ -6,46 +6,49 @@ This plan implements SSM-based model configuration across all 5 AgentCore runtim
 
 ## Tasks
 
-- [ ] 1. Backend: Shared config module and runtime modifications
-  - [ ] 1.1 Create shared config module `workshop4/phase3/studentservices/shared/__init__.py` and `workshop4/phase3/studentservices/shared/config.py`
+- [x] 1. Backend: Shared config module and runtime modifications
+  - [x] 1.1 Create shared config module `workshop4/phase3/studentservices/shared/__init__.py` and `workshop4/phase3/studentservices/shared/config.py`
     - Create `shared/__init__.py` with module docstring
     - Create `shared/config.py` with `get_model_config()` function
     - Resolution order: `MODEL_ID` env var → SSM `/student-services/model-id` → hardcoded default `us.amazon.nova-2-lite-v1:0`
     - Return dict with keys: `model_id`, `region` (always `us-west-2`), `max_tokens` (always `4096`)
     - Use `boto3.client("ssm", region_name="us-west-2")` with `get_parameter`
     - Catch all exceptions from SSM and fall back gracefully
+    - NOTE: shared/ module NOT used by deployed runtimes (CodeZip limitation). Function inlined in each agent.py instead.
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5_
 
-  - [ ] 1.2 Modify `workshop4/phase3/studentservices/student_services/agent.py` to use `get_model_config`
-    - Add `from shared.config import get_model_config` import
+  - [x] 1.2 Modify `workshop4/phase3/studentservices/student_services/agent.py` to use `get_model_config`
+    - Inlined `get_model_config()` directly in agent.py (CodeZip only packages codeLocation directory)
     - Replace hardcoded `BedrockModel(model_id="us.amazon.nova-2-lite-v1:0", ...)` with `get_model_config()` dict values
     - Keep cache key as `{session_id}/{user_id}` (model is infrastructure config, not user identity)
     - _Requirements: 2.1, 2.2, 2.3, 2.4_
 
-  - [ ] 1.3 Modify `workshop4/phase3/studentservices/course_registration/agent.py` to use `get_model_config`
-    - Add `from shared.config import get_model_config` import
+  - [x] 1.3 Modify `workshop4/phase3/studentservices/course_registration/agent.py` to use `get_model_config`
+    - Inlined `get_model_config()` directly in agent.py
     - Replace hardcoded `BedrockModel(model_id="us.amazon.nova-2-lite-v1:0", ...)` in `course_registration_assistant()` with `get_model_config()` dict values
     - _Requirements: 3.1, 3.5_
 
-  - [ ] 1.4 Modify `workshop4/phase3/studentservices/course_review/agent.py` to use `get_model_config`
-    - Add `from shared.config import get_model_config` import
+  - [x] 1.4 Modify `workshop4/phase3/studentservices/course_review/agent.py` to use `get_model_config`
+    - Inlined `get_model_config()` directly in agent.py
     - Replace hardcoded `BedrockModel(model_id="us.amazon.nova-2-lite-v1:0", ...)` in `course_review_assistant()` with `get_model_config()` dict values
     - _Requirements: 3.2, 3.5_
 
-  - [ ] 1.5 Modify `workshop4/phase3/studentservices/loan_application/agent.py` to use `get_model_config`
-    - Add `from shared.config import get_model_config` import
+  - [x] 1.5 Modify `workshop4/phase3/studentservices/loan_application/agent.py` to use `get_model_config`
+    - Inlined `get_model_config()` directly in agent.py
     - Replace hardcoded `BedrockModel(model_id="us.amazon.nova-2-lite-v1:0", ...)` in the MCP tool function with `get_model_config()` dict values
     - _Requirements: 3.3, 3.5_
 
-  - [ ] 1.6 Modify `workshop4/phase3/studentservices/math_teaching/agent.py` to use `get_model_config`
-    - Add `from shared.config import get_model_config` import
+  - [x] 1.6 Modify `workshop4/phase3/studentservices/math_teaching/agent.py` to use `get_model_config`
+    - Inlined `get_model_config()` directly in agent.py
+    - Added `boto3` to math_teaching/requirements.txt
     - Replace hardcoded `BedrockModel(model_id="us.amazon.nova-2-lite-v1:0", ...)` in the MCP tool function with `get_model_config()` dict values
     - _Requirements: 3.4, 3.5_
 
-  - [ ] 1.7 Add `ssm:GetParameter` to `AgentCoreBasePolicy` in `workshop4/phase3/cloudformation/student-services-agentcore-infra.yaml`
+  - [x] 1.7 Add `ssm:GetParameter` to `AgentCoreBasePolicy` in `workshop4/phase3/cloudformation/student-services-agentcore-infra.yaml`
     - Add new Statement with Sid `SSMParameterAccess`
     - Action: `ssm:GetParameter`
     - Resource: `arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/student-services/*`
+    - CloudFormation stack deployed successfully
     - _Requirements: 4.1, 4.2, 4.3_
 
   - [ ]* 1.8 Write property tests for shared config module
@@ -54,14 +57,12 @@ This plan implements SSM-based model configuration across all 5 AgentCore runtim
     - **Validates: Requirements 1.1, 1.2, 1.3, 8.1, 8.3**
 
 - [ ] 2. Checkpoint — Verify backend changes
-  - Ensure all tests pass, ask the user if questions arise.
-  - Manual steps required:
-    - Deploy CloudFormation stack: `aws cloudformation deploy --template-file cloudformation/student-services-agentcore-infra.yaml --stack-name student-services-agentcore-infra --capabilities CAPABILITY_NAMED_IAM`
-    - Create SSM parameter: `aws ssm put-parameter --name /student-services/model-id --value "us.amazon.nova-2-lite-v1:0" --type String`
-    - Redeploy runtimes: `agentcore deploy -y`
+  - CloudFormation stack deployed successfully (ssm:GetParameter added)
+  - SSM parameter `/student-services/model-id` already exists from Phase 1
+  - Manual step remaining: `agentcore deploy -y` (redeploy runtimes with inlined get_model_config)
 
-- [ ] 3. Local thin client: Create `workshop4/phase3/streamlit_app/`
-  - [ ] 3.1 Create `workshop4/phase3/streamlit_app/agent_client.py`
+- [x] 3. Local thin client: Create `workshop4/phase3/streamlit_app/`
+  - [x] 3.1 Create `workshop4/phase3/streamlit_app/agent_client.py`
     - Implement `get_config_errors()` returning list of missing env var names (checks `STUDENT_SERVICES_AGENT_URL`)
     - Implement `invoke(prompt: str) -> str` with SigV4 signing (service `bedrock-agentcore`, region from boto3 session or `us-west-2`)
     - Use `boto3.Session()` for credentials, `httpx` for HTTP POST, 120s timeout
@@ -69,7 +70,7 @@ This plan implements SSM-based model configuration across all 5 AgentCore runtim
     - Extract `response` field from JSON reply on 200, raise `RuntimeError` otherwise
     - _Requirements: 5.2, 5.3, 5.4, 5.5, 5.8, 5.9_
 
-  - [ ] 3.2 Create `workshop4/phase3/streamlit_app/app.py`
+  - [x] 3.2 Create `workshop4/phase3/streamlit_app/app.py`
     - Streamlit chat UI with page title "Student Services Agent" and 🎓 icon
     - Validate env vars on startup via `agent_client.get_config_errors()`, display error and `st.stop()` if missing
     - Sidebar: read-only model ID display (read from SSM `/student-services/model-id`), Clear Chat button, sample prompts
@@ -78,11 +79,11 @@ This plan implements SSM-based model configuration across all 5 AgentCore runtim
     - Maintain chat history in `st.session_state.messages`
     - _Requirements: 5.1, 5.4, 5.6, 5.7, 5.8, 5.9, 5.10_
 
-  - [ ] 3.3 Create `workshop4/phase3/streamlit_app/requirements.txt`
+  - [x] 3.3 Create `workshop4/phase3/streamlit_app/requirements.txt`
     - Include: `boto3`, `httpx`, `streamlit` (alphabetical order)
     - _Requirements: 5.10_
 
-  - [ ] 3.4 Create `workshop4/phase3/streamlit_app/run.ps1` and `workshop4/phase3/streamlit_app/run.sh`
+  - [x] 3.4 Create `workshop4/phase3/streamlit_app/run.ps1` and `workshop4/phase3/streamlit_app/run.sh`
     - PowerShell script with comment about required `STUDENT_SERVICES_AGENT_URL` env var, runs `streamlit run app.py`
     - Bash script with `#!/bin/bash`, same pattern
     - _Requirements: 5.10_
@@ -92,47 +93,46 @@ This plan implements SSM-based model configuration across all 5 AgentCore runtim
     - **Validates: Requirements 5.2, 5.3**
 
 - [ ] 4. Checkpoint — Verify local thin client
-  - Ensure all tests pass, ask the user if questions arise.
   - Manual step: set `STUDENT_SERVICES_AGENT_URL` env var and run `streamlit run app.py` to test locally
 
-- [ ] 5. Production web app: Create `workshop4/phase3/deploy-streamlit-app/docker_app/`
-  - [ ] 5.1 Create `workshop4/phase3/deploy-streamlit-app/docker_app/config_file.py`
+- [x] 5. Production web app: Create `workshop4/phase3/deploy-streamlit-app/docker_app/`
+  - [x] 5.1 Create `workshop4/phase3/deploy-streamlit-app/docker_app/config_file.py`
     - Define `Config` class with `STACK_NAME = "StudentServicesPhase3"`, `SECRETS_MANAGER_ID`, `CUSTOM_HEADER_VALUE`, VPC/ALB/ECS naming constants, `AWS_REGION = "us-west-2"`
     - _Requirements: 6.9, 6.11_
 
-  - [ ] 5.2 Create `workshop4/phase3/deploy-streamlit-app/docker_app/agent_client.py`
+  - [x] 5.2 Create `workshop4/phase3/deploy-streamlit-app/docker_app/agent_client.py`
     - Same SigV4 HTTP client implementation as `streamlit_app/agent_client.py`
     - Reads `STUDENT_SERVICES_AGENT_URL` from environment
     - _Requirements: 7.2, 7.4_
 
-  - [ ] 5.3 Create `workshop4/phase3/deploy-streamlit-app/docker_app/cognito_client.py`
+  - [x] 5.3 Create `workshop4/phase3/deploy-streamlit-app/docker_app/cognito_client.py`
     - Read Cognito credentials from Secrets Manager using `Config.SECRETS_MANAGER_ID`
     - Provide login/logout/session management for Streamlit app
     - _Requirements: 7.3_
 
-  - [ ] 5.4 Create `workshop4/phase3/deploy-streamlit-app/docker_app/app.py`
+  - [x] 5.4 Create `workshop4/phase3/deploy-streamlit-app/docker_app/app.py`
     - Cognito authentication gate — show login form when not authenticated
     - After login, same chat interface as local version (no model_id in payload, read-only model display from SSM)
     - Display username + Logout button in sidebar when authenticated
     - _Requirements: 7.1, 7.3, 7.4_
 
-  - [ ] 5.5 Create `workshop4/phase3/deploy-streamlit-app/docker_app/requirements.txt`
+  - [x] 5.5 Create `workshop4/phase3/deploy-streamlit-app/docker_app/requirements.txt`
     - Include: `boto3`, `httpx`, `streamlit` (alphabetical order)
     - _Requirements: 7.5_
 
-  - [ ] 5.6 Create `workshop4/phase3/deploy-streamlit-app/docker_app/Dockerfile`
+  - [x] 5.6 Create `workshop4/phase3/deploy-streamlit-app/docker_app/Dockerfile`
     - Base image: `python:3.13-slim`
     - Install requirements, copy app files, expose port 8501
     - CMD: `streamlit run app.py --server.port=8501 --server.address=0.0.0.0`
     - _Requirements: 7.1, 7.5, 7.6_
 
-- [ ] 6. Production web app: Create CDK stack at `workshop4/phase3/deploy-streamlit-app/`
-  - [ ] 6.1 Create `workshop4/phase3/deploy-streamlit-app/cdk/__init__.py` and `workshop4/phase3/deploy-streamlit-app/cdk/app.py`
+- [x] 6. Production web app: Create CDK stack at `workshop4/phase3/deploy-streamlit-app/`
+  - [x] 6.1 Create `workshop4/phase3/deploy-streamlit-app/cdk/__init__.py` and `workshop4/phase3/deploy-streamlit-app/cdk/app.py`
     - Empty `__init__.py` for Python package
     - `app.py`: CDK app entry point, instantiate `CdkStack` with `"StudentServicesPhase3"`
     - _Requirements: 6.11_
 
-  - [ ] 6.2 Create `workshop4/phase3/deploy-streamlit-app/cdk/cdk_stack.py`
+  - [x] 6.2 Create `workshop4/phase3/deploy-streamlit-app/cdk/cdk_stack.py`
     - Cognito User Pool + Client + Secrets Manager secret
     - VPC (10.0.0.0/16, 2 AZs, 1 NAT), ALB SG, ECS SG (port 8501 from ALB only)
     - ECS Cluster + Fargate task (ARM64, 256 CPU, 512 MiB), container with `STUDENT_SERVICES_AGENT_URL` env var from CDK context
@@ -143,7 +143,7 @@ This plan implements SSM-based model configuration across all 5 AgentCore runtim
     - CfnOutputs: `CloudFrontDistributionURL`, `CognitoPoolId`
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8, 6.9, 6.10, 6.11_
 
-  - [ ] 6.3 Create `workshop4/phase3/deploy-streamlit-app/cdk.json` and `workshop4/phase3/deploy-streamlit-app/requirements.txt`
+  - [x] 6.3 Create `workshop4/phase3/deploy-streamlit-app/cdk.json` and `workshop4/phase3/deploy-streamlit-app/requirements.txt`
     - `cdk.json`: `{"app": "python3 cdk/app.py"}`
     - `requirements.txt`: `aws-cdk-lib>=2.100.0`, `constructs>=10.0.0`
     - _Requirements: 6.11_

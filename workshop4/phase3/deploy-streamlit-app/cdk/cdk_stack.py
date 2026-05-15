@@ -1,0 +1,250 @@
+"""CDK stack for deploying the Student Services Phase 3 Streamlit thin client.
+
+Provisions: VPC, ECS Fargate, ALB, CloudFront, Cognito, Secrets Manager, IAM.
+The container invokes the StudentServicesAgent runtime on AgentCore via SigV4.
+"""
+
+import os
+
+from aws_cdk import (
+    CfnOutput,
+    SecretValue,
+    Stack,
+    aws_cloudfront as cloudfront,
+    aws_cloudfront_origins as origins,
+    aws_cognito as cognito,
+    aws_ec2 as ec2,
+    aws_ecs as ecs,
+    aws_elasticloadbalancingv2 as elbv2,
+    aws_iam as iam,
+    aws_secretsmanager as secretsmanager,
+)
+from constructs import Construct
+
+import sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from docker_app.config_file import Config
+
+CUSTOM_HEADER_NAME = "X-Custom-Header"
+
+
+class CdkStack(Stack):
+
+    def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
+        super().__init__(scope, construct_id, **kwargs)
+
+        prefix = Config.STACK_NAME
+
+        # -------------------------------------------------------------------
+        # Cognito + Secrets Manager
+        # -------------------------------------------------------------------
+        user_pool = cognito.UserPool(self, f"{prefix}UserPool")
+
+        user_pool_client = cognito.UserPoolClient(
+            self,
+            f"{prefix}UserPoolClient",
+            user_pool=user_pool,
+            generate_secret=True,
+        )
+
+        secret = secretsmanager.Secret(
+            self,
+            f"{prefix}ParamCognitoSecret",
+            secret_object_value={
+                "pool_id": SecretValue.unsafe_plain_text(user_pool.user_pool_id),
+                "app_client_id": SecretValue.unsafe_plain_text(
+                    user_pool_client.user_pool_client_id
+                ),
+                "app_client_secret": user_pool_client.user_pool_client_secret,
+            },
+            secret_name=Config.SECRETS_MANAGER_ID,
+        )
+
+        # -------------------------------------------------------------------
+        # VPC + Security Groups
+        # -------------------------------------------------------------------
+        vpc = ec2.Vpc(
+            self,
+            f"{prefix}AppVpc",
+            ip_addresses=ec2.IpAddresses.cidr("10.0.0.0/16"),
+            max_azs=2,
+            vpc_name=f"{prefix}-stl-vpc",
+            nat_gateways=1,
+        )
+
+        alb_security_group = ec2.SecurityGroup(
+            self,
+            f"{prefix}SecurityGroupALB",
+            vpc=vpc,
+            security_group_name=f"{prefix}-stl-alb-sg",
+        )
+
+        ecs_security_group = ec2.SecurityGroup(
+            self,
+            f"{prefix}SecurityGroupECS",
+            vpc=vpc,
+            security_group_name=f"{prefix}-stl-ecs-sg",
+        )
+
+        ecs_security_group.add_ingress_rule(
+            peer=alb_security_group,
+            connection=ec2.Port.tcp(8501),
+            description="ALB traffic",
+        )
+
+        # -------------------------------------------------------------------
+        # ECS Cluster + Fargate Service
+        # -------------------------------------------------------------------
+        cluster = ecs.Cluster(
+            self,
+            f"{prefix}Cluster",
+            enable_fargate_capacity_providers=True,
+            vpc=vpc,
+        )
+
+        fargate_task_definition = ecs.FargateTaskDefinition(
+            self,
+            f"{prefix}WebappTaskDef",
+            memory_limit_mib=512,
+            cpu=256,
+            runtime_platform=ecs.RuntimePlatform(
+                cpu_architecture=ecs.CpuArchitecture.ARM64,
+                operating_system_family=ecs.OperatingSystemFamily.LINUX,
+            ),
+        )
+
+        # Build Docker image from docker_app/ directory
+        docker_app_path = os.path.join(os.path.dirname(__file__), "..", "docker_app")
+        image = ecs.ContainerImage.from_asset(docker_app_path)
+
+        fargate_task_definition.add_container(
+            f"{prefix}WebContainer",
+            image=image,
+            port_mappings=[
+                ecs.PortMapping(
+                    container_port=8501,
+                    protocol=ecs.Protocol.TCP,
+                )
+            ],
+            environment={
+                "STUDENT_SERVICES_AGENT_URL": self.node.try_get_context("student_services_agent_url") or "",
+            },
+            logging=ecs.LogDrivers.aws_logs(stream_prefix="WebContainerLogs"),
+        )
+
+        service = ecs.FargateService(
+            self,
+            f"{prefix}ECSService",
+            cluster=cluster,
+            task_definition=fargate_task_definition,
+            service_name=f"{prefix}-stl-front",
+            security_groups=[ecs_security_group],
+            vpc_subnets=ec2.SubnetSelection(
+                subnet_type=ec2.SubnetType.PRIVATE_WITH_EGRESS
+            ),
+            circuit_breaker=ecs.DeploymentCircuitBreaker(rollback=True),
+            min_healthy_percent=100,
+        )
+
+        # -------------------------------------------------------------------
+        # ALB + CloudFront
+        # -------------------------------------------------------------------
+        alb = elbv2.ApplicationLoadBalancer(
+            self,
+            f"{prefix}Alb",
+            vpc=vpc,
+            internet_facing=True,
+            load_balancer_name=f"{prefix}-stl",
+            security_group=alb_security_group,
+            vpc_subnets=ec2.SubnetSelection(subnet_type=ec2.SubnetType.PUBLIC),
+        )
+
+        origin = origins.LoadBalancerV2Origin(
+            alb,
+            custom_headers={CUSTOM_HEADER_NAME: Config.CUSTOM_HEADER_VALUE},
+            origin_shield_enabled=False,
+            protocol_policy=cloudfront.OriginProtocolPolicy.HTTP_ONLY,
+        )
+
+        cloudfront_distribution = cloudfront.Distribution(
+            self,
+            f"{prefix}CfDist",
+            default_behavior=cloudfront.BehaviorOptions(
+                origin=origin,
+                viewer_protocol_policy=cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+                allowed_methods=cloudfront.AllowedMethods.ALLOW_ALL,
+                cache_policy=cloudfront.CachePolicy.CACHING_DISABLED,
+                origin_request_policy=cloudfront.OriginRequestPolicy.ALL_VIEWER,
+            ),
+        )
+
+        http_listener = alb.add_listener(
+            f"{prefix}HttpListener",
+            port=80,
+            open=True,
+        )
+
+        http_listener.add_targets(
+            f"{prefix}TargetGroup",
+            target_group_name=f"{prefix}-tg",
+            port=8501,
+            priority=1,
+            conditions=[
+                elbv2.ListenerCondition.http_header(
+                    CUSTOM_HEADER_NAME, [Config.CUSTOM_HEADER_VALUE]
+                )
+            ],
+            protocol=elbv2.ApplicationProtocol.HTTP,
+            targets=[service],
+        )
+
+        http_listener.add_action(
+            "default-action",
+            action=elbv2.ListenerAction.fixed_response(
+                status_code=403,
+                content_type="text/plain",
+                message_body="Access denied",
+            ),
+        )
+
+        # -------------------------------------------------------------------
+        # IAM Policies
+        # -------------------------------------------------------------------
+        task_policy = iam.Policy(
+            self,
+            f"{prefix}TaskPolicy",
+            statements=[
+                iam.PolicyStatement(
+                    actions=["bedrock-agentcore:InvokeAgentRuntime"],
+                    resources=["*"],
+                ),
+                iam.PolicyStatement(
+                    actions=[
+                        "ssm:GetParameter",
+                        "ssm:GetParametersByPath",
+                    ],
+                    resources=[
+                        f"arn:aws:ssm:{self.region}:{self.account}:parameter/student-services/*"
+                    ],
+                ),
+            ],
+        )
+        task_role = fargate_task_definition.task_role
+        task_role.attach_inline_policy(task_policy)
+
+        # Grant Secrets Manager read access for Cognito credentials
+        secret.grant_read(task_role)
+
+        # -------------------------------------------------------------------
+        # Outputs
+        # -------------------------------------------------------------------
+        CfnOutput(
+            self,
+            "CloudFrontDistributionURL",
+            value=cloudfront_distribution.domain_name,
+        )
+        CfnOutput(
+            self,
+            "CognitoPoolId",
+            value=user_pool.user_pool_id,
+        )

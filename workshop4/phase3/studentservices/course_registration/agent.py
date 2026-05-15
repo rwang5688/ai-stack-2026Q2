@@ -18,6 +18,24 @@ from strands.models import BedrockModel
 mcp = FastMCP("course-registration-mcp-server")
 
 # ---------------------------------------------------------------------------
+# Model configuration — reads from SSM Parameter Store (no caching)
+# ---------------------------------------------------------------------------
+def get_model_config() -> dict:
+    """Get model config from SSM. Resolution: env var → SSM → hardcoded default."""
+    model_id = os.environ.get("MODEL_ID")
+    if not model_id:
+        try:
+            ssm = boto3.client("ssm", region_name="us-west-2")
+            response = ssm.get_parameter(Name="/student-services/model-id")
+            model_id = response["Parameter"]["Value"]
+        except Exception:
+            model_id = None
+    if not model_id:
+        model_id = "us.amazon.nova-2-lite-v1:0"
+    return {"model_id": model_id, "region": "us-west-2", "max_tokens": 4096}
+
+
+# ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
 AWS_REGION = os.environ.get("AWS_REGION", "us-west-2")
@@ -99,10 +117,11 @@ def course_registration_assistant(prompt: str) -> dict:
     Returns:
         Dict with the agent's response and runtime identifier.
     """
+    model_config = get_model_config()
     model = BedrockModel(
-        model_id="us.amazon.nova-2-lite-v1:0",
-        region_name=AWS_REGION,
-        max_tokens=4096,
+        model_id=model_config["model_id"],
+        region_name=model_config["region"],
+        max_tokens=model_config["max_tokens"],
     )
 
     agent = Agent(

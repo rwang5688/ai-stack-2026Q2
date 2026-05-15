@@ -60,6 +60,12 @@ Resources:
             Condition:
               StringEquals:
                 cloudwatch:namespace: bedrock-agentcore
+          - Sid: SSMParameterAccess
+            Effect: Allow
+            Action:
+              - ssm:GetParameter
+            Resource:
+              - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter/student-services/*'
           - Sid: XRayTracing
             Effect: Allow
             Action:
