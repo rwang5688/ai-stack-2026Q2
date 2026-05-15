@@ -153,12 +153,51 @@ Deploys the gateway with 4 MCP server targets. Verify "Gateways: studentservices
 
 ### Testing
 
+#### 1. Test in AgentCore Runtime Playground
+
+After deploying the backend, verify the orchestrator routes correctly to all 4 specialists:
+
 ```bash
 cd workshop4/phase3/studentservices
 agentcore invoke "What courses are available for Fall 2026?"
 ```
 
-Or test in the AgentCore Runtime Playground (AWS Console → Bedrock → AgentCore → Runtimes → StudentServicesAgent → Playground).
+Or use the AgentCore Runtime Playground (AWS Console → Bedrock → AgentCore → Runtimes → StudentServicesAgent → Playground).
+
+#### 2. Test Local Thin Client
+
+Run the Streamlit app locally on Windows or Ubuntu desktop:
+
+```bash
+cd workshop4/phase3/streamlit_app
+bash run.sh
+```
+
+On Windows (PowerShell):
+```powershell
+cd workshop4\phase3\streamlit_app
+.\run.ps1
+```
+
+Requires AWS credentials configured (the app signs requests with SigV4).
+
+#### 3. Deploy Thin Client Web App (ECS Fargate)
+
+Run from the **code-server** (requires Docker for container build):
+
+```bash
+cd workshop4/phase3
+bash deploy-streamlit-app.sh
+```
+
+This bootstraps CDK (if needed), builds the Docker image, deploys to ECS Fargate behind CloudFront, and outputs the CloudFront URL + Cognito User Pool ID.
+
+#### 4. Test Thin Client Web App
+
+1. In the AWS Console, navigate to the Cognito User Pool created by the CDK stack
+2. Create a user (username + password)
+3. Access the CloudFront URL output by the deploy script
+4. Log in with the Cognito credentials
 
 ### After Recreating Cognito Pools (Full Redeploy)
 
