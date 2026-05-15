@@ -49,17 +49,21 @@ with st.sidebar:
 
     st.markdown("---")
 
-    # Model configuration display (read-only from SSM)
-    st.header("⚙️ Configuration")
+    # Model Selection (read-only — configured via SSM)
+    st.header("🤖 Model Selection")
     try:
         ssm = boto3.client("ssm", region_name=Config.DEPLOYMENT_REGION)
         param = ssm.get_parameter(Name="/student-services/model-id")
         model_id = param["Parameter"]["Value"]
     except Exception:
         model_id = "(unable to read from SSM)"
-    st.text_input("Model ID (from SSM)", value=model_id, disabled=True)
-
-    st.markdown("---")
+    st.text_input("Active Model:", value=model_id, disabled=True)
+    st.caption(
+        "In Phase 3, model selection is managed centrally via SSM Parameter Store. "
+        "To change the model for all agents, an administrator updates the "
+        "`/student-services/model-id` parameter in AWS Systems Manager. "
+        "The change takes effect on the next new session."
+    )
 
     # Sample Prompts
     st.header("💡 Sample Prompts")
@@ -86,7 +90,12 @@ with st.sidebar:
     st.code("Solve x^2 + 5x + 6 = 0", language=None)
     st.code("What is the derivative of x^3 + 2x?", language=None)
 
-    st.markdown("---")
+    # Configuration Details
+    st.header("🔍 Configuration")
+    with st.expander("Details", expanded=False):
+        st.code(f"model_id: {model_id}")
+        st.code(f"region: {Config.DEPLOYMENT_REGION}")
+        st.code(f"stack: {Config.STACK_NAME}")
 
     # Clear Chat
     if st.button("🗑️ Clear Chat"):

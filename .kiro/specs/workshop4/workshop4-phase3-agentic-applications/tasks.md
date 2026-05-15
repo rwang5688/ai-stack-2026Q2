@@ -56,10 +56,10 @@ This plan implements SSM-based model configuration across all 5 AgentCore runtim
     - **Property 2: SSM Freshness (No Caching)** — consecutive calls with SSM value change between them return the updated model_id
     - **Validates: Requirements 1.1, 1.2, 1.3, 8.1, 8.3**
 
-- [ ] 2. Checkpoint — Verify backend changes
+- [x] 2. Checkpoint — Verify backend changes
   - CloudFormation stack deployed successfully (ssm:GetParameter added)
   - SSM parameter `/student-services/model-id` already exists from Phase 1
-  - Manual step remaining: `agentcore deploy -y` (redeploy runtimes with inlined get_model_config)
+  - `agentcore deploy -y` completed — all 5 runtimes READY, credentials Deployed, gateway with 4 targets
 
 - [x] 3. Local thin client: Create `workshop4/phase3/streamlit_app/`
   - [x] 3.1 Create `workshop4/phase3/streamlit_app/agent_client.py`
@@ -92,8 +92,10 @@ This plan implements SSM-based model configuration across all 5 AgentCore runtim
     - **Property 5: Client Request Serialization** — for any non-empty string prompt, `invoke(prompt)` sends HTTP POST with body exactly `json.dumps({"prompt": prompt})` signed with SigV4 service `bedrock-agentcore`
     - **Validates: Requirements 5.2, 5.3**
 
-- [ ] 4. Checkpoint — Verify local thin client
-  - Manual step: set `STUDENT_SERVICES_AGENT_URL` env var and run `streamlit run app.py` to test locally
+- [x] 4. Checkpoint — Verify local thin client
+  - Tested locally on Windows — all 4 specialists working (course review, registration, loan prediction, math)
+  - Model selection displayed as read-only with SSM explanation
+  - Loan CSV prompt passing through correctly with system prompt fix
 
 - [x] 5. Production web app: Create `workshop4/phase3/deploy-streamlit-app/docker_app/`
   - [x] 5.1 Create `workshop4/phase3/deploy-streamlit-app/docker_app/config_file.py`
@@ -148,13 +150,12 @@ This plan implements SSM-based model configuration across all 5 AgentCore runtim
     - `requirements.txt`: `aws-cdk-lib>=2.100.0`, `constructs>=10.0.0`
     - _Requirements: 6.11_
 
-- [ ] 7. Documentation: Update `workshop4/phase3/README.md`
-  - Add teaching point explaining why dynamic per-request model propagation is difficult in multi-hop microservices (UI → orchestrator → gateway → MCP server → inner agent)
-  - Explain that propagating model_id through MCP tool calls would require changing the MCP protocol contract at each hop
-  - Explain SSM "one model everywhere" pattern — change once, all runtimes pick it up on next session creation
-  - Document local thin client deployment steps (set `STUDENT_SERVICES_AGENT_URL`, run `streamlit run app.py`)
-  - Document production web app deployment steps (CDK deploy from code-server)
-  - Document how to switch models via `aws ssm put-parameter --name /student-services/model-id --value "new-model-id" --type String --overwrite`
+- [x] 7. Documentation: Update `workshop4/phase3/README.md`
+  - Added "Why No Dynamic Model Selection?" section explaining multi-hop propagation difficulty
+  - Documented SSM "one model everywhere" pattern with `aws ssm put-parameter` command
+  - Documented local thin client steps (run.sh / run.ps1)
+  - Documented production web app deployment (deploy-streamlit-app.sh)
+  - Reorganized Testing section: Runtime Playground → Local thin client → Deploy web app → Test web app
   - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6_
 
 - [ ] 8. Final checkpoint — Deploy and verify

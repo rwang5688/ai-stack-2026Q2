@@ -40,13 +40,13 @@ Thin Client ──(SigV4 POST {"model_id": "...", "prompt": "..."})──→ Stu
 - [ ] ~~Checkpoint: zip specs + README changes, upload to code-server, commit/push~~
 - [x] Execute Task 1.1–1.7: Backend changes (shared config inlined into all 5 agent.py files)
 - [x] Deploy CloudFormation stack update (ssm:GetParameter permission added)
-- [ ] Redeploy runtimes: `agentcore deploy -y` (from studentservices/ directory) — IN PROGRESS (fixing npm issues)
-- [ ] Test in Runtime Playground to confirm SSM model config works
+- [x] Redeploy runtimes: `agentcore deploy -y` (from studentservices/ directory) — DONE
+- [x] Test in Runtime Playground to confirm SSM model config works — all 4 specialists confirmed
 - [x] Execute Task 3: Build local thin client (streamlit_app/) — files created
-- [ ] Test local thin client: set STUDENT_SERVICES_AGENT_URL and run streamlit
+- [x] Test local thin client — working on Windows, all specialists routing correctly
 - [x] Execute Tasks 5-6: Build production web app (deploy-streamlit-app/) — files created
-- [ ] Deploy CDK stack from code-server (requires Docker)
-- [x] Update README — corrected model config section (no redeploy needed, SSM picked up on new session)
+- [ ] Deploy CDK stack from code-server (requires Docker) — IN PROGRESS
+- [x] Update README — corrected model config section, added testing order, deploy scripts
 
 ## Troubleshooting: AgentCore CLI + TypeScript/Node Issues (2026-05-14)
 
