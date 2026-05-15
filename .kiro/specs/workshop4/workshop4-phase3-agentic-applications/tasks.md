@@ -158,11 +158,11 @@ This plan implements SSM-based model configuration across all 5 AgentCore runtim
   - Reorganized Testing section: Runtime Playground → Local thin client → Deploy web app → Test web app
   - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6_
 
-- [ ] 8. Final checkpoint — Deploy and verify
-  - Ensure all tests pass, ask the user if questions arise.
-  - Manual steps required:
-    - Deploy production stack from code-server (Linux): `cdk deploy -c student_services_agent_url=<RUNTIME_URL>` (requires Docker for container build)
-    - After deployment: create Cognito user via AWS Console, access CloudFront URL
+- [x] 8. Final checkpoint — Deploy and verify
+  - Phase 3 web app deployed to ECS Fargate via `deploy-streamlit-app.sh`
+  - Cognito user created, login working
+  - All 4 specialists tested end-to-end through the web app (loan prediction confirmed)
+  - All phases (1, 2, 3) working with loan CSV passthrough fix
 
 ## Notes
 

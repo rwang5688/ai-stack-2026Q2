@@ -45,8 +45,14 @@ Thin Client ──(SigV4 POST {"model_id": "...", "prompt": "..."})──→ Stu
 - [x] Execute Task 3: Build local thin client (streamlit_app/) — files created
 - [x] Test local thin client — working on Windows, all specialists routing correctly
 - [x] Execute Tasks 5-6: Build production web app (deploy-streamlit-app/) — files created
-- [ ] Deploy CDK stack from code-server (requires Docker) — IN PROGRESS
+- [x] Deploy CDK stack from code-server — DONE (StudentServicesPhase3 stack)
+- [x] Test Phase 3 web app — loan prediction confirmed end-to-end
 - [x] Update README — corrected model config section, added testing order, deploy scripts
+- [x] Fix loan CSV passthrough — added CRITICAL instruction to orchestrator system prompts (all 3 phases)
+- [x] UI consistency — Phase 3 apps show read-only model selection with SSM explanation
+
+## Session Complete
+All tasks in the Phase 3 spec are done. All 3 phases tested end-to-end with loan prediction working correctly.
 
 ## Troubleshooting: AgentCore CLI + TypeScript/Node Issues (2026-05-14)
 
