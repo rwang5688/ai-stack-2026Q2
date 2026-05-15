@@ -1,4 +1,4 @@
-# Workshop 4: Multi-Agent Student Services — From Monolith to Microservices
+# Workshop 4: Multi-Agent Student Services — Agentic AI Application Development - From Monolith to Agents as Microservices
 
 This workshop builds a multi-agent Student Services system for Any University (any.edu) and progressively evolves its architecture from a monolithic application to independently deployable microservices.
 

@@ -253,6 +253,6 @@ Targets:
 
 ## Related Documentation
 
-- **Specification**: `.kiro/specs/code-server-deployment/`
-- **Session Notes**: `.kiro/session-notes/20251217-session-notes.md`
-- **Project README**: `../README.md`
+- **Specification**: `.kiro/specs/workshop1/code-server/code-server-deployment/`
+- **Session Notes**: `.kiro/session-notes/`
+- **Project README**: `../../README.md`

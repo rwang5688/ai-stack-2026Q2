@@ -315,6 +315,6 @@ aws cloudformation delete-stack \
 ## Support
 
 For issues or questions:
-1. Check session notes: `.kiro/session-notes/20260220-session-notes.md`
-2. Review improvements: `code-server/IMPROVEMENTS.md`
-3. Check spec documentation: `.kiro/specs/code-server-deployment/`
+1. Check session notes: `.kiro/session-notes/`
+2. Review improvements: `IMPROVEMENTS.md`
+3. Check spec documentation: `.kiro/specs/workshop1/code-server/code-server-deployment/`

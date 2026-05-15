@@ -7,7 +7,7 @@ Organize feature development using structured specifications that follow spec-dr
 
 ### Directory Structure
 - Specs are organized by major module under `.kiro/specs/`
-- Top-level directories: `code-server/`, `workshop2/`, `workshop3/`, `workshop4/`
+- Top-level directories: `workshop1/`, `workshop2/`, `workshop3/`, `workshop4/`
 - Feature specs go under their module: `.kiro/specs/{module}/{feature-name}/`
 - Archive completed/obsolete specs under: `.kiro/specs/archive/{module}/{feature-name}/`
 - Feature names use kebab-case (e.g., `workshop4-phase1-monolithic-agents`)
@@ -16,12 +16,11 @@ Organize feature development using structured specifications that follow spec-dr
 ```
 .kiro/specs/
 ├── archive/
-│   ├── code-server/
-│   ├── workshop2/
-│   ├── workshop3/
 │   └── workshop4/
-├── code-server/
-│   └── code-server-deployment/
+├── workshop1/
+│   └── code-server/
+│       ├── code-server-deployment/
+│       └── code-server-private-ip/
 ├── workshop2/
 │   └── workshop2-transform-datasets/
 ├── workshop3/
