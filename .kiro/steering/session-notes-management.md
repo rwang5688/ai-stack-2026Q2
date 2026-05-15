@@ -62,3 +62,10 @@ Brief description of the session's focus and goals.
 - Update session notes throughout the day as work progresses
 - Review previous session notes at the start of new sessions
 - Archive or organize notes monthly for long-term reference
+
+### Checkpoint Commit Workflow
+When the user says "checkpoint" or "commit":
+1. **IMMEDIATELY** produce a list of **directories containing changed files** (alphabetical order)
+2. Include the root-level standalone files that changed (e.g., `workshop4/phase3/README.md` → listed as `workshop4/phase3/`)
+3. Remind user to upload to code-server for commit/push (cannot push from Windows PC)
+4. Do NOT ask questions, do NOT delay — just produce the list

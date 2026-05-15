@@ -12,9 +12,12 @@ Created complete spec for Workshop 4 Phase 3 thin client applications (local Str
 - Listed all 12 test combinations (6 prompts × 2 models)
 
 ## Key Decisions
-- **Model selection in thin client UI** — Yes, include it. Requires modifying the runtime's `invoke` entrypoint to accept `model_id` from the payload
+- **Model selection in thin client UI** — No dynamic per-request model_id. SSM-only approach.
+  - MCP protocol can't propagate model_id through gateway to specialists
+  - Dynamic model_id would only affect orchestrator, not specialists = half-baked
+  - SSM gives centralized, consistent config across all 5 runtimes
+  - New session picks up SSM changes (no redeploy needed)
 - **Allowed models**: `us.amazon.nova-2-lite-v1:0` (default), `us.anthropic.claude-sonnet-4-6`
-- **Agent cache key change**: `{session_id}/{user_id}` → `{session_id}/{user_id}/{model_id}` so switching models creates a fresh Agent instance
 - **Execution order**: Backend changes first → local thin client → production web app (cautious, incremental approach)
 - **CDK stack name**: `StudentServicesPhase3` (following Phase 2 pattern)
 - **No routing display in thin client** — runtime doesn't expose routing metadata in its response payload
@@ -37,13 +40,33 @@ Thin Client ──(SigV4 POST {"model_id": "...", "prompt": "..."})──→ Stu
 - [ ] ~~Checkpoint: zip specs + README changes, upload to code-server, commit/push~~
 - [x] Execute Task 1.1–1.7: Backend changes (shared config inlined into all 5 agent.py files)
 - [x] Deploy CloudFormation stack update (ssm:GetParameter permission added)
-- [ ] Redeploy runtimes: `agentcore deploy -y` (from studentservices/ directory)
+- [ ] Redeploy runtimes: `agentcore deploy -y` (from studentservices/ directory) — IN PROGRESS (fixing npm issues)
 - [ ] Test in Runtime Playground to confirm SSM model config works
-- [ ] Execute Task 3: Build local thin client (streamlit_app/) — DONE (files created)
+- [x] Execute Task 3: Build local thin client (streamlit_app/) — files created
 - [ ] Test local thin client: set STUDENT_SERVICES_AGENT_URL and run streamlit
-- [ ] Execute Tasks 5-6: Build production web app (deploy-streamlit-app/) — DONE (files created)
+- [x] Execute Tasks 5-6: Build production web app (deploy-streamlit-app/) — files created
 - [ ] Deploy CDK stack from code-server (requires Docker)
-- [ ] Update README with model config teaching point
+- [x] Update README — corrected model config section (no redeploy needed, SSM picked up on new session)
+
+## Troubleshooting: AgentCore CLI + TypeScript/Node Issues (2026-05-14)
+
+### Problem: `agentcore deploy -y` fails with `'tsc' is not recognized`
+- **Root cause**: `@aws/agentcore@0.13.1` bundles TypeScript as a nested dep but doesn't expose `tsc` globally
+- **Fix**: `npm install -g typescript`
+
+### Problem: `tsc` compiles but errors on `moduleResolution=node10` deprecated
+- **Root cause**: TypeScript 6.0 (installed globally) treats `moduleResolution: "Node"` as an error
+- **Fix**: Either pin `typescript@5.x` globally, or add `"ignoreDeprecations": "6.0"` to `agentcore/cdk/tsconfig.json`
+- **Better fix**: The `npm install` in the CDK dir should pull a compatible TS version locally
+
+### Problem: `Cannot find module 'aws-cdk-lib'` and `@aws/agentcore-cdk` errors
+- **Root cause**: `agentcore/cdk/node_modules/` missing — the global CLI reinstall regenerated the CDK scaffold without running `npm install`
+- **Fix**: `cd agentcore/cdk && npm install`, then retry `agentcore deploy -y`
+
+### Lesson Learned
+- Reinstalling `@aws/agentcore` globally can blow away the local CDK scaffold's `node_modules`
+- Always check `agentcore/cdk/node_modules` exists before deploying after a CLI upgrade
+- The CDK scaffold is TypeScript — it needs its own `npm install` separate from the global CLI
 
 ## Design Pivot: Shared Module → Inline
 - Originally planned `shared/config.py` importable by all runtimes

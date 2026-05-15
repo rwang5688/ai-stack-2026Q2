@@ -19,7 +19,13 @@ Git push must be done from the code-server (Linux). The workflow is:
 ## Commit Workflow
 - Do NOT run `git add` or `git commit` on the Windows PC
 - Do NOT suggest pushing from here
-- When the user says "checkpoint" or "commit" — remind them to zip and upload to code-server
+- When the user says "checkpoint" or "commit":
+  1. Run `git status --short` IMMEDIATELY
+  2. Extract ALL unique parent directories (including leaf subdirectories — do NOT collapse)
+  3. Present them as a code block (alphabetical order)
+  4. Do NOT guess, do NOT explain, do NOT list files from memory — USE GIT STATUS
+  5. Do it in ONE response, no back-and-forth
+  6. Include leaf subdirectories separately — code-server requires uploading files INTO each directory (cannot upload whole directory trees)
 
 ## Deployment Workflow
 

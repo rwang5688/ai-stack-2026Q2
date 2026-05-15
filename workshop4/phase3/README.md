@@ -240,7 +240,7 @@ aws ssm put-parameter \
   --region us-west-2
 ```
 
-Then redeploy runtimes (`agentcore deploy -y`) for the change to take effect on next cold start.
+The change takes effect on the next new session (sign out and back in). No redeployment required — each agent reads SSM at creation time, and a new session creates a fresh agent instance.
 
 **Resolution order** (same as Phase 1): environment variable `MODEL_ID` → SSM `/student-services/model-id` → hardcoded default `us.amazon.nova-2-lite-v1:0`
 
@@ -282,7 +282,7 @@ Tell me about CS 441 Machine Learning
 ### Loan Prediction
 
 ```
-Will a person with these features accept the loan: 29,2,999,0,1,0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0
+Will a person with these features accept the loan: `29,2,999,0,1,0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,1.0,0.0,0.0,1.0,0.0`
 ```
 
 ### Math Tutoring
