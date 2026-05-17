@@ -16,21 +16,21 @@ aws cloudformation create-stack \
   --stack-name code-server \
   --template-body file://code-server.yaml \
   --capabilities CAPABILITY_IAM \
-  --region us-east-1
+  --region us-west-2
 ```
 
 ### 2. Monitor Deployment
 ```bash
 aws cloudformation wait stack-create-complete \
   --stack-name code-server \
-  --region us-east-1
+  --region us-west-2
 ```
 
 ### 3. Get Access Information
 ```bash
 aws cloudformation describe-stacks \
   --stack-name code-server \
-  --region us-east-1 \
+  --region us-west-2 \
   --query 'Stacks[0].Outputs'
 ```
 
@@ -299,7 +299,7 @@ aws cloudformation update-stack \
   --parameters \
     ParameterKey=InstanceType,ParameterValue=c7g.large \
   --capabilities CAPABILITY_IAM \
-  --region us-east-1
+  --region us-west-2
 ```
 
 ## Deleting the Stack
@@ -307,7 +307,7 @@ aws cloudformation update-stack \
 ```bash
 aws cloudformation delete-stack \
   --stack-name code-server \
-  --region us-east-1
+  --region us-west-2
 ```
 
 **Note**: The NAT Gateway's Elastic IP will be automatically released when the stack is deleted.

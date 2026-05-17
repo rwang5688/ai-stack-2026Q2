@@ -136,7 +136,7 @@ aws cloudformation create-stack \
   --stack-name code-server \
   --template-body file://code-server.yaml \
   --capabilities CAPABILITY_IAM \
-  --region us-east-1
+  --region us-west-2
 ```
 
 The stack name `code-server` is used throughout the workshop documentation. After deployment completes (approximately 10-15 minutes), retrieve the CloudFront URL from the stack outputs:
@@ -250,6 +250,69 @@ Targets:
 - **Minimal changes**: Preserve original structure and installation methods for easy maintenance
 - **Deployment reliability**: Fix only critical issues that prevent deployment
 - **Future compatibility**: Easy to merge upstream updates
+
+## TODO
+
+- [ ] **Upgrade Node.js to v24 LTS**: The current template installs Node 20.18.0 (via binary tarball in `InstallNode` step). Node 22 was discovered to be back-leveled during workshop4 development. Upgrade to Node 24 LTS when available/stable. Update the `NODE_VERSION` variable in `code-server.yaml` and both archive templates.
+
+## Template Evolution
+
+The current `code-server.yaml` evolved through three iterations, each archived for reference:
+
+### 1. `archive/code-server-strands-sdk-workshop.yaml` (Original)
+The initial template created for the "Building Agents with Amazon Nova Act and MCP" workshop.
+
+**Key characteristics:**
+- EC2 in **public subnet** with direct CloudFront → EC2 connectivity
+- Used NodeSource APT repository for Node.js installation (`node_20.x` via `deb.nodesource.com`)
+- Required `EC2KeyPair` parameter for SSH access
+- Cloned a specific GitHub repo (`VincentV89/agentic-ai-with-mcp-and-strands`) during bootstrap
+- Installed workshop-specific Python dependencies (playwright, streamlit, etc.)
+- SSM Association used **tag-based targeting** (`tag:SSMBootstrap`)
+- Security group allowed CloudFront prefix list directly to EC2
+- Nginx `server_name` set to CloudFront domain name
+
+### 2. `archive/code-server-improved.yaml` (Intermediate)
+Incremental improvements to reliability and Node.js installation.
+
+**Changes from original:**
+- Node.js installation switched from APT repository to **direct binary tarball** (`NODE_VERSION="20.18.0"`) for deterministic versioning
+- SSM Association changed to **instance ID targeting** (more reliable)
+- Nginx config: `server_name` changed to `_` (wildcard — works regardless of domain)
+- Added `sudo rm -f /etc/nginx/sites-enabled/default` to prevent conflicts
+- Added `sudo nginx -t` validation before restart
+- Still retained: public subnet architecture, EC2KeyPair parameter, GitHub clone, workshop-specific deps
+- Default keypair name: `ws-default-keypair` (Workshop Studio standard)
+- Volume size increased from 30 GB to 50 GB
+
+### 3. `code-server.yaml` (Current Production)
+Major security overhaul — moved to private subnet architecture.
+
+**Changes from improved:**
+- **Architecture**: EC2 moved to **private subnet** (no public IP)
+- **Access path**: CloudFront → ALB → EC2 (defense-in-depth)
+- **New resources**: NAT Gateway, ALB, ALB Security Group, private route tables
+- **Removed**: `EC2KeyPair` parameter (no SSH — use SSM Session Manager)
+- **Removed**: GitHub clone and workshop-specific Python deps (generic template)
+- **Removed**: `MapPublicIpOnLaunch: true` from private subnets
+- **Added**: `/health` endpoint in nginx for ALB health checks
+- **Added**: S3 bucket policy enforcing TLS
+- **Security groups**: Chained (ALB SG → EC2 SG) instead of direct CloudFront → EC2
+- Description changed from workshop-specific to generic "Code Server"
+
+### Summary of Key Differences
+
+| Feature | Original | Improved | Current |
+|---------|----------|----------|---------|
+| EC2 Subnet | Public | Public | **Private** |
+| Access Path | CloudFront → EC2 | CloudFront → EC2 | CloudFront → **ALB** → EC2 |
+| Node.js Install | APT repo | Binary tarball | Binary tarball |
+| SSM Targeting | Tag-based | Instance ID | Instance ID |
+| EC2 Key Pair | Required | Required | **Removed** |
+| NAT Gateway | No | No | **Yes** |
+| Health Check | No | No | **Yes** (`/health`) |
+| Workshop Deps | Yes (git clone + pip) | Yes (git clone + pip) | **No** (generic) |
+| Nginx server_name | CloudFront domain | Wildcard (`_`) | Wildcard (`_`) |
 
 ## Related Documentation
 
