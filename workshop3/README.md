@@ -29,3 +29,27 @@ Deploy the fine-tuned model from Workshop 2 to SageMaker Inference endpoints usi
 ## Outcome
 
 A deployed SageMaker endpoint serving the fine-tuned model. The provisioned XGBoost endpoint is reused in Workshop 4 for the Loan Application agent.
+
+## Usage
+
+Both scripts share the same CLI interface:
+
+```bash
+python deploy_serverless.py deploy                                      # Deploy with default model
+python deploy_serverless.py deploy --model-id "your-org/your-model"     # Deploy a custom model
+python deploy_serverless.py invoke                                      # Invoke with default prompt
+python deploy_serverless.py invoke --prompt "Once upon a time"          # Custom prompt
+python deploy_serverless.py cleanup                                     # Delete the endpoint
+
+python deploy_provisioned.py deploy                                     # Deploy with default model (GPU)
+python deploy_provisioned.py deploy --model-id "your-org/your-model"    # Deploy a custom model (GPU)
+python deploy_provisioned.py invoke                                     # Invoke with default prompt
+python deploy_provisioned.py invoke --prompt "The meaning of life is"   # Custom prompt
+python deploy_provisioned.py cleanup                                    # Delete the endpoint (STOPS CHARGES)
+```
+
+| Argument | Applies to | Default |
+|----------|-----------|---------|
+| `--model-id` | `deploy` | `rwang5688/distilgpt2-finetuned-wikitext2` |
+| `--role-arn` | `deploy` | Auto-detected from AWS session |
+| `--prompt` | `invoke` | `A long time ago in a galaxy far, far away` |

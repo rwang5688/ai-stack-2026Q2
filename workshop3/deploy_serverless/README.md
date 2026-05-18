@@ -62,10 +62,16 @@ Instead of using the `HuggingFaceModel` wrapper (which hides the DLC selection),
 pip install boto3
 ```
 
-**If running locally** (not in SageMaker JupyterLab), edit `deploy_serverless.py` and set `EXECUTION_ROLE_ARN`:
+**If running locally** (not in SageMaker JupyterLab), provide the role ARN via CLI or edit the script:
+
+```bash
+python deploy_serverless.py deploy --role-arn "arn:aws:iam::123456789012:role/YourSageMakerExecutionRole"
+```
+
+Or set `DEFAULT_EXECUTION_ROLE_ARN` at the top of `deploy_serverless.py`:
 
 ```python
-EXECUTION_ROLE_ARN = "arn:aws:iam::123456789012:role/YourSageMakerExecutionRole"
+DEFAULT_EXECUTION_ROLE_ARN = "arn:aws:iam::123456789012:role/YourSageMakerExecutionRole"
 ```
 
 ## Runbook
@@ -74,6 +80,8 @@ EXECUTION_ROLE_ARN = "arn:aws:iam::123456789012:role/YourSageMakerExecutionRole"
 
 ```bash
 python deploy_serverless.py deploy
+python deploy_serverless.py deploy --model-id "your-org/your-model"  # custom model
+python deploy_serverless.py deploy --role-arn "arn:aws:iam::..."     # explicit role
 ```
 
 Creates a serverless endpoint with:
@@ -89,6 +97,7 @@ Deployment takes about 2-5 minutes.
 
 ```bash
 python deploy_serverless.py invoke
+python deploy_serverless.py invoke --prompt "Once upon a time"  # custom prompt
 ```
 
 First request may have a cold start of 30-60 seconds.

@@ -48,10 +48,16 @@ DLC_TAG = "2.1.0-transformers4.37.0-cpu-py310-ubuntu22.04"
 pip install boto3
 ```
 
-**If running locally** (not in SageMaker JupyterLab), edit `deploy_provisioned.py` and set `EXECUTION_ROLE_ARN`:
+**If running locally** (not in SageMaker JupyterLab), provide the role ARN via CLI or edit the script:
+
+```bash
+python deploy_provisioned.py deploy --role-arn "arn:aws:iam::123456789012:role/YourSageMakerExecutionRole"
+```
+
+Or set `DEFAULT_EXECUTION_ROLE_ARN` at the top of `deploy_provisioned.py`:
 
 ```python
-EXECUTION_ROLE_ARN = "arn:aws:iam::123456789012:role/YourSageMakerExecutionRole"
+DEFAULT_EXECUTION_ROLE_ARN = "arn:aws:iam::123456789012:role/YourSageMakerExecutionRole"
 ```
 
 ## Runbook
@@ -60,6 +66,8 @@ EXECUTION_ROLE_ARN = "arn:aws:iam::123456789012:role/YourSageMakerExecutionRole"
 
 ```bash
 python deploy_provisioned.py deploy
+python deploy_provisioned.py deploy --model-id "your-org/your-model"  # custom model
+python deploy_provisioned.py deploy --role-arn "arn:aws:iam::..."     # explicit role
 ```
 
 Creates a real-time endpoint with:
@@ -75,6 +83,7 @@ Deployment takes about 5-10 minutes.
 
 ```bash
 python deploy_provisioned.py invoke
+python deploy_provisioned.py invoke --prompt "Once upon a time"  # custom prompt
 ```
 
 No cold start — the GPU instance is always running. Expect fast responses.

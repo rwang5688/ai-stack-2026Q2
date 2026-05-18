@@ -16,8 +16,10 @@ The same pattern works with PyTorch DLCs, TensorFlow DLCs, or any custom contain
 — just change the repository name and tag.
 
 Usage:
-    python deploy_serverless.py deploy     # Deploy the model
-    python deploy_serverless.py invoke     # Send a test request
+    python deploy_serverless.py deploy     # Deploy with default model
+    python deploy_serverless.py deploy --model-id "your-org/your-model"  # Custom model
+    python deploy_serverless.py invoke     # Invoke with default prompt
+    python deploy_serverless.py invoke --prompt "Once upon a time"  # Custom prompt
     python deploy_serverless.py cleanup    # Delete the endpoint and model
 
 Prerequisites:
@@ -38,13 +40,21 @@ import boto3
 
 
 # --- Configuration ---
+DEFAULT_PROMPT = "A long time ago in a galaxy far, far away"
+DEFAULT_MODEL_ID = "rwang5688/distilgpt2-finetuned-wikitext2"
 ENDPOINT_NAME = "distilgpt2-finetuned-wikitext2-serverless"
+
+# SageMaker execution role ARN.
+# Set this to skip auto-detection. If left as None, the script will auto-detect
+# from your current AWS session (STS + IAM lookup).
+# Example: "arn:aws:iam::123456789012:role/YourSageMakerExecutionRole"
+DEFAULT_EXECUTION_ROLE_ARN = None
 
 # Environment variables passed to the DLC container.
 # The HuggingFace DLC uses these to know which model to download and what task to run.
 # This same env-var pattern works with any DLC that supports environment-based configuration.
 HUB_CONFIG = {
-    "HF_MODEL_ID": "rwang5688/distilgpt2-finetuned-wikitext2",
+    "HF_MODEL_ID": DEFAULT_MODEL_ID,
     "HF_TASK": "text-generation",
 }
 
@@ -71,11 +81,6 @@ DLC_TAG = "2.6.0-transformers4.49.0-cpu-py312-ubuntu22.04"
 MEMORY_SIZE_IN_MB = 4096
 MAX_CONCURRENCY = 5
 
-# SageMaker execution role ARN.
-# If running in SageMaker, this is auto-detected. If running locally, set it here.
-# Example: "arn:aws:iam::123456789012:role/YourSageMakerExecutionRole"
-EXECUTION_ROLE_ARN = None
-
 
 def get_region():
     """Get the current AWS region from the boto3 session."""
@@ -87,15 +92,20 @@ def get_region():
     return region
 
 
-def get_execution_role():
+def get_execution_role(role_arn=None):
     """Resolve the SageMaker execution role ARN.
 
     Resolution order:
-    1. EXECUTION_ROLE_ARN constant (if set manually)
-    2. boto3 IAM — look up the role from the assumed-role session to get the full ARN with path
+    1. --role-arn CLI argument (if provided)
+    2. DEFAULT_EXECUTION_ROLE_ARN constant (if set at top of script)
+    3. Auto-detect from current AWS session (STS + IAM lookup)
+    4. Error out with helpful message
     """
-    if EXECUTION_ROLE_ARN:
-        return EXECUTION_ROLE_ARN
+    if role_arn:
+        return role_arn
+
+    if DEFAULT_EXECUTION_ROLE_ARN:
+        return DEFAULT_EXECUTION_ROLE_ARN
 
     # Use boto3 STS + IAM — get the role name from STS, then look up the full ARN from IAM
     try:
@@ -115,10 +125,9 @@ def get_execution_role():
     except Exception:
         pass
 
-    print("ERROR: EXECUTION_ROLE_ARN is not set and could not be auto-detected.")
-    print("Edit deploy_serverless.py and set EXECUTION_ROLE_ARN to your")
-    print("SageMaker execution role ARN, e.g.:")
-    print('  EXECUTION_ROLE_ARN = "arn:aws:iam::123456789012:role/YourRole"')
+    print("ERROR: Could not resolve SageMaker execution role ARN.")
+    print("Provide it via --role-arn, or set DEFAULT_EXECUTION_ROLE_ARN at the top of this script.")
+    print('  Example: --role-arn "arn:aws:iam::123456789012:role/YourRole"')
     sys.exit(1)
 
 
@@ -147,10 +156,10 @@ def get_dlc_image_uri(region):
     return f"{DLC_ACCOUNT_ID}.dkr.ecr.{region}.amazonaws.com/{DLC_REPOSITORY}:{DLC_TAG}"
 
 
-def deploy():
+def deploy(model_id, role_arn):
     """Deploy the model to a SageMaker Serverless Inference endpoint."""
     region = get_region()
-    role = get_execution_role()
+    role = get_execution_role(role_arn)
     sm_client = boto3.client("sagemaker", region_name=region)
 
     print(f"Region:             {region}")
@@ -161,15 +170,19 @@ def deploy():
     print(f"\nDLC Image URI: {image_uri}")
 
     # Step 2: Create a SageMaker Model
+    hub_config = {
+        "HF_MODEL_ID": model_id,
+        "HF_TASK": "text-generation",
+    }
     model_name = f"{ENDPOINT_NAME}-model"
-    print(f"\nCreating Model '{model_name}' with config: {json.dumps(HUB_CONFIG, indent=2)}")
+    print(f"\nCreating Model '{model_name}' with config: {json.dumps(hub_config, indent=2)}")
 
     try:
         sm_client.create_model(
             ModelName=model_name,
             PrimaryContainer={
                 "Image": image_uri,
-                "Environment": HUB_CONFIG,
+                "Environment": hub_config,
             },
             ExecutionRoleArn=role,
         )
@@ -230,15 +243,15 @@ def deploy():
     print("Run: python deploy_serverless.py invoke")
 
 
-def invoke():
-    """Send a test text-generation request to the serverless endpoint."""
+def invoke(prompt):
+    """Send a text-generation request to the serverless endpoint."""
     print(f"Invoking endpoint: {ENDPOINT_NAME}")
     print("  (First request may have a cold start of 30-60 seconds)\n")
 
     runtime = boto3.client("sagemaker-runtime")
 
     payload = {
-        "inputs": "In a distant galaxy far, far away,",
+        "inputs": prompt,
         "parameters": {
             "max_new_tokens": 50,
             "temperature": 0.7,
@@ -299,14 +312,29 @@ def main():
         choices=["deploy", "invoke", "cleanup"],
         help="Action to perform",
     )
+    parser.add_argument(
+        "--prompt",
+        default=DEFAULT_PROMPT,
+        help=f"Text prompt for the invoke action (default: '{DEFAULT_PROMPT}')",
+    )
+    parser.add_argument(
+        "--model-id",
+        default=DEFAULT_MODEL_ID,
+        help=f"HuggingFace model ID for the deploy action (default: '{DEFAULT_MODEL_ID}')",
+    )
+    parser.add_argument(
+        "--role-arn",
+        default=None,
+        help="SageMaker execution role ARN for the deploy action (default: auto-detect)",
+    )
     args = parser.parse_args()
 
-    actions = {
-        "deploy": deploy,
-        "invoke": invoke,
-        "cleanup": cleanup,
-    }
-    actions[args.action]()
+    if args.action == "invoke":
+        invoke(args.prompt)
+    elif args.action == "deploy":
+        deploy(args.model_id, args.role_arn)
+    elif args.action == "cleanup":
+        cleanup()
 
 
 if __name__ == "__main__":
