@@ -76,6 +76,21 @@ DEFAULT_EXECUTION_ROLE_ARN = "arn:aws:iam::123456789012:role/YourSageMakerExecut
 
 ## Runbook
 
+All commands accept `--region` to override the AWS region (default: `us-west-2`):
+
+```bash
+python deploy_serverless.py deploy --region us-east-1   # deploy in a different region
+```
+
+Or change `DEFAULT_REGION` at the top of the script for a permanent override.
+
+| Argument | Applies to | Default |
+|----------|-----------|---------|
+| `--model-id` | `deploy` | `rwang5688/distilgpt2-finetuned-wikitext2` |
+| `--prompt` | `invoke` | `A long time ago in a galaxy far, far away` |
+| `--region` | all | From AWS config, or `us-west-2` |
+| `--role-arn` | `deploy` | Auto-detected from AWS session |
+
 ### 1. Deploy the serverless endpoint
 
 ```bash

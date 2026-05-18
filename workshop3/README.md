@@ -51,5 +51,8 @@ python deploy_provisioned.py cleanup                                    # Delete
 | Argument | Applies to | Default |
 |----------|-----------|---------|
 | `--model-id` | `deploy` | `rwang5688/distilgpt2-finetuned-wikitext2` |
-| `--role-arn` | `deploy` | Auto-detected from AWS session |
 | `--prompt` | `invoke` | `A long time ago in a galaxy far, far away` |
+| `--region` | all | From AWS config, or `us-west-2` |
+| `--role-arn` | `deploy` | Auto-detected from AWS session |
+
+**Different region?** Change `DEFAULT_REGION` at the top of each script, or pass `--region us-east-1` to any command.

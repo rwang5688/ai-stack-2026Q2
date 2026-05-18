@@ -43,15 +43,11 @@ import boto3
 
 
 # --- Configuration ---
-DEFAULT_PROMPT = "A long time ago in a galaxy far, far away"
+DEFAULT_EXECUTION_ROLE_ARN = None  # Set to skip auto-detection (e.g., "arn:aws:iam::123456789012:role/YourRole")
 DEFAULT_MODEL_ID = "rwang5688/distilgpt2-finetuned-wikitext2"
+DEFAULT_PROMPT = "A long time ago in a galaxy far, far away"
+DEFAULT_REGION = "us-west-2"
 ENDPOINT_NAME = "distilgpt2-finetuned-wikitext2-provisioned"
-
-# SageMaker execution role ARN.
-# Set this to skip auto-detection. If left as None, the script will auto-detect
-# from your current AWS session (STS + IAM lookup).
-# Example: "arn:aws:iam::123456789012:role/YourSageMakerExecutionRole"
-DEFAULT_EXECUTION_ROLE_ARN = None
 
 # Environment variables passed to the DLC container.
 # The HuggingFace DLC uses these to know which model to download and what task to run.
@@ -88,14 +84,23 @@ DEPLOY_INSTANCE_TYPE = "ml.g6.xlarge"
 INITIAL_INSTANCE_COUNT = 1
 
 
-def get_region():
-    """Get the current AWS region from the boto3 session."""
+def get_region(region=None):
+    """Get the AWS region.
+
+    Resolution order:
+    1. --region CLI argument (if provided)
+    2. boto3 session region (from AWS_DEFAULT_REGION or AWS config)
+    3. DEFAULT_REGION constant at top of script
+    """
+    if region:
+        return region
+
     session = boto3.session.Session()
-    region = session.region_name
-    if not region:
-        print("ERROR: No AWS region configured. Set AWS_DEFAULT_REGION or configure your AWS CLI.")
-        sys.exit(1)
-    return region
+    session_region = session.region_name
+    if session_region:
+        return session_region
+
+    return DEFAULT_REGION
 
 
 def get_execution_role(role_arn=None):
@@ -160,9 +165,9 @@ def get_dlc_image_uri(region):
     return f"{DLC_ACCOUNT_ID}.dkr.ecr.{region}.amazonaws.com/{DLC_REPOSITORY}:{DLC_TAG}"
 
 
-def deploy(model_id, role_arn):
+def deploy(model_id, role_arn, region):
     """Deploy the model to a provisioned GPU endpoint (ml.g6.xlarge)."""
-    region = get_region()
+    region = get_region(region)
     role = get_execution_role(role_arn)
     sm_client = boto3.client("sagemaker", region_name=region)
 
@@ -250,12 +255,13 @@ def deploy(model_id, role_arn):
     print("\n** Remember: Run 'python deploy_provisioned.py cleanup' when done to stop charges!")
 
 
-def invoke(prompt):
+def invoke(prompt, region):
     """Send a text-generation request to the provisioned endpoint."""
+    region = get_region(region)
     print(f"Invoking endpoint: {ENDPOINT_NAME}")
     print("  (No cold start — GPU instance is always running)\n")
 
-    runtime = boto3.client("sagemaker-runtime")
+    runtime = boto3.client("sagemaker-runtime", region_name=region)
 
     payload = {
         "inputs": prompt,
@@ -279,12 +285,13 @@ def invoke(prompt):
     print(f"Response:\n{json.dumps(result, indent=2)}")
 
 
-def cleanup():
+def cleanup(region):
     """Delete the provisioned endpoint and its model. STOPS HOURLY CHARGES."""
+    region = get_region(region)
     print(f"Cleaning up endpoint: {ENDPOINT_NAME}")
     print("  (This will stop the hourly GPU instance charges)\n")
 
-    sm_client = boto3.client("sagemaker")
+    sm_client = boto3.client("sagemaker", region_name=region)
 
     # Get the endpoint config and model name before deleting
     try:
@@ -321,6 +328,11 @@ def main():
         help="Action to perform",
     )
     parser.add_argument(
+        "--region",
+        default=None,
+        help=f"AWS region (default: from AWS config, or '{DEFAULT_REGION}')",
+    )
+    parser.add_argument(
         "--prompt",
         default=DEFAULT_PROMPT,
         help=f"Text prompt for the invoke action (default: '{DEFAULT_PROMPT}')",
@@ -338,11 +350,11 @@ def main():
     args = parser.parse_args()
 
     if args.action == "invoke":
-        invoke(args.prompt)
+        invoke(args.prompt, args.region)
     elif args.action == "deploy":
-        deploy(args.model_id, args.role_arn)
+        deploy(args.model_id, args.role_arn, args.region)
     elif args.action == "cleanup":
-        cleanup()
+        cleanup(args.region)
 
 
 if __name__ == "__main__":
