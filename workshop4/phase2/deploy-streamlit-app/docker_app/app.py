@@ -29,6 +29,7 @@ from student_services_agent.agent import create_orchestrator
 # --- Page Configuration ---
 st.set_page_config(
     page_title="Student Services Assistant",
+    page_icon="🎓",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -182,6 +183,12 @@ if query:
                         "loan_offering_assistant": "Loan Application Agent",
                         "math_assistant": "Math Teaching Agent",
                     }
+                    routing_paths = {
+                        "course_review_assistant": "StudentServicesAgent → course_review_assistant (retrieve_course_catalog + query_course_reviews)",
+                        "course_registration_assistant": "StudentServicesAgent → course_registration_assistant (register_course)",
+                        "loan_offering_assistant": "StudentServicesAgent → loan_offering_assistant (predict_loan)",
+                        "math_assistant": "StudentServicesAgent → math_assistant (calculator)",
+                    }
                     try:
                         for msg in orchestrator.messages:
                             if msg.get("role") == "assistant" and "content" in msg:
@@ -189,12 +196,12 @@ if query:
                                     if "toolUse" in block:
                                         tool_name = block["toolUse"].get("name", "")
                                         if tool_name in tool_display_names:
-                                            routed_to = tool_display_names[tool_name]
+                                            routed_to = routing_paths[tool_name]
                     except Exception:
                         pass
 
                     if routed_to:
-                        content = f"🔀 **Routed to: {routed_to}**\n\n{content}"
+                        content = f"🔀 **Routing: {routed_to}**\n\n{content}"
 
                 except Exception as e:
                     error_detail = f"{type(e).__name__}: {str(e)}" if str(e) else type(e).__name__

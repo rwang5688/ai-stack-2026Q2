@@ -49,6 +49,14 @@ Use the available tools to:
 - search_course_catalog: Search the knowledge base for course descriptions, prerequisites, and details
 - get_course_reviews: Look up student reviews and ratings for specific courses
 
+CRITICAL WORKFLOW: For ANY course-related query, you MUST:
+1. FIRST search the course catalog to find relevant courses
+2. THEN look up student reviews for EACH course found (use the course code, e.g., "CS 441")
+3. Combine both sources in your response — catalog info AND student reviews
+
+NEVER skip step 2. Even if the user only asks about course descriptions, always include
+available student reviews to give a complete picture. If no reviews exist, explicitly state that.
+
 Always provide helpful, accurate information based on the data returned by the tools.
 If no results are found, let the student know clearly.
 """
@@ -123,7 +131,7 @@ def search_course_catalog(query: str) -> str:
 # ---------------------------------------------------------------------------
 # MCP tool (exposed to the gateway — wraps the Strands Agent)
 # ---------------------------------------------------------------------------
-@mcp.tool()
+@mcp.tool(name="course_review")
 def course_review_assistant(prompt: str) -> dict:
     """Course Review — search course catalog and student reviews at Any University.
 
@@ -149,7 +157,11 @@ def course_review_assistant(prompt: str) -> dict:
     )
 
     response = agent(prompt)
-    return {"response": str(response), "runtime": RUNTIME_NAME}
+    return {
+        "response": str(response),
+        "runtime": RUNTIME_NAME,
+        "routing_path": "StudentServicesAgent → AgentCore Gateway → CourseReviewMcp → course_review_assistant (search_course_catalog + get_course_reviews)",
+    }
 
 
 if __name__ == "__main__":

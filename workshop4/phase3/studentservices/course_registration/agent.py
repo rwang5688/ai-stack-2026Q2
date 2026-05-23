@@ -104,7 +104,7 @@ def register_course(student_id: str, course_name: str, semester: str) -> str:
 # ---------------------------------------------------------------------------
 # MCP tool (exposed to the gateway — wraps the Strands Agent)
 # ---------------------------------------------------------------------------
-@mcp.tool()
+@mcp.tool(name="course_registration")
 def course_registration_assistant(prompt: str) -> dict:
     """Course Registration — register students in courses at Any University.
 
@@ -131,7 +131,11 @@ def course_registration_assistant(prompt: str) -> dict:
     )
 
     response = agent(prompt)
-    return {"response": str(response), "runtime": RUNTIME_NAME}
+    return {
+        "response": str(response),
+        "runtime": RUNTIME_NAME,
+        "routing_path": "StudentServicesAgent → AgentCore Gateway → CourseRegistrationMcp → course_registration_assistant (register_course)",
+    }
 
 
 if __name__ == "__main__":

@@ -84,7 +84,7 @@ def calculator(expression: str) -> str:
 # ---------------------------------------------------------------------------
 # MCP tool (exposed to the gateway — wraps the Strands Agent)
 # ---------------------------------------------------------------------------
-@mcp.tool()
+@mcp.tool(name="math_teaching")
 def math_assistant(prompt: str) -> dict:
     """Math Teaching — solve math problems with step-by-step explanations.
 
@@ -110,7 +110,11 @@ def math_assistant(prompt: str) -> dict:
     )
 
     response = agent(prompt)
-    return {"response": str(response), "runtime": RUNTIME_NAME}
+    return {
+        "response": str(response),
+        "runtime": RUNTIME_NAME,
+        "routing_path": "StudentServicesAgent → AgentCore Gateway → MathTeachingMcp → math_assistant (calculator)",
+    }
 
 
 if __name__ == "__main__":

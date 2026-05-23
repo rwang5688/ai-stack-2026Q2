@@ -118,7 +118,7 @@ def predict_loan(features_csv: str) -> str:
 # ---------------------------------------------------------------------------
 # MCP tool (exposed to the gateway — wraps the Strands Agent)
 # ---------------------------------------------------------------------------
-@mcp.tool()
+@mcp.tool(name="loan_application")
 def loan_offering_assistant(prompt: str) -> dict:
     """Loan Application — predict loan acceptance based on customer features.
 
@@ -145,7 +145,11 @@ def loan_offering_assistant(prompt: str) -> dict:
     )
 
     response = agent(prompt)
-    return {"response": str(response), "runtime": RUNTIME_NAME}
+    return {
+        "response": str(response),
+        "runtime": RUNTIME_NAME,
+        "routing_path": "StudentServicesAgent → AgentCore Gateway → LoanApplicationMcp → loan_offering_assistant (predict_loan)",
+    }
 
 
 if __name__ == "__main__":
