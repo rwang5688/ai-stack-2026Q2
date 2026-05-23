@@ -15,7 +15,7 @@ from fastmcp import FastMCP
 from strands import Agent, tool
 from strands.models import BedrockModel
 
-mcp = FastMCP("loan-application-mcp-server", path="/mcp/")
+mcp = FastMCP("loan-application-mcp-server")
 
 # ---------------------------------------------------------------------------
 # Model configuration — reads from SSM Parameter Store (no caching)
@@ -154,6 +154,6 @@ def loan_offering_assistant(prompt: str) -> dict:
 
 if __name__ == "__main__":
     if os.environ.get("MCP_TRANSPORT") == "streamable-http":
-        mcp.run(transport="streamable-http", host="0.0.0.0", stateless_http=True, path="/mcp/")
+        mcp.run(transport="streamable-http", host="0.0.0.0", stateless_http=True)
     else:
         mcp.run()
