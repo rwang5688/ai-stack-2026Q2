@@ -154,6 +154,6 @@ def loan_offering_assistant(prompt: str) -> dict:
 
 if __name__ == "__main__":
     if os.environ.get("MCP_TRANSPORT") == "streamable-http":
-        mcp.run(transport="streamable-http", host="0.0.0.0", stateless_http=True)
+        mcp.run(transport="streamable-http", host="0.0.0.0", stateless_http=True, path="/mcp/")
     else:
         mcp.run()

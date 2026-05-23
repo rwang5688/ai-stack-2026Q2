@@ -58,26 +58,33 @@ AgentCore Gateway sends MCP tool calls to `/mcp/` (with trailing slash). FastMCP
 - Any query requiring a tool call hangs or times out
 
 ### Current Fix
-All four MCP server `requirements.txt` files pin `fastmcp==3.0.0`.
+All four MCP server `requirements.txt` files pin `fastmcp==3.0.0` (NOTE: AgentCore runtime ignores this pin — installs 3.3.1 from base image).
+
+**Actual working fix**: Set `path="/mcp/"` in `mcp.run()` to match the trailing-slash path the gateway sends, preventing the 307 redirect.
+
+```python
+mcp.run(transport="streamable-http", host="0.0.0.0", stateless_http=True, path="/mcp/")
+```
 
 ### How to Test if AgentCore Has Caught Up
-1. Change all four MCP server `requirements.txt` from `fastmcp==3.0.0` to `fastmcp>=3.0.0,<4`
+1. Remove `path="/mcp/"` from all four MCP server `mcp.run()` calls (revert to no path argument)
 2. Run `agentcore deploy -y`
 3. Test: `agentcore invoke --runtime StudentServicesAgent "Find courses about artificial intelligence"`
-4. Check logs: `agentcore logs --runtime CourseReviewMcp --since 5m`
-5. **If you see the 307 redirect pattern** → revert to `fastmcp==3.0.0`
-6. **If tool calls succeed without 307 redirects** → AgentCore gateway is fixed, keep unpinned
+4. Check logs: `agentcore logs --runtime CourseReviewMcp --since 5m -n 20`
+5. **If you see the 307 redirect pattern** → re-add `path="/mcp/"`
+6. **If tool calls succeed without 307 redirects** → AgentCore gateway is fixed, keep without path
 
 ### Files to Change
-- `workshop4/phase3/studentservices/course_registration/requirements.txt`
-- `workshop4/phase3/studentservices/course_review/requirements.txt`
-- `workshop4/phase3/studentservices/loan_application/requirements.txt`
-- `workshop4/phase3/studentservices/math_teaching/requirements.txt`
+- `workshop4/phase3/studentservices/course_registration/agent.py` — `mcp.run()` path parameter
+- `workshop4/phase3/studentservices/course_review/agent.py` — `mcp.run()` path parameter
+- `workshop4/phase3/studentservices/loan_application/agent.py` — `mcp.run()` path parameter
+- `workshop4/phase3/studentservices/math_teaching/agent.py` — `mcp.run()` path parameter
 
 ### Root Cause Timeline
 - **Before 2026-05-23**: `fastmcp>=3.0.0,<4` worked (likely fastmcp 3.0.0 was installed)
-- **2026-05-23**: Fresh deploy with agentcore 0.15.0 pulled a newer fastmcp 3.x that added trailing-slash redirect
-- **Fix**: Pinned to `fastmcp==3.0.0`
+- **2026-05-23**: Fresh deploy with agentcore 0.15.0 pulled fastmcp 3.3.1 (from base image, ignores requirements.txt pin)
+- **FastMCP 3.3.1 behavior**: Default path is `/mcp/` per docs, but AgentCore runtime mounts at `/mcp` — Starlette's `redirect_slashes=True` causes 307 redirect from `/mcp/` → `/mcp`, stripping POST body
+- **Fix**: Explicit `path="/mcp/"` in `mcp.run()` forces FastMCP to serve on the trailing-slash path the gateway sends to
 
 ## Lessons Learned
 - When using AgentCore Gateway with `toolDefinitions`, the `name` field must exactly match the MCP tool name exposed by the server — semantic search can mask this bug for simple single-tool servers
