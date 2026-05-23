@@ -15,7 +15,7 @@ from fastmcp import FastMCP
 from strands import Agent, tool
 from strands.models import BedrockModel
 
-mcp = FastMCP("math-teaching-mcp-server")
+mcp = FastMCP("math-teaching-mcp-server", path="/mcp/")
 
 # ---------------------------------------------------------------------------
 # Model configuration — reads from SSM Parameter Store (no caching)

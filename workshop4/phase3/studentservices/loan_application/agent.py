@@ -15,7 +15,7 @@ from fastmcp import FastMCP
 from strands import Agent, tool
 from strands.models import BedrockModel
 
-mcp = FastMCP("loan-application-mcp-server")
+mcp = FastMCP("loan-application-mcp-server", path="/mcp/")
 
 # ---------------------------------------------------------------------------
 # Model configuration — reads from SSM Parameter Store (no caching)

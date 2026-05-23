@@ -86,6 +86,22 @@ mcp.run(transport="streamable-http", host="0.0.0.0", stateless_http=True, path="
 - **FastMCP 3.3.1 behavior**: Default path is `/mcp/` per docs, but AgentCore runtime mounts at `/mcp` — Starlette's `redirect_slashes=True` causes 307 redirect from `/mcp/` → `/mcp`, stripping POST body
 - **Fix**: Explicit `path="/mcp/"` in `mcp.run()` forces FastMCP to serve on the trailing-slash path the gateway sends to
 
+## Recovery Plan (for next session)
+
+**Problem**: AgentCore CLI 0.15.0 deploys FastMCP 3.3.1 runtime which breaks tool execution. The 307 redirect is fixed (path="/mcp/" in constructor) but tool results still don't reach the orchestrator.
+
+**Previous working version**: `@aws/agentcore@0.13.1` (confirmed working May 14, 2026)
+
+**Steps:**
+1. `npm install -g @aws/agentcore@0.13.1`
+2. `cd workshop4/phase3/studentservices`
+3. `agentcore deploy -y`
+4. `agentcore invoke --runtime StudentServicesAgent "What is 2 + 2?"`
+5. If works → test all 4 specialists → done
+6. If doesn't work → `agentcore logs --runtime StudentServicesAgent --since 5m --level debug -n 50` and debug from there
+
+**Current code state**: All improvements applied (tool names, system prompts, routing_path, favicon, path="/mcp/"). Do NOT revert code. The issue is the runtime environment version, not the code.
+
 ## Lessons Learned
 - When using AgentCore Gateway with `toolDefinitions`, the `name` field must exactly match the MCP tool name exposed by the server — semantic search can mask this bug for simple single-tool servers
 - Inner agents with multiple tools need explicit workflow instructions in their system prompt — the model won't reliably call all tools without being told to
