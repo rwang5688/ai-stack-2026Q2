@@ -55,7 +55,7 @@ def get_model_config() -> dict:
 # ---------------------------------------------------------------------------
 GATEWAY_MCP_URL = os.environ.get(
     "GATEWAY_MCP_URL",
-    "https://studentservices-studentservicesgateway-8dicrvcvo8.gateway.bedrock-agentcore.us-west-2.amazonaws.com/mcp",
+    "https://studentservices-studentservicesgateway-nxhssbogbd.gateway.bedrock-agentcore.us-west-2.amazonaws.com/mcp",
 )
 GATEWAY_CLIENT_ID = os.environ.get(
     "GATEWAY_CLIENT_ID",

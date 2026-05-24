@@ -258,7 +258,7 @@
                 {
                     "name": "coursecatalog",
                     "targetType": "mcpServer",
-                    "endpoint": "https://bedrock-agentcore.us-west-2.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-west-2%3A149057604171%3Aruntime%2Fstudentservices_CourseCatalogMcp-fulwsf32ho/invocations",
+                    "endpoint": "https://bedrock-agentcore.us-west-2.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-west-2%3A149057604171%3Aruntime%2Fstudentservices_CourseCatalogMcp-1eMaj0DXfd/invocations",
                     "outboundAuth": {
                         "type": "OAUTH",
                         "credentialName": "CourseCatalogMcp-oauth"
@@ -276,7 +276,7 @@
                 {
                     "name": "coursereviews",
                     "targetType": "mcpServer",
-                    "endpoint": "https://bedrock-agentcore.us-west-2.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-west-2%3A149057604171%3Aruntime%2Fstudentservices_CourseReviewsMcp-GtfbiG65pV/invocations",
+                    "endpoint": "https://bedrock-agentcore.us-west-2.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-west-2%3A149057604171%3Aruntime%2Fstudentservices_CourseReviewsMcp-vYqB8A7u89/invocations",
                     "outboundAuth": {
                         "type": "OAUTH",
                         "credentialName": "CourseReviewsMcp-oauth"
@@ -294,7 +294,7 @@
                 {
                     "name": "courseregistration",
                     "targetType": "mcpServer",
-                    "endpoint": "https://bedrock-agentcore.us-west-2.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-west-2%3A149057604171%3Aruntime%2Fstudentservices_CourseRegistrationMcp-8zewrkF29n/invocations",
+                    "endpoint": "https://bedrock-agentcore.us-west-2.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-west-2%3A149057604171%3Aruntime%2Fstudentservices_CourseRegistrationMcp-BbB8mO8Spr/invocations",
                     "outboundAuth": {
                         "type": "OAUTH",
                         "credentialName": "CourseRegistrationMcp-oauth"
@@ -312,7 +312,7 @@
                 {
                     "name": "loanapplication",
                     "targetType": "mcpServer",
-                    "endpoint": "https://bedrock-agentcore.us-west-2.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-west-2%3A149057604171%3Aruntime%2Fstudentservices_LoanApplicationMcp-odQAlS6coH/invocations",
+                    "endpoint": "https://bedrock-agentcore.us-west-2.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-west-2%3A149057604171%3Aruntime%2Fstudentservices_LoanApplicationMcp-SGOP4FCEDG/invocations",
                     "outboundAuth": {
                         "type": "OAUTH",
                         "credentialName": "LoanApplicationMcp-oauth"
