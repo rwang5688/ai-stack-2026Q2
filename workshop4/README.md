@@ -7,8 +7,8 @@ This workshop builds a multi-agent Student Services system for Any University (a
 | Phase | Architecture | Key Characteristic |
 |-------|-------------|-------------------|
 | Phase 1 | Monolithic Agentic App | All agents + UI in one process |
-| Phase 2 | Containerized Monolith | Same app deployed to ECS Fargate |
-| Phase 3 | Agent Microservices | Agents as independent runtimes, thin client frontend |
+| Phase 2 | Containerized Monolith | Same app deployed to ECS Fargate with Cognito auth |
+| Phase 3 | Agent Microservices | Agent intelligence in one runtime, data access decoupled behind Gateway |
 
 ## [Phase 1: Monolithic Agentic Application](phase1/README.md)
 
@@ -44,33 +44,46 @@ CloudFront → ALB → ECS Fargate (Streamlit + all agents)
 
 ## [Phase 3: Agent Microservices (AgentCore)](phase3/README.md)
 
-Decomposes the monolith into independent AgentCore Runtimes. Each agent becomes its own managed service, communicating through an AgentCore Gateway. The Streamlit app becomes a thin client that invokes the orchestrator via a stable HTTP POST — completely decoupled from backend agent logic.
+Separates the Reasoning Layer from the Capability Layer. All agent intelligence (orchestrator + 4 specialists) runs in one AgentCore HTTP Runtime using the Agent-as-Tool pattern. Data access is decoupled into dumb MCP servers behind an AgentCore Gateway — no LLM calls in MCP servers, just direct SDK calls that return in <1 second.
 
 ```
-Thin Streamlit Client ──(SigV4 HTTP POST)──→ Orchestrator Runtime
-                                                    ↓
-                                          AgentCore Gateway (OAuth2)
-                                    ┌───────┼───────┼───────┐
-                                    ↓       ↓       ↓       ↓
-                              CourseReg  CourseRev  Loan   Math
-                              (Runtime)  (Runtime) (Runtime) (Runtime)
-                                 ↓          ↓        ↓
-                              DynamoDB   Bedrock   SageMaker
-                                         KB+DDB   XGBoost
+Thin Streamlit Client ──(SigV4 HTTP POST)──→ StudentServicesAgent (HTTP Runtime)
+                                                    │
+                                          ┌─────────┼─────────┬──────────┐
+                                          │         │         │          │
+                                   course_review  course_reg  loan_app  math
+                                     (Agent)      (Agent)     (Agent)   (Agent)
+                                          │         │         │          │
+                                    OAuth2 via Gateway                calculator
+                              ┌───────────┼─────────┼─────────┐      (local)
+                              ↓           ↓         ↓         ↓
+                        CourseCatalog  CourseReviews  CourseReg  LoanApp
+                         (MCP Server)  (MCP Server)  (MCP Srv)  (MCP Srv)
+                              ↓           ↓            ↓          ↓
+                          Bedrock KB   DynamoDB     DynamoDB   SageMaker
 ```
 
-**Pros**: Frontend and backend agents evolve independently. Add/update/scale specialists without touching the client. Cedar policies enforce content safety at the gateway layer. Memory provides cross-session context.
-**Cons**: More infrastructure to manage; OAuth2 identity per runtime.
+**Pros**: Frontend and backend evolve independently. Data-access tools scale independently. Cedar policies enforce access control at the gateway. OAuth2 per-service identity. Observability per-tool.
+**Cons**: Two-pass deployment required. Gateway adds latency for tool calls.
 
 ## Agents
 
 | Agent | Role | External Services |
 |-------|------|-------------------|
-| Student Services (Orchestrator) | Routes queries to specialists | AgentCore Gateway |
-| Course Registration | Enrolls students in courses | DynamoDB |
-| Course Review | Course catalog and review lookup | Bedrock Knowledge Base, DynamoDB |
-| Loan Application | Predicts loan acceptance | SageMaker XGBoost |
-| Math Teaching | Step-by-step math tutoring | Calculator tools |
+| Student Services (Orchestrator) | Routes queries to specialists | AgentCore Gateway (MCPClient) |
+| Course Review (local Agent-as-Tool) | Course catalog and review lookup | Gateway → CourseCatalogMcp + CourseReviewsMcp |
+| Course Registration (local Agent-as-Tool) | Enrolls students in courses | Gateway → CourseRegistrationMcp |
+| Loan Application (local Agent-as-Tool) | Predicts loan acceptance | Gateway → LoanApplicationMcp |
+| Math Teaching (local Agent-as-Tool) | Step-by-step math tutoring | Local calculator (no MCP) |
+
+## MCP Servers (Dumb Tools — No LLM Calls)
+
+| MCP Server | Tool | Backend |
+|-----------|------|---------|
+| CourseCatalogMcp | `search_course_catalog` | Bedrock Knowledge Base |
+| CourseReviewsMcp | `get_course_reviews` | DynamoDB (course_reviews table) |
+| CourseRegistrationMcp | `register_course` | DynamoDB (course_registration table) |
+| LoanApplicationMcp | `predict_loan` | SageMaker XGBoost endpoint |
 
 ## AWS Region
 
@@ -78,58 +91,25 @@ All resources deploy to **us-west-2**.
 
 ## Code Mapping: Phase 1 → Phase 3
 
-The core business logic is **identical** between phases. The difference is how specialist agents are exposed and invoked. Use `diff` to compare:
+The core business logic is preserved across phases. The key architectural difference:
 
-```bash
-diff workshop4/phase1/streamlit_app/course_registration_agent/agent.py \
-     workshop4/phase3/studentservices/course_registration/agent.py
-```
+| Aspect | Phase 1 (Monolith) | Phase 3 (AgentCore) |
+|--------|-------------------|---------------------|
+| **Agent location** | All in one process | All in one AgentCore Runtime (Agent-as-Tool) |
+| **Tool location** | In-process (direct SDK calls) | Remote MCP servers (via Gateway) |
+| **Transport** | Direct function call | MCPClient → Gateway → MCP server |
+| **Auth** | None (same process) | OAuth2 per MCP server (Cognito pools) |
+| **Model config** | Shared `config.py` | SSM Parameter Store (centralized) |
+| **Thin client** | Streamlit (embedded) | Streamlit (SigV4 HTTP POST to runtime) |
 
-### Structural Comparison
-
-| Aspect | Phase 1 (Monolith) | Phase 3 (AgentCore MCP) |
-|--------|-------------------|------------------------|
-| **Entry point** | `@tool` decorator — called in-process by orchestrator | `@mcp.tool()` decorator — called remotely via MCP protocol through Gateway |
-| **Transport** | Direct function call (same process) | MCP streamable-http (network call) |
-| **Config** | Shared `config.py` (SSM-backed, imported) | `os.environ.get(...)` (env vars injected by AgentCore runtime) |
-| **Model creation** | `create_model_from_config()` (shared factory) | `BedrockModel(...)` (direct, self-contained per runtime) |
-| **Inner tools** | `@tool register_student(...)` | `@tool register_course_inner(...)` (same logic) |
-| **Response format** | Returns `str` prefixed with `[Agent Name]` | Returns `dict` with `{"response": str, "runtime": RUNTIME_NAME}` |
-| **Server bootstrap** | None (imported by orchestrator) | `mcp.run(transport="streamable-http", ...)` |
-| **Dependencies** | Shares code with other agents via imports | Self-contained — no cross-runtime imports |
-
-### The Two-Layer Tool Pattern (Preserved Across Phases)
-
-Both phases use the same two-layer pattern:
+### What Moved Where
 
 ```
-Phase 1:
-  Orchestrator calls → @tool course_registration_assistant(query)
-                            → creates inner Agent
-                            → inner Agent calls → @tool register_student(...)
-                            → returns string response
+Phase 1 (one process):
+  Orchestrator → @tool specialist_agent(query) → inner Agent → @tool do_thing() → SDK call
 
-Phase 3:
-  Orchestrator calls → Gateway → @mcp.tool() course_registration_assistant(prompt)
-                                      → creates inner Agent
-                                      → inner Agent calls → @tool register_course_inner(...)
-                                      → returns dict response
+Phase 3 (distributed):
+  Orchestrator → @tool specialist_agent(query) → inner Agent → MCPClient → Gateway → MCP server → SDK call
 ```
 
-The inner agent reasoning (LLM call, tool selection, validation) is identical. The only difference is the **outer wrapper**: `@tool` (in-process) vs `@mcp.tool()` (network service).
-
-### What Changes When Moving to AgentCore
-
-1. **Replace `@tool` with `@mcp.tool()`** on the outer function (the one the orchestrator calls)
-2. **Add `FastMCP` server bootstrap** at the bottom of the file
-3. **Replace shared config imports** with `os.environ.get()` (each runtime is self-contained)
-4. **Replace shared model factory** with direct `BedrockModel(...)` instantiation
-5. **Add `RUNTIME_NAME`** to responses so the thin client can show which runtime handled the request
-6. **Return `dict` instead of `str`** from the outer MCP tool (MCP protocol uses structured data)
-
-### What Stays the Same
-
-- System prompts
-- Inner tool logic (validation, DynamoDB writes, KB queries, SageMaker invocations)
-- Error handling patterns
-- The Agent-inside-tool pattern (specialist agent with its own LLM reasoning)
+The specialist agents still have their own system prompts and LLM reasoning — they just reach their data-access tools through the network (Gateway + MCP) instead of direct function calls. The MCP servers themselves have NO agent logic — they're just thin wrappers around boto3 SDK calls.

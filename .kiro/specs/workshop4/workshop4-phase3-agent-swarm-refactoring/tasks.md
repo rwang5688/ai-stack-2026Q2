@@ -67,67 +67,67 @@ Deployment sequence: CloudFormation → register-credentials.sh → CLI upgrade 
   - [x] 7.1 Regenerate agentcore/cdk/ from fresh scaffold + npm install
     - _Requirements: 14.1_
 
-- [ ] 8. Clean Slate Deployment
-  - [ ] 8.1 Stop Kiro, apply fresh AWS credentials
+- [x] 8. Clean Slate Deployment
+  - [x] 8.1 Stop Kiro, apply fresh AWS credentials
     - Credentials expire; must refresh before any AWS operations
-  - [ ] 8.2 Delete old AgentCore CDK stack
+  - [x] 8.2 Delete old AgentCore CDK stack
     - `aws cloudformation delete-stack --stack-name AgentCore-studentservices-default --region us-west-2`
     - `aws cloudformation wait stack-delete-complete --stack-name AgentCore-studentservices-default --region us-west-2`
     - This deletes all runtimes, gateway, credential providers, and memory
-  - [ ] 8.3 Delete stale deployed state
+  - [x] 8.3 Delete stale deployed state
     - `Remove-Item "workshop4\phase3\studentservices\agentcore\.cli\deployed-state.json" -Force`
     - This forces the CLI to treat next deploy as a fresh creation
-  - [ ] 8.4 Clear gateway targets in agentcore.json (set `"targets": []`)
+  - [x] 8.4 Clear gateway targets in agentcore.json (set `"targets": []`)
     - Avoids chicken-and-egg: gateway can't reference runtime URLs that don't exist yet
     - Keep the gateway definition, credentials, runtimes — just empty the targets array
-  - [ ] 8.5 Re-register OAuth credentials
+  - [x] 8.5 Re-register OAuth credentials
     - `bash register-credentials.sh` (from GitBash on Windows or code-server)
     - Deleting the stack deletes credential providers; they must be re-registered
     - Verify all 5 credentials registered successfully
-  - [ ] 8.6 First `agentcore deploy -y` (creates runtimes + gateway with no targets)
+  - [x] 8.6 First `agentcore deploy -y` (creates runtimes + gateway with no targets)
     - Creates all 5 runtimes and the gateway (empty targets)
     - _Requirements: 14.1, 14.2, 14.3, 14.4, 14.5_
 
-- [ ] 9. Update Gateway Endpoints and Second Deploy
-  - [ ] 9.1 Get runtime URLs from `agentcore status`
+- [x] 9. Update Gateway Endpoints and Second Deploy
+  - [x] 9.1 Get runtime URLs from `agentcore status`
     - Record all 4 MCP server endpoint URLs (CourseCatalog, CourseReviews, CourseRegistration, LoanApplication)
-  - [ ] 9.2 Update agentcore.json gateway targets with real endpoint URLs
+  - [x] 9.2 Update agentcore.json gateway targets with real endpoint URLs
     - Add all 4 targets back with correct endpoint URLs from 9.1
-  - [ ] 9.3 Second `agentcore deploy -y` (adds targets to gateway)
+  - [x] 9.3 Second `agentcore deploy -y` (adds targets to gateway)
     - Gateway now has correct endpoints for all 4 MCP servers
     - _Requirements: 14.1, 14.2, 14.3, 14.4, 14.5_
-  - [ ] 9.4 Update orchestrator hardcoded gateway URL if it changed
+  - [x] 9.4 Update orchestrator hardcoded gateway URL if it changed
     - Check `student_services/agent.py` — GATEWAY_MCP_URL must match new gateway endpoint
 
-- [ ] 10. End-to-End Testing (via agentcore invoke)
-  - [ ]* 10.1 Test math teaching (local, no MCP)
+- [x] 10. End-to-End Testing (via agentcore invoke)
+  - [x] 10.1 Test math teaching (local, no MCP)
     - `agentcore invoke --runtime StudentServicesAgent "What is the derivative of x^3 + 2x?"`
     - _Requirements: 7.1, 7.2, 10.2_
-  - [ ]* 10.2 Test course review (gateway → 2 MCP servers)
+  - [x] 10.2 Test course review (gateway → 2 MCP servers)
     - `agentcore invoke --runtime StudentServicesAgent "What are the most challenging courses?"`
     - _Requirements: 8.1, 8.2, 8.3, 10.1_
-  - [ ]* 10.3 Test course registration (gateway → 1 MCP server)
+  - [x] 10.3 Test course registration (gateway → 1 MCP server)
     - `agentcore invoke --runtime StudentServicesAgent "Register student STU001 for CS 441 in Fall 2026"`
     - _Requirements: 5.1, 5.2, 10.1_
-  - [ ]* 10.4 Test loan application (gateway → 1 MCP server)
+  - [x] 10.4 Test loan application (gateway → 1 MCP server)
     - `agentcore invoke --runtime StudentServicesAgent` with 59 CSV features
     - _Requirements: 6.1, 6.2, 10.1_
 
-- [ ] 11. Test Local Streamlit App (`streamlit_app/`)
-  - [ ] 11.1 Update and test local Streamlit thin client
+- [x] 11. Test Local Streamlit App (`streamlit_app/`)
+  - [x] 11.1 Update and test local Streamlit thin client
     - Run `streamlit run app.py` locally, test all 4 specialists
     - _Requirements: 10.3, 11.1, 11.2_
 
-- [ ] 12. Deploy Production Streamlit App (`deploy-streamlit-app/`)
-  - [ ] 12.1 Deploy to ECS Fargate from code-server
+- [x] 12. Deploy Production Streamlit App (`deploy-streamlit-app/`)
+  - [x] 12.1 Deploy to ECS Fargate from code-server
     - _Requirements: 11.1, 11.2, 12.3_
 
-- [ ] 13. Update README and Documentation
-  - [ ] 13.1 Update Phase 3 README with new architecture
+- [x] 13. Update README and Documentation
+  - [x] 13.1 Update Phase 3 README with new architecture
     - _Requirements: 13.1, 13.2, 13.3_
 
-- [ ] 14. Final checkpoint
-  - Ensure all tests pass.
+- [x] 14. Final checkpoint
+  - All 4 specialists verified on production ECS Fargate deployment (CloudFront + Cognito auth).
 
 ## Notes
 
