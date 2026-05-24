@@ -18,7 +18,7 @@ echo ""
 
 # Deploy stack (builds Docker image, pushes to ECR, deploys CloudFormation)
 # Pass the StudentServicesAgent runtime URL as context
-AGENT_URL="https://bedrock-agentcore.us-west-2.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-west-2%3A149057604171%3Aruntime%2Fstudentservices_StudentServicesAgent-6O7q8v7Eqb/invocations"
+AGENT_URL="https://bedrock-agentcore.us-west-2.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-west-2%3A149057604171%3Aruntime%2Fstudentservices_StudentServicesAgent-DVMRTdBLbs/invocations"
 
 echo ">>> Deploying CDK stack..."
 cdk deploy --require-approval never --outputs-file cdk-outputs.json \
