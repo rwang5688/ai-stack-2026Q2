@@ -1,12 +1,12 @@
 #!/bin/bash
 # register-credentials.sh
 #
-# Fetches Cognito client secrets from the student-services-identity CloudFormation
+# Fetches Cognito client secrets from the student-services-agentcore-infra CloudFormation
 # stack and registers them as AgentCore OAuth credentials.
 #
 # Prerequisites:
 #   - AWS credentials configured
-#   - CloudFormation stack "student-services-identity" deployed
+#   - CloudFormation stack "student-services-agentcore-infra" deployed
 #   - agentcore CLI installed
 #
 # Usage:
@@ -49,42 +49,42 @@ get_secret() {
 
 # Define credentials to register
 declare -a CRED_NAMES=(
+    "CourseCatalogMcp-oauth"
     "CourseRegistrationMcp-oauth"
-    "CourseReviewMcp-oauth"
+    "CourseReviewsMcp-oauth"
     "LoanApplicationMcp-oauth"
-    "MathTeachingMcp-oauth"
     "StudentServicesGateway-oauth"
 )
 
 declare -a POOL_ID_KEYS=(
+    "CourseCatalogUserPoolId"
     "CourseRegistrationUserPoolId"
-    "CourseReviewUserPoolId"
+    "CourseReviewsUserPoolId"
     "LoanApplicationUserPoolId"
-    "MathTeachingUserPoolId"
     "StudentServicesGatewayUserPoolId"
 )
 
 declare -a CLIENT_ID_KEYS=(
+    "CourseCatalogClientId"
     "CourseRegistrationClientId"
-    "CourseReviewClientId"
+    "CourseReviewsClientId"
     "LoanApplicationClientId"
-    "MathTeachingClientId"
     "StudentServicesGatewayClientId"
 )
 
 declare -a DISCOVERY_URL_KEYS=(
+    "CourseCatalogDiscoveryUrl"
     "CourseRegistrationDiscoveryUrl"
-    "CourseReviewDiscoveryUrl"
+    "CourseReviewsDiscoveryUrl"
     "LoanApplicationDiscoveryUrl"
-    "MathTeachingDiscoveryUrl"
     "StudentServicesGatewayDiscoveryUrl"
 )
 
 declare -a SCOPES=(
+    "course-catalog/access"
     "course-registration/access"
-    "course-review/access"
+    "course-reviews/access"
     "loan-application/access"
-    "math-teaching/access"
     "student-services-gateway/access"
 )
 

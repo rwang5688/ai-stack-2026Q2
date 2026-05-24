@@ -1,5 +1,5 @@
 [project]
-name = "course-registration-mcp"
+name = "course-catalog-mcp"
 version = "1.0.0"
 requires-python = ">=3.12"
 dependencies = [

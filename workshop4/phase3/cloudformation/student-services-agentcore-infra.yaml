@@ -237,18 +237,104 @@ Resources:
       AllowedOAuthFlowsUserPoolClient: true
 
   # =======================================================================
-  # DOMAIN: CourseReview
+  # DOMAIN: CourseCatalog
   #
-  # MCP server that searches course catalog (Bedrock KB) and reviews (DynamoDB).
-  # Execution role: Bedrock (base) + DynamoDB (course_reviews table reads) +
-  #                 Bedrock Agent Runtime (Knowledge Base retrieval).
+  # MCP server that searches the course catalog via Bedrock Knowledge Base.
+  # Execution role: Bedrock (base) + Bedrock Agent Runtime (Knowledge Base retrieval).
   # Cognito: protects the MCP runtime endpoint.
   # =======================================================================
 
-  CourseReviewExecutionRole:
+  CourseCatalogExecutionRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: CourseReview-execution-role
+      RoleName: CourseCatalog-execution-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AssumeRolePolicy
+            Effect: Allow
+            Principal:
+              Service: bedrock-agentcore.amazonaws.com
+            Action: sts:AssumeRole
+            Condition:
+              StringEquals:
+                aws:SourceAccount: !Ref AWS::AccountId
+              ArnLike:
+                aws:SourceArn: !Sub 'arn:aws:bedrock-agentcore:${AWS::Region}:${AWS::AccountId}:*'
+      ManagedPolicyArns:
+        - !Ref AgentCoreBasePolicy
+      Policies:
+        - PolicyName: BedrockKnowledgeBaseAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Sid: BedrockAgentRuntimeRetrieve
+                Effect: Allow
+                Action:
+                  - bedrock:Retrieve
+                Resource:
+                  - !Sub 'arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:knowledge-base/*'
+
+  CourseCatalogUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: course-catalog-user-pool
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireUppercase: false
+          RequireLowercase: false
+          RequireNumbers: false
+          RequireSymbols: false
+      AutoVerifiedAttributes:
+        - email
+      Schema:
+        - Name: email
+          AttributeDataType: String
+          Required: true
+          Mutable: true
+
+  CourseCatalogUserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      Domain: !Sub 'course-catalog-${AWS::AccountId}'
+      UserPoolId: !Ref CourseCatalogUserPool
+
+  CourseCatalogResourceServer:
+    Type: AWS::Cognito::UserPoolResourceServer
+    Properties:
+      UserPoolId: !Ref CourseCatalogUserPool
+      Identifier: course-catalog
+      Name: Course Catalog
+      Scopes:
+        - ScopeName: access
+          ScopeDescription: Access Course Catalog MCP Server
+
+  CourseCatalogAppClient:
+    Type: AWS::Cognito::UserPoolClient
+    DependsOn: CourseCatalogResourceServer
+    Properties:
+      UserPoolId: !Ref CourseCatalogUserPool
+      ClientName: course-catalog-client
+      GenerateSecret: true
+      AllowedOAuthFlows:
+        - client_credentials
+      AllowedOAuthScopes:
+        - course-catalog/access
+      AllowedOAuthFlowsUserPoolClient: true
+
+  # =======================================================================
+  # DOMAIN: CourseReviews
+  #
+  # MCP server that retrieves course reviews from DynamoDB.
+  # Execution role: Bedrock (base) + DynamoDB (course_reviews table reads).
+  # Cognito: protects the MCP runtime endpoint.
+  # =======================================================================
+
+  CourseReviewsExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: CourseReviews-execution-role
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -265,22 +351,11 @@ Resources:
       ManagedPolicyArns:
         - !Ref AgentCoreBasePolicy
         - 'arn:aws:iam::aws:policy/AmazonDynamoDBReadOnlyAccess'
-      Policies:
-        - PolicyName: BedrockKnowledgeBaseAccess
-          PolicyDocument:
-            Version: '2012-10-17'
-            Statement:
-              - Sid: BedrockAgentRuntimeRetrieve
-                Effect: Allow
-                Action:
-                  - bedrock:Retrieve
-                Resource:
-                  - !Sub 'arn:aws:bedrock:${AWS::Region}:${AWS::AccountId}:knowledge-base/*'
 
-  CourseReviewUserPool:
+  CourseReviewsUserPool:
     Type: AWS::Cognito::UserPool
     Properties:
-      UserPoolName: course-review-user-pool
+      UserPoolName: course-reviews-user-pool
       Policies:
         PasswordPolicy:
           MinimumLength: 8
@@ -296,33 +371,33 @@ Resources:
           Required: true
           Mutable: true
 
-  CourseReviewUserPoolDomain:
+  CourseReviewsUserPoolDomain:
     Type: AWS::Cognito::UserPoolDomain
     Properties:
-      Domain: !Sub 'course-review-${AWS::AccountId}'
-      UserPoolId: !Ref CourseReviewUserPool
+      Domain: !Sub 'course-reviews-${AWS::AccountId}'
+      UserPoolId: !Ref CourseReviewsUserPool
 
-  CourseReviewResourceServer:
+  CourseReviewsResourceServer:
     Type: AWS::Cognito::UserPoolResourceServer
     Properties:
-      UserPoolId: !Ref CourseReviewUserPool
-      Identifier: course-review
-      Name: Course Review
+      UserPoolId: !Ref CourseReviewsUserPool
+      Identifier: course-reviews
+      Name: Course Reviews
       Scopes:
         - ScopeName: access
-          ScopeDescription: Access Course Review MCP Server
+          ScopeDescription: Access Course Reviews MCP Server
 
-  CourseReviewAppClient:
+  CourseReviewsAppClient:
     Type: AWS::Cognito::UserPoolClient
-    DependsOn: CourseReviewResourceServer
+    DependsOn: CourseReviewsResourceServer
     Properties:
-      UserPoolId: !Ref CourseReviewUserPool
-      ClientName: course-review-client
+      UserPoolId: !Ref CourseReviewsUserPool
+      ClientName: course-reviews-client
       GenerateSecret: true
       AllowedOAuthFlows:
         - client_credentials
       AllowedOAuthScopes:
-        - course-review/access
+        - course-reviews/access
       AllowedOAuthFlowsUserPoolClient: true
 
   # =======================================================================
@@ -412,82 +487,6 @@ Resources:
         - loan-application/access
       AllowedOAuthFlowsUserPoolClient: true
 
-  # =======================================================================
-  # DOMAIN: MathTeaching
-  #
-  # MCP server that solves math problems with step-by-step explanations.
-  # Execution role: Bedrock only (base policy — no external AWS services).
-  # Cognito: protects the MCP runtime endpoint.
-  # =======================================================================
-
-  MathTeachingExecutionRole:
-    Type: AWS::IAM::Role
-    Properties:
-      RoleName: MathTeaching-execution-role
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-          - Sid: AssumeRolePolicy
-            Effect: Allow
-            Principal:
-              Service: bedrock-agentcore.amazonaws.com
-            Action: sts:AssumeRole
-            Condition:
-              StringEquals:
-                aws:SourceAccount: !Ref AWS::AccountId
-              ArnLike:
-                aws:SourceArn: !Sub 'arn:aws:bedrock-agentcore:${AWS::Region}:${AWS::AccountId}:*'
-      ManagedPolicyArns:
-        - !Ref AgentCoreBasePolicy
-
-  MathTeachingUserPool:
-    Type: AWS::Cognito::UserPool
-    Properties:
-      UserPoolName: math-teaching-user-pool
-      Policies:
-        PasswordPolicy:
-          MinimumLength: 8
-          RequireUppercase: false
-          RequireLowercase: false
-          RequireNumbers: false
-          RequireSymbols: false
-      AutoVerifiedAttributes:
-        - email
-      Schema:
-        - Name: email
-          AttributeDataType: String
-          Required: true
-          Mutable: true
-
-  MathTeachingUserPoolDomain:
-    Type: AWS::Cognito::UserPoolDomain
-    Properties:
-      Domain: !Sub 'math-teaching-${AWS::AccountId}'
-      UserPoolId: !Ref MathTeachingUserPool
-
-  MathTeachingResourceServer:
-    Type: AWS::Cognito::UserPoolResourceServer
-    Properties:
-      UserPoolId: !Ref MathTeachingUserPool
-      Identifier: math-teaching
-      Name: Math Teaching
-      Scopes:
-        - ScopeName: access
-          ScopeDescription: Access Math Teaching MCP Server
-
-  MathTeachingAppClient:
-    Type: AWS::Cognito::UserPoolClient
-    DependsOn: MathTeachingResourceServer
-    Properties:
-      UserPoolId: !Ref MathTeachingUserPool
-      ClientName: math-teaching-client
-      GenerateSecret: true
-      AllowedOAuthFlows:
-        - client_credentials
-      AllowedOAuthScopes:
-        - math-teaching/access
-      AllowedOAuthFlowsUserPoolClient: true
-
 # =======================================================================
 # Outputs
 # =======================================================================
@@ -569,42 +568,79 @@ Outputs:
     Export:
       Name: !Sub '${AWS::StackName}-CourseRegistrationScope'
 
-  # --- CourseReview ---
-  CourseReviewExecutionRoleArn:
-    Description: 'Execution role ARN for CourseReview runtime'
-    Value: !GetAtt CourseReviewExecutionRole.Arn
+  # --- CourseCatalog ---
+  CourseCatalogExecutionRoleArn:
+    Description: 'Execution role ARN for CourseCatalog runtime'
+    Value: !GetAtt CourseCatalogExecutionRole.Arn
     Export:
-      Name: !Sub '${AWS::StackName}-CourseReviewExecutionRoleArn'
+      Name: !Sub '${AWS::StackName}-CourseCatalogExecutionRoleArn'
 
-  CourseReviewUserPoolId:
-    Description: 'Cognito User Pool ID for Course Review'
-    Value: !Ref CourseReviewUserPool
+  CourseCatalogUserPoolId:
+    Description: 'Cognito User Pool ID for Course Catalog'
+    Value: !Ref CourseCatalogUserPool
     Export:
-      Name: !Sub '${AWS::StackName}-CourseReviewUserPoolId'
+      Name: !Sub '${AWS::StackName}-CourseCatalogUserPoolId'
 
-  CourseReviewDiscoveryUrl:
-    Description: 'OIDC Discovery URL for Course Review'
-    Value: !Sub 'https://cognito-idp.${AWS::Region}.amazonaws.com/${CourseReviewUserPool}/.well-known/openid-configuration'
+  CourseCatalogDiscoveryUrl:
+    Description: 'OIDC Discovery URL for Course Catalog'
+    Value: !Sub 'https://cognito-idp.${AWS::Region}.amazonaws.com/${CourseCatalogUserPool}/.well-known/openid-configuration'
     Export:
-      Name: !Sub '${AWS::StackName}-CourseReviewDiscoveryUrl'
+      Name: !Sub '${AWS::StackName}-CourseCatalogDiscoveryUrl'
 
-  CourseReviewClientId:
-    Description: 'App Client ID for Course Review'
-    Value: !Ref CourseReviewAppClient
+  CourseCatalogClientId:
+    Description: 'App Client ID for Course Catalog'
+    Value: !Ref CourseCatalogAppClient
     Export:
-      Name: !Sub '${AWS::StackName}-CourseReviewClientId'
+      Name: !Sub '${AWS::StackName}-CourseCatalogClientId'
 
-  CourseReviewTokenEndpoint:
-    Description: 'Token endpoint for Course Review'
-    Value: !Sub 'https://course-review-${AWS::AccountId}.auth.${AWS::Region}.amazoncognito.com/oauth2/token'
+  CourseCatalogTokenEndpoint:
+    Description: 'Token endpoint for Course Catalog'
+    Value: !Sub 'https://course-catalog-${AWS::AccountId}.auth.${AWS::Region}.amazoncognito.com/oauth2/token'
     Export:
-      Name: !Sub '${AWS::StackName}-CourseReviewTokenEndpoint'
+      Name: !Sub '${AWS::StackName}-CourseCatalogTokenEndpoint'
 
-  CourseReviewScope:
-    Description: 'OAuth scope for Course Review'
-    Value: 'course-review/access'
+  CourseCatalogScope:
+    Description: 'OAuth scope for Course Catalog'
+    Value: 'course-catalog/access'
     Export:
-      Name: !Sub '${AWS::StackName}-CourseReviewScope'
+      Name: !Sub '${AWS::StackName}-CourseCatalogScope'
+
+  # --- CourseReviews ---
+  CourseReviewsExecutionRoleArn:
+    Description: 'Execution role ARN for CourseReviews runtime'
+    Value: !GetAtt CourseReviewsExecutionRole.Arn
+    Export:
+      Name: !Sub '${AWS::StackName}-CourseReviewsExecutionRoleArn'
+
+  CourseReviewsUserPoolId:
+    Description: 'Cognito User Pool ID for Course Reviews'
+    Value: !Ref CourseReviewsUserPool
+    Export:
+      Name: !Sub '${AWS::StackName}-CourseReviewsUserPoolId'
+
+  CourseReviewsDiscoveryUrl:
+    Description: 'OIDC Discovery URL for Course Reviews'
+    Value: !Sub 'https://cognito-idp.${AWS::Region}.amazonaws.com/${CourseReviewsUserPool}/.well-known/openid-configuration'
+    Export:
+      Name: !Sub '${AWS::StackName}-CourseReviewsDiscoveryUrl'
+
+  CourseReviewsClientId:
+    Description: 'App Client ID for Course Reviews'
+    Value: !Ref CourseReviewsAppClient
+    Export:
+      Name: !Sub '${AWS::StackName}-CourseReviewsClientId'
+
+  CourseReviewsTokenEndpoint:
+    Description: 'Token endpoint for Course Reviews'
+    Value: !Sub 'https://course-reviews-${AWS::AccountId}.auth.${AWS::Region}.amazoncognito.com/oauth2/token'
+    Export:
+      Name: !Sub '${AWS::StackName}-CourseReviewsTokenEndpoint'
+
+  CourseReviewsScope:
+    Description: 'OAuth scope for Course Reviews'
+    Value: 'course-reviews/access'
+    Export:
+      Name: !Sub '${AWS::StackName}-CourseReviewsScope'
 
   # --- LoanApplication ---
   LoanApplicationExecutionRoleArn:
@@ -642,40 +678,3 @@ Outputs:
     Value: 'loan-application/access'
     Export:
       Name: !Sub '${AWS::StackName}-LoanApplicationScope'
-
-  # --- MathTeaching ---
-  MathTeachingExecutionRoleArn:
-    Description: 'Execution role ARN for MathTeaching runtime'
-    Value: !GetAtt MathTeachingExecutionRole.Arn
-    Export:
-      Name: !Sub '${AWS::StackName}-MathTeachingExecutionRoleArn'
-
-  MathTeachingUserPoolId:
-    Description: 'Cognito User Pool ID for Math Teaching'
-    Value: !Ref MathTeachingUserPool
-    Export:
-      Name: !Sub '${AWS::StackName}-MathTeachingUserPoolId'
-
-  MathTeachingDiscoveryUrl:
-    Description: 'OIDC Discovery URL for Math Teaching'
-    Value: !Sub 'https://cognito-idp.${AWS::Region}.amazonaws.com/${MathTeachingUserPool}/.well-known/openid-configuration'
-    Export:
-      Name: !Sub '${AWS::StackName}-MathTeachingDiscoveryUrl'
-
-  MathTeachingClientId:
-    Description: 'App Client ID for Math Teaching'
-    Value: !Ref MathTeachingAppClient
-    Export:
-      Name: !Sub '${AWS::StackName}-MathTeachingClientId'
-
-  MathTeachingTokenEndpoint:
-    Description: 'Token endpoint for Math Teaching'
-    Value: !Sub 'https://math-teaching-${AWS::AccountId}.auth.${AWS::Region}.amazoncognito.com/oauth2/token'
-    Export:
-      Name: !Sub '${AWS::StackName}-MathTeachingTokenEndpoint'
-
-  MathTeachingScope:
-    Description: 'OAuth scope for Math Teaching'
-    Value: 'math-teaching/access'
-    Export:
-      Name: !Sub '${AWS::StackName}-MathTeachingScope'

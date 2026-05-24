@@ -86,6 +86,15 @@ npm install -g @aws/agentcore@0.13.1
 
 ## FINAL ROOT CAUSE ANALYSIS (Confirmed May 23, 2026)
 
+### Two Separate Problems (Don't Confuse Them)
+
+| # | Problem | Cause | Fix |
+|---|---------|-------|-----|
+| 1 | **307 Redirect Loop** — Gateway sends `POST /mcp/`, MCP server redirects to `/mcp`, Gateway doesn't follow redirect, retries forever | FastMCP 3.3.1 registers endpoint at `/mcp` but Gateway sends to `/mcp/`. Starlette's `redirect_slashes=True` causes 307. | Add `path="/mcp/"` to `FastMCP()` constructor so server listens on `/mcp/` directly. **Proven fix** — logs showed 200 OK after applying. |
+| 2 | **Tool Result Timeout** — Even after 307 is fixed, orchestrator says "issue with tool" and falls back to answering directly | Inner Strands Agent inside MCP server makes its own Bedrock LLM call (30+ seconds). Gateway/orchestrator times out waiting for the response. | Remove inner agent from MCP server. Make MCP tools dumb (direct AWS SDK call, returns in <1 second). **Architectural fix** — eliminates the timeout entirely. |
+
+**Key insight:** Problem 1 (307) is a URL routing bug. Problem 2 (timeout) is an architectural anti-pattern. They are independent issues that happened to surface together.
+
 ### Key Findings
 1. **Wrapping Strands Agent inside MCP server is an anti-pattern.** The "Agent-inside-MCP" pattern (inner Strands Agent with its own Bedrock LLM loop inside an MCP tool) creates double-inference latency, state fragmentation, and fragility to library version changes.
 
@@ -171,3 +180,98 @@ Thin Client → StudentServicesAgent (HTTP Runtime)
 - Implementation → today/tomorrow
 - Testing → before Tuesday demo
 
+
+
+## CONTINUED: May 24, 2026 (Late Night Session)
+
+### Key Decision
+
+**DECISION: After major architectural refactoring, ALWAYS start clean.**
+
+Delete the old AgentCore CDK stack and deploy fresh. Don't try to incrementally update an existing stack with fundamentally different runtimes.
+
+**Rule going forward:** If the runtime count changes, runtime names change, or protocol types change — nuke and pave. The agentcore.json + code is the source of truth; the stack is disposable.
+
+### Mistakes Made (Root Cause Analysis) — Two Nights Lost (~8 hours)
+
+#### Mistake 1: Did not compare against reference implementation BEFORE writing code
+- **Impact**: ~3 hours wasted
+- **What happened**: Wrote agentcore.json from memory/docs instead of copying the working travelplanner reference pattern field-by-field.
+- **What was missed**: `"instrumentation": {"enableOtel": false}` on every MCP runtime. Without this, AgentCore expects OpenTelemetry dependencies bundled in the CodeZip — which we don't have because our MCP servers are minimal.
+- **Rule**: ALWAYS diff your config against the reference implementation before deploying. Field by field. No exceptions.
+
+#### Mistake 2: Tried to incrementally update a fundamentally changed stack
+- **Impact**: ~2 hours wasted
+- **What happened**: The old stack had MathTeachingMcp + CourseReviewMcp runtimes. The new topology removes those and adds CourseCatalogMcp + CourseReviewsMcp. Tried to `agentcore deploy -y` on top of the existing stack instead of deleting it first.
+- **What went wrong**: CDK drift, orphaned resources, credential providers pointing to deleted Cognito pools, DELETE_FAILED loops.
+- **Rule**: Major topology changes = delete stack first. Always.
+
+#### Mistake 3: Did not validate agentcore.json against reference before FIRST deploy attempt
+- **Impact**: ~1 hour wasted (deploy, wait, fail, diagnose, fix, delete stack, redeploy)
+- **What happened**: The OTEL error only surfaces AFTER the runtime is created and the zip is uploaded. By then the stack is in ROLLBACK_COMPLETE and must be manually deleted before retrying.
+- **Rule**: Before ANY `agentcore deploy`, run a mental (or actual) checklist:
+  1. Does every MCP runtime have `"instrumentation": {"enableOtel": false}`?
+  2. Are gateway targets empty for first deploy?
+  3. Are all credentials registered?
+  4. Is deployed-state.json deleted (if starting fresh)?
+
+#### Mistake 4: Put architectural decisions in tasks.md instead of session notes
+- **Rule**: Tasks.md is a disposable checklist. Decisions go in session notes. Patterns go in steering files.
+
+#### Mistake 5: Excessive back-and-forth instead of acting
+- **Rule**: When the user says "go" — go. Don't ask, don't explain, don't repeat. Act.
+
+### AgentCore Deploy Checklist (NEVER skip this)
+
+Before running `agentcore deploy -y`:
+- [ ] Every MCP runtime has `"instrumentation": {"enableOtel": false}`
+- [ ] Gateway targets are `[]` on first deploy (add real URLs on second deploy)
+- [ ] All credentials registered (`bash register-credentials.sh`)
+- [ ] `deployed-state.json` deleted if starting fresh
+- [ ] No stale ROLLBACK_COMPLETE stack exists
+- [ ] `agentcore.json` matches reference implementation structure field-by-field
+
+### Clean Deployment Procedure
+
+1. Refresh AWS credentials
+2. `aws cloudformation delete-stack --stack-name AgentCore-studentservices-default --region us-west-2`
+3. `aws cloudformation wait stack-delete-complete --stack-name AgentCore-studentservices-default --region us-west-2`
+4. `Remove-Item "workshop4\phase3\studentservices\agentcore\.cli\deployed-state.json" -Force`
+5. Empty gateway targets in agentcore.json (`"targets": []`)
+6. `bash register-credentials.sh` (stack deletion kills credential providers)
+7. `agentcore deploy -y` (first pass — creates runtimes, empty gateway)
+8. `agentcore status` → grab runtime URLs
+9. Add targets with real URLs to agentcore.json
+10. `agentcore deploy -y` (second pass — gateway gets targets)
+11. Update orchestrator hardcoded gateway URL if changed
+
+
+#### Mistake 6: Left `path="/mcp/"` in FastMCP constructor from old architecture
+- **Impact**: 2 failed gateway target deployments (~40 min each)
+- **What happened**: The old Agent-inside-MCP architecture needed `path="/mcp/"` to fix a 307 redirect with FastMCP 3.3.1. The new dumb MCP servers don't need it. The gateway health check connects on the DEFAULT path — with `path="/mcp/"` set, the server listens on `/mcp/` but the health check hits `/`, gets no response, times out after 30s, and fails.
+- **What the error said**: "Runtime initialization time exceeded. Please make sure that initialization completes in 30s." — MISLEADING. It's not a cold start issue. It's a path mismatch.
+- **Rule**: Match the reference implementation EXACTLY. No `path="/mcp/"` in FastMCP constructor. The reference uses `FastMCP("flights-mcp-server")` with no path argument.
+- **Broader rule**: When an error message says X, verify X is actually the cause before acting on it. "Initialization time exceeded" made me think cold start, but it was actually a path routing issue.
+
+
+#### Mistake 6: Left `path="/mcp/"` in FastMCP constructor from old architecture
+- **Impact**: 2 failed gateway deployments (~30 min each wasted)
+- **What happened**: The old Agent-inside-MCP architecture needed `path="/mcp/"` to fix a 307 redirect with FastMCP 3.3.1. The new dumb MCP servers don't need it. The gateway health check connects on the DEFAULT path — if the server only listens on `/mcp/`, the health check times out.
+- **What the error said**: "Runtime initialization time exceeded. Please make sure that initialization completes in 30s." — misleading error message that sounds like cold start but is actually a path mismatch.
+- **Rule**: Match the reference implementation EXACTLY. The reference uses `FastMCP("name")` with NO path argument. Do the same.
+
+#### Mistake 7: Gave multiple conflicting explanations for the same error
+- **Impact**: User confusion, lost trust
+- **What happened**: First said "cold start timeout", then said "path mismatch", then flip-flopped. Should have checked the reference implementation FIRST before speculating.
+- **Rule**: Don't speculate. Check the reference. Give ONE explanation backed by evidence.
+
+
+#### Mistake 6: Left `path="/mcp/"` in FastMCP constructor from old architecture
+- **Impact**: 2 failed gateway deploys (~30 min each wasted)
+- **What happened**: The old Agent-inside-MCP architecture needed `path="/mcp/"` to fix a 307 redirect with FastMCP 3.3.1. The new dumb MCP servers don't need it. The gateway health check connects on the DEFAULT path — with `path="/mcp/"` set, the server listens on `/mcp/` but the gateway hits `/`, gets no response, times out after 30s, and fails.
+- **Rule**: Match the reference implementation EXACTLY. The reference has `FastMCP("flights-mcp-server")` with NO path argument. Do the same.
+
+#### Mistake 7: Speculated about causes instead of checking the reference
+- **Impact**: Confused the user with multiple contradictory explanations
+- **What happened**: First said "cold start timeout", then said "path issue", then reverted, then re-applied. Should have checked the reference FIRST and given ONE answer.
+- **Rule**: When something fails, check the reference implementation FIRST. Give ONE explanation. Don't speculate.
