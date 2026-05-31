@@ -57,7 +57,7 @@ Thin Streamlit Client ──(SigV4 HTTP POST)──→ StudentServicesAgent (HTT
                                     OAuth2 via Gateway                calculator
                               ┌───────────┼─────────┼─────────┐      (local)
                               ↓           ↓         ↓         ↓
-                        CourseCatalog  CourseReviews  CourseReg  LoanApp
+                        CourseCatalog  CourseReview  CourseReg  LoanApp
                          (MCP Server)  (MCP Server)  (MCP Srv)  (MCP Srv)
                               ↓           ↓            ↓          ↓
                           Bedrock KB   DynamoDB     DynamoDB   SageMaker
@@ -71,7 +71,7 @@ Thin Streamlit Client ──(SigV4 HTTP POST)──→ StudentServicesAgent (HTT
 | Agent | Role | External Services |
 |-------|------|-------------------|
 | Student Services (Orchestrator) | Routes queries to specialists | AgentCore Gateway (MCPClient) |
-| Course Review (local Agent-as-Tool) | Course catalog and review lookup | Gateway → CourseCatalogMcp + CourseReviewsMcp |
+| Course Review (local Agent-as-Tool) | Course catalog and review lookup | Gateway → CourseCatalogMcp + CourseReviewMcp |
 | Course Registration (local Agent-as-Tool) | Enrolls students in courses | Gateway → CourseRegistrationMcp |
 | Loan Application (local Agent-as-Tool) | Predicts loan acceptance | Gateway → LoanApplicationMcp |
 | Math Teaching (local Agent-as-Tool) | Step-by-step math tutoring | Local calculator (no MCP) |
@@ -81,7 +81,7 @@ Thin Streamlit Client ──(SigV4 HTTP POST)──→ StudentServicesAgent (HTT
 | MCP Server | Tool | Backend |
 |-----------|------|---------|
 | CourseCatalogMcp | `search_course_catalog` | Bedrock Knowledge Base |
-| CourseReviewsMcp | `get_course_reviews` | DynamoDB (course_reviews table) |
+| CourseReviewMcp | `get_course_reviews` | DynamoDB (course_review table) |
 | CourseRegistrationMcp | `register_course` | DynamoDB (course_registration table) |
 | LoanApplicationMcp | `predict_loan` | SageMaker XGBoost endpoint |
 

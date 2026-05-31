@@ -184,7 +184,7 @@ All Phase 3 resources deploy to **us-west-2** (matching Phase 1 infrastructure).
 
 ## Existing Infrastructure (from Phase 1)
 
-- DynamoDB: `course_registration`, `course_reviews`
+- DynamoDB: `course_registration`, `course_review`
 - Bedrock Knowledge Base: `NCGF0S9LJR`
 - SageMaker endpoint: `xgboost-serverless-ep2026-05-10-06-08-28`
 - SSM parameters: `/student-services/*`

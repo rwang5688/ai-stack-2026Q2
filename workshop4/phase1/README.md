@@ -31,7 +31,7 @@ This deploys the CloudFormation stack (`student-services-infra`) which creates:
 - S3 data bucket with `kb-datasource/` and `dynamodb/` prefixes
 - S3 Vectors bucket + index for Bedrock Knowledge Base
 - Bedrock Knowledge Base with S3 data source
-- DynamoDB tables: `course_registration`, `course_reviews`
+- DynamoDB tables: `course_registration`, `course_review`
 - SSM Parameters under `/student-services/`
 
 ### 2. Populate Seed Data
@@ -75,7 +75,7 @@ All configuration is read from SSM Parameter Store (`/student-services/` prefix)
 | `DATA_SOURCE_ID` | KB data source ID | From SSM |
 | `XGBOOST_ENDPOINT_NAME` | SageMaker endpoint name | From SSM |
 | `COURSE_REGISTRATION_TABLE` | DynamoDB table name | `course_registration` |
-| `COURSE_REVIEWS_TABLE` | DynamoDB table name | `course_reviews` |
+| `COURSE_REVIEW_TABLE` | DynamoDB table name | `course_review` |
 
 ## Supported Models
 
@@ -101,12 +101,17 @@ workshop4/phase1/
 ├── streamlit_app/                      # Self-contained application
 │   ├── app.py                          # Streamlit entry point
 │   ├── config.py                       # SSM + env var configuration
-│   ├── course_registration_agent/      # DynamoDB write specialist
-│   ├── course_review_agent/            # RAG specialist
-│   ├── loan_application_agent/         # SageMaker specialist
-│   ├── math_teaching_agent/            # Calculator specialist
+│   ├── __init__.py
 │   ├── shared/                         # Model factory, cross-platform tools
-│   └── student_services_agent/         # Orchestrator agent
+│   │   ├── model_factory.py
+│   │   └── cross_platform_tools.py
+│   └── student_services/              # All agents in one flat package
+│       ├── __init__.py
+│       ├── student_services_agent.py   # Orchestrator agent
+│       ├── course_registration_agent.py
+│       ├── course_review_agent.py
+│       ├── loan_application_agent.py
+│       └── math_teaching_agent.py
 ├── tests/
 ├── .env / .env.example
 ├── deploy-infra.sh
@@ -115,7 +120,7 @@ workshop4/phase1/
 └── requirements.txt
 ```
 
-All application code (agents, shared modules, config) lives inside `streamlit_app/` as a self-contained package. Infrastructure and data remain at the phase1 root. In Phase 3, each agent directory migrates to its own AgentCore Runtime.
+All application code (agents, shared modules, config) lives inside `streamlit_app/` as a self-contained package. The `student_services/` package contains all agents in a flat structure (one file per agent). Infrastructure and data remain at the phase1 root. In Phase 3, each agent directory migrates to its own AgentCore Runtime.
 
 ### Routing Status Display
 

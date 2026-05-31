@@ -17,7 +17,7 @@ Thin Streamlit Client ──(SigV4 HTTP POST)──→ StudentServicesAgent (HTT
                                     AgentCore Gateway                       │
                               ┌───────────┼─────────┼─────────┐            │
                               ↓           ↓         ↓         ↓            ↓
-                        CourseCatalog  CourseReviews  CourseReg  LoanApp  calculator
+                        CourseCatalog  CourseReview  CourseReg  LoanApp  calculator
                          (MCP Server)  (MCP Server)  (MCP Srv)  (MCP Srv)  (local)
                               ↓           ↓            ↓          ↓
                           Bedrock KB   DynamoDB     DynamoDB   SageMaker
@@ -61,14 +61,19 @@ workshop4/phase3/
 │   │   └── server.py
 │   ├── course_registration/            # MCP server: DynamoDB write
 │   │   └── server.py
-│   ├── course_reviews/                 # MCP server: DynamoDB read
+│   ├── course_review/                  # MCP server: DynamoDB read
 │   │   └── server.py
 │   ├── loan_application/               # MCP server: SageMaker invoke
 │   │   └── server.py
 │   ├── policies/                       # Cedar policy files
 │   │   └── permit_all_tools.cedar
 │   └── student_services/               # Orchestrator (all agent intelligence here)
-│       ├── agent.py                    # 4 specialist agents + MCPClient + calculator
+│       ├── __init__.py
+│       ├── student_services_agent.py   # Orchestrator + MCPClient
+│       ├── course_registration_agent.py
+│       ├── course_review_agent.py
+│       ├── loan_application_agent.py
+│       ├── math_teaching_agent.py
 │       └── calculator.py
 ├── deploy-agentcore-infra.sh
 ├── deploy-streamlit-app.sh
@@ -129,7 +134,7 @@ Verify: `studentservicesgateway: Deployed (4 targets)`
 
 #### 5. Update Orchestrator Gateway URL
 
-If the gateway name changed (new random suffix), update `student_services/agent.py`:
+If the gateway name changed (new random suffix), update `student_services/student_services_agent.py`:
 - `GATEWAY_MCP_URL` hardcoded default
 
 Then redeploy to push the code change:
@@ -193,7 +198,7 @@ Thin Client ──(SigV4/IAM)──→ StudentServicesAgent
 | `student-services-gateway-pool` | Gateway inbound | Orchestrator (outbound to gateway) |
 | `course-catalog-pool` | CourseCatalogMcp | Gateway (outbound) |
 | `course-registration-pool` | CourseRegistrationMcp | Gateway (outbound) |
-| `course-reviews-pool` | CourseReviewsMcp | Gateway (outbound) |
+| `course-review-pool` | CourseReviewMcp | Gateway (outbound) |
 | `loan-application-pool` | LoanApplicationMcp | Gateway (outbound) |
 
 The orchestrator uses SigV4 (IAM) for inbound — no Cognito pool needed for it.

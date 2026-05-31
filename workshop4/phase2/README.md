@@ -98,22 +98,28 @@ workshop4/phase2/
 │       ├── app.py                      # Streamlit entry point
 │       ├── config.py                   # SSM + env var configuration
 │       ├── config_file.py              # Stack name, secrets ID, region
-│       ├── course_registration_agent/  # DynamoDB write specialist
-│       ├── course_review_agent/        # RAG specialist
 │       ├── Dockerfile                  # ARM64 Python 3.12 base
-│       ├── loan_application_agent/     # SageMaker specialist
-│       ├── math_teaching_agent/        # Calculator specialist
 │       ├── requirements.txt            # Container dependencies
+│       ├── __init__.py
 │       ├── shared/                     # Model factory, cross-platform tools
-│       ├── student_services_agent/     # Orchestrator agent
+│       │   ├── model_factory.py
+│       │   └── cross_platform_tools.py
+│       ├── student_services/           # All agents in one flat package
+│       │   ├── __init__.py
+│       │   ├── student_services_agent.py
+│       │   ├── course_registration_agent.py
+│       │   ├── course_review_agent.py
+│       │   ├── loan_application_agent.py
+│       │   └── math_teaching_agent.py
 │       └── utils/                      # Auth utilities (Cognito)
+│           └── auth.py
 ├── deploy.sh                           # One-command deploy
 ├── force-deploy.sh                     # Force redeployment after code changes
 ├── README.md
 └── requirements.txt                    # CDK dependencies (aws-cdk-lib)
 ```
 
-`docker_app/` is the deployment unit — it contains everything that goes into the container. The agent code from Phase 1's `streamlit_app/` lives here, plus Cognito auth (`utils/auth.py`) and CDK config (`config_file.py`).
+`docker_app/` is the deployment unit — it contains everything that goes into the container. The agent code from Phase 1's `streamlit_app/` lives here in a flat `student_services/` package (one file per agent), plus Cognito auth (`utils/auth.py`) and CDK config (`config_file.py`).
 
 ## Troubleshooting
 
