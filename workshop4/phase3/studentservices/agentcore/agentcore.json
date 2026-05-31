@@ -274,6 +274,24 @@
                     ]
                 },
                 {
+                    "name": "coursereview",
+                    "targetType": "mcpServer",
+                    "endpoint": "https://bedrock-agentcore.us-west-2.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-west-2%3A149057604171%3Aruntime%2Fstudentservices_CourseReviewMcp-fLHQyH6OGi/invocations",
+                    "outboundAuth": {
+                        "type": "OAUTH",
+                        "credentialName": "CourseReviewMcp-oauth"
+                    },
+                    "toolDefinitions": [
+                        {
+                            "name": "get_course_reviews",
+                            "description": "Get student reviews for a course from DynamoDB",
+                            "inputSchema": {
+                                "type": "object"
+                            }
+                        }
+                    ]
+                },
+                {
                     "name": "courseregistration",
                     "targetType": "mcpServer",
                     "endpoint": "https://bedrock-agentcore.us-west-2.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-west-2%3A149057604171%3Aruntime%2Fstudentservices_CourseRegistrationMcp-BbB8mO8Spr/invocations",

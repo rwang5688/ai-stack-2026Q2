@@ -18,10 +18,10 @@
             "runtimeArn": "arn:aws:bedrock-agentcore:us-west-2:149057604171:runtime/studentservices_LoanApplicationMcp-SGOP4FCEDG",
             "roleArn": "arn:aws:iam::149057604171:role/LoanApplication-execution-role"
           },
-          "CourseReviewsMcp": {
-            "runtimeId": "studentservices_CourseReviewsMcp-vYqB8A7u89",
-            "runtimeArn": "arn:aws:bedrock-agentcore:us-west-2:149057604171:runtime/studentservices_CourseReviewsMcp-vYqB8A7u89",
-            "roleArn": "arn:aws:iam::149057604171:role/CourseReviews-execution-role"
+          "CourseReviewMcp": {
+            "runtimeId": "studentservices_CourseReviewMcp-fLHQyH6OGi",
+            "runtimeArn": "arn:aws:bedrock-agentcore:us-west-2:149057604171:runtime/studentservices_CourseReviewMcp-fLHQyH6OGi",
+            "roleArn": "arn:aws:iam::149057604171:role/CourseReview-execution-role"
           },
           "StudentServicesAgent": {
             "runtimeId": "studentservices_StudentServicesAgent-DVMRTdBLbs",
@@ -55,10 +55,10 @@
             "clientSecretArn": "arn:aws:secretsmanager:us-west-2:149057604171:secret:bedrock-agentcore-identity!default/oauth2/CourseRegistrationMcp-oauth-16d703c6-j2WJMA",
             "callbackUrl": "https://bedrock-agentcore.us-west-2.amazonaws.com/identities/oauth2/callback/6d908eee-c59e-49c8-b18c-b10f353ed926"
           },
-          "CourseReviewsMcp-oauth": {
-            "credentialProviderArn": "arn:aws:bedrock-agentcore:us-west-2:149057604171:token-vault/default/oauth2credentialprovider/CourseReviewsMcp-oauth",
-            "clientSecretArn": "arn:aws:secretsmanager:us-west-2:149057604171:secret:bedrock-agentcore-identity!default/oauth2/CourseReviewsMcp-oauth-d4ba708f-VFlurn",
-            "callbackUrl": "https://bedrock-agentcore.us-west-2.amazonaws.com/identities/oauth2/callback/cf0d503b-fac4-4740-b809-3b5d025262e8"
+          "CourseReviewMcp-oauth": {
+            "credentialProviderArn": "arn:aws:bedrock-agentcore:us-west-2:149057604171:token-vault/default/oauth2credentialprovider/CourseReviewMcp-oauth",
+            "clientSecretArn": "arn:aws:secretsmanager:us-west-2:149057604171:secret:bedrock-agentcore-identity!default/oauth2/CourseReviewMcp-oauth-9ea51078-fgPSpa",
+            "callbackUrl": "https://bedrock-agentcore.us-west-2.amazonaws.com/identities/oauth2/callback/56ea7291-0755-4628-8624-9cf08969de48"
           },
           "LoanApplicationMcp-oauth": {
             "credentialProviderArn": "arn:aws:bedrock-agentcore:us-west-2:149057604171:token-vault/default/oauth2credentialprovider/LoanApplicationMcp-oauth",
