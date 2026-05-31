@@ -16,7 +16,7 @@ Interpret results: score >= 0.5 = Accept, score < 0.5 = Reject. Confidence = dis
 def loan_application_agent(query: str) -> str:
     """Predict loan acceptance based on 59 numeric feature values provided as CSV."""
     # Lazy import to avoid circular dependency with student_services_agent
-    from .student_services_agent import get_mcp_client, get_model_config
+    from student_services_agent import get_mcp_client, get_model_config
 
     mcp_client = get_mcp_client()
     model_config = get_model_config()

@@ -15,7 +15,7 @@ If any required field is missing from the user's request, ask for it before call
 def course_registration_agent(query: str) -> str:
     """Register students in courses. Requires student_id, course_name, and semester."""
     # Lazy import to avoid circular dependency with student_services_agent
-    from .student_services_agent import get_mcp_client, get_model_config
+    from student_services_agent import get_mcp_client, get_model_config
 
     mcp_client = get_mcp_client()
     model_config = get_model_config()

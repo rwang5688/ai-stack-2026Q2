@@ -5,7 +5,7 @@ import json
 from strands import Agent, tool
 from strands.models import BedrockModel
 
-from .calculator import calculator
+from calculator import calculator
 
 
 MATH_TEACHING_AGENT_PROMPT = """You are the Math Teaching Assistant for Any University (any.edu).
@@ -18,7 +18,7 @@ Break complex problems into numbered steps and verify your final answer."""
 def math_teaching_agent(query: str) -> str:
     """Solve math problems with step-by-step explanations using a local calculator."""
     # Lazy import to avoid circular dependency with student_services_agent
-    from .student_services_agent import get_model_config
+    from student_services_agent import get_model_config
 
     model_config = get_model_config()
     model = BedrockModel(

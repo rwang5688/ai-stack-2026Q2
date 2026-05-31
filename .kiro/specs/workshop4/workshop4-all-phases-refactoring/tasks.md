@@ -152,7 +152,7 @@ All deployments run on the Ubuntu code-server. Code changes happen on this Windo
     - Delete file: `workshop4/phase3/studentservices/student_services/agent.py`
     - _Requirements: 7.2_
 
-- [ ] 6. Checkpoint — Phase 3 working
+- [x] 6. Checkpoint — Phase 3 working
   - **Register credentials** (must happen before first deploy):
     - Run on Ubuntu code-server: `bash register-credentials.sh`
     - Run on Windows: `bash register-credentials.sh` (Git Bash)

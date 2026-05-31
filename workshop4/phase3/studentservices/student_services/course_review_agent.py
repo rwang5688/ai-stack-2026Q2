@@ -21,7 +21,7 @@ NEVER skip step 2. Even if the user only asks about course descriptions, always 
 def course_review_agent(query: str) -> str:
     """Handle course catalog and review queries. Use for ANY question about courses, difficulty, reviews, ratings, recommendations, prerequisites, or course information."""
     # Lazy import to avoid circular dependency with student_services_agent
-    from .student_services_agent import get_mcp_client, get_model_config
+    from student_services_agent import get_mcp_client, get_model_config
 
     mcp_client = get_mcp_client()
     model_config = get_model_config()

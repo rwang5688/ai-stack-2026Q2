@@ -29,10 +29,10 @@ from strands import Agent
 from strands.models import BedrockModel
 from strands.tools.mcp import MCPClient
 
-from .course_registration_agent import course_registration_agent
-from .course_review_agent import course_review_agent
-from .loan_application_agent import loan_application_agent
-from .math_teaching_agent import math_teaching_agent
+from course_registration_agent import course_registration_agent
+from course_review_agent import course_review_agent
+from loan_application_agent import loan_application_agent
+from math_teaching_agent import math_teaching_agent
 
 
 # ---------------------------------------------------------------------------
