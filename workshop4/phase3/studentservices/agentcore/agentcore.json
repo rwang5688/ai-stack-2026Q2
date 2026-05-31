@@ -10,7 +10,7 @@
         {
             "name": "StudentServicesAgent",
             "build": "CodeZip",
-            "entrypoint": "agent.py",
+            "entrypoint": "student_services_agent.py",
             "codeLocation": "./student_services/",
             "runtimeVersion": "PYTHON_3_13",
             "executionRoleArn": "arn:aws:iam::149057604171:role/StudentServicesAgent-execution-role",
@@ -94,12 +94,12 @@
             }
         },
         {
-            "name": "CourseReviewsMcp",
+            "name": "CourseReviewMcp",
             "build": "CodeZip",
             "entrypoint": "server.py",
-            "codeLocation": "./course_reviews/",
+            "codeLocation": "./course_review/",
             "runtimeVersion": "PYTHON_3_13",
-            "executionRoleArn": "arn:aws:iam::149057604171:role/CourseReviews-execution-role",
+            "executionRoleArn": "arn:aws:iam::149057604171:role/CourseReview-execution-role",
             "envVars": [
                 {
                     "name": "MCP_TRANSPORT",
@@ -118,12 +118,12 @@
             "authorizerType": "CUSTOM_JWT",
             "authorizerConfiguration": {
                 "customJwtAuthorizer": {
-                    "discoveryUrl": "https://cognito-idp.us-west-2.amazonaws.com/us-west-2_KhzH8tG1U/.well-known/openid-configuration",
+                    "discoveryUrl": "https://cognito-idp.us-west-2.amazonaws.com/us-west-2_bISws074e/.well-known/openid-configuration",
                     "allowedClients": [
-                        "6dc4985qtb1bq3va8t4lqoev6i"
+                        "7l8ht9u8l8hgne1anupj4pltte"
                     ],
                     "allowedScopes": [
-                        "course-reviews/access"
+                        "course-review/access"
                     ]
                 }
             }
@@ -211,10 +211,10 @@
         },
         {
             "authorizerType": "OAuthCredentialProvider",
-            "name": "CourseReviewsMcp-oauth",
-            "discoveryUrl": "https://cognito-idp.us-west-2.amazonaws.com/us-west-2_KhzH8tG1U/.well-known/openid-configuration",
+            "name": "CourseReviewMcp-oauth",
+            "discoveryUrl": "https://cognito-idp.us-west-2.amazonaws.com/us-west-2_bISws074e/.well-known/openid-configuration",
             "scopes": [
-                "course-reviews/access"
+                "course-review/access"
             ],
             "vendor": "CustomOauth2"
         },
@@ -267,24 +267,6 @@
                         {
                             "name": "search_course_catalog",
                             "description": "Search the course catalog knowledge base",
-                            "inputSchema": {
-                                "type": "object"
-                            }
-                        }
-                    ]
-                },
-                {
-                    "name": "coursereviews",
-                    "targetType": "mcpServer",
-                    "endpoint": "https://bedrock-agentcore.us-west-2.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-west-2%3A149057604171%3Aruntime%2Fstudentservices_CourseReviewsMcp-vYqB8A7u89/invocations",
-                    "outboundAuth": {
-                        "type": "OAUTH",
-                        "credentialName": "CourseReviewsMcp-oauth"
-                    },
-                    "toolDefinitions": [
-                        {
-                            "name": "get_course_reviews",
-                            "description": "Get student reviews for a course from DynamoDB",
                             "inputSchema": {
                                 "type": "object"
                             }

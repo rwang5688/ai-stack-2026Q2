@@ -7,7 +7,7 @@ from fastmcp import FastMCP
 
 mcp = FastMCP("course-reviews-mcp-server")
 
-TABLE_NAME = os.environ.get("COURSE_REVIEWS_TABLE", "course_reviews")
+TABLE_NAME = os.environ.get("COURSE_REVIEW_TABLE", "course_review")
 REGION = os.environ.get("AWS_REGION", "us-west-2")
 
 

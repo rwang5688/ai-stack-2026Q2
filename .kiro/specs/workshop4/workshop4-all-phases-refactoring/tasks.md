@@ -98,9 +98,9 @@ All deployments run on the Ubuntu code-server. Code changes happen on this Windo
   - Docker build on code-server: `docker build -t student-services-phase2 .`
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 5. Phase 3 — Infrastructure + Modularization (last)
+- [x] 5. Phase 3 — Infrastructure + Modularization (last)
 
-  - [ ] 5.1 Update Phase 3 CloudFormation (Cognito + IAM singular naming)
+  - [x] 5.1 Update Phase 3 CloudFormation (Cognito + IAM singular naming)
     - File: `workshop4/phase3/cloudformation/student-services-agentcore-infra.yaml`
     - Rename all `CourseReviews*` logical IDs → `CourseReview*` (ExecutionRole, UserPool, UserPoolDomain, ResourceServer, AppClient)
     - Change role name: `CourseReviews-execution-role` → `CourseReview-execution-role`
@@ -112,14 +112,14 @@ All deployments run on the Ubuntu code-server. Code changes happen on this Windo
     - ⚠️ DESTRUCTIVE: Cognito pools will be deleted and recreated — capture new pool IDs from stack outputs
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 2.6_
 
-  - [ ] 5.2 Rename Phase 3 MCP server directory + update server.py
+  - [x] 5.2 Rename Phase 3 MCP server directory + update server.py
     - Rename directory: `workshop4/phase3/studentservices/course_reviews/` → `workshop4/phase3/studentservices/course_review/`
     - In `course_review/server.py`: change env var `COURSE_REVIEWS_TABLE` → `COURSE_REVIEW_TABLE`
     - In `course_review/server.py`: change default value `"course_reviews"` → `"course_review"`
     - Tool name `get_course_reviews` remains unchanged (public API)
     - _Requirements: 4.1, 4.5, 1.5, 8.3_
 
-  - [ ] 5.3 Update agentcore.json (runtime/credential/gateway singular naming + codeLocation + entrypoint)
+  - [x] 5.3 Update agentcore.json (runtime/credential/gateway singular naming + codeLocation + entrypoint)
     - File: `workshop4/phase3/studentservices/agentcore/agentcore.json`
     - Runtime: rename `CourseReviewsMcp` → `CourseReviewMcp`
     - Runtime: change `executionRoleArn` to reference `CourseReview-execution-role`
@@ -137,7 +137,7 @@ All deployments run on the Ubuntu code-server. Code changes happen on this Windo
     - All other runtimes/credentials/targets remain unchanged
     - _Requirements: 2.7, 2.8, 2.9, 3.1, 3.2, 3.3, 3.4, 3.5, 3.6, 3.7, 4.2, 4.3, 4.4, 7.7_
 
-  - [ ] 5.4 Split monolithic agent.py into modular files
+  - [x] 5.4 Split monolithic agent.py into modular files
     - Create 5 agent files + calculator.py + __init__.py in `workshop4/phase3/studentservices/student_services/`:
     - `student_services_agent.py`: BedrockAgentCoreApp entrypoint, ORCHESTRATOR_SYSTEM_PROMPT, get_model_config, OAuth2 get_oauth_token with caching, get_mcp_client factory, gateway config constants, invoke entrypoint, `if __name__` block. Import specialist tools from siblings: `from .course_review_agent import course_review_agent` etc.
     - `course_review_agent.py`: COURSE_REVIEW_AGENT_PROMPT, `@tool course_review_agent()`. Import `get_model_config, get_mcp_client` from `.student_services_agent`.
@@ -148,17 +148,26 @@ All deployments run on the Ubuntu code-server. Code changes happen on this Windo
     - `__init__.py`: Empty file (enables package imports for relative imports).
     - _Requirements: 7.1, 7.3, 7.4, 7.5, 7.6, 7.8_
 
-  - [ ] 5.5 Delete old monolithic agent.py
+  - [x] 5.5 Delete old monolithic agent.py
     - Delete file: `workshop4/phase3/studentservices/student_services/agent.py`
     - _Requirements: 7.2_
 
 - [ ] 6. Checkpoint — Phase 3 working
-  - Deploy Phase 3 CloudFormation on code-server: `aws cloudformation deploy --template-file student-services-agentcore-infra.yaml --stack-name student-services-agentcore-infra --capabilities CAPABILITY_NAMED_IAM`
-  - Capture new Cognito pool IDs and client IDs from stack outputs
-  - Update agentcore.json discoveryUrl and allowedClients with new values
-  - Re-register credentials on code-server: `bash register-credentials.sh`
-  - Deploy AgentCore on code-server: `agentcore deploy -y`
-  - Verify: `agentcore invoke "What courses are available?"`
+  - **Register credentials** (must happen before first deploy):
+    - Run on Ubuntu code-server: `bash register-credentials.sh`
+    - Run on Windows: `bash register-credentials.sh` (Git Bash)
+    - This registers credentials with AgentCore AND auto-generates `agentcore/.env.local` on each machine (used by `agentcore dev` for local testing)
+  - **First deploy** (creates new CourseReviewMcp runtime — gateway does NOT include coursereview target yet):
+    - Deploy AgentCore on code-server: `agentcore deploy -y`
+    - Capture new CourseReviewMcp runtime endpoint from `agentcore status` output
+  - **Add coursereview gateway target back**:
+    - Add the `coursereview` target to `agentcore.json` gateway targets with the real runtime endpoint URL
+    - Target config: name=`coursereview`, credentialName=`CourseReviewMcp-oauth`, toolDefinitions=[`get_course_reviews`]
+  - **Second deploy** (updates gateway with coursereview target):
+    - Deploy AgentCore again on code-server: `agentcore deploy -y`
+  - **Verify**:
+    - `agentcore invoke "What courses are available?"`
+    - Ensure routing works through gateway to CourseReviewMcp
   - Ensure all tests pass, ask the user if questions arise.
   - **Rollback if Phase 3 deploy fails**: Revert CloudFormation template, `aws cloudformation deploy` to restore old pools, revert agentcore.json, `agentcore deploy -y`
 
@@ -167,6 +176,7 @@ All deployments run on the Ubuntu code-server. Code changes happen on this Windo
 - No property-based tests — this is a refactoring of infrastructure config, directory structure, and import paths
 - DynamoDB table rename (Phase 1) is destructive — data must be re-seeded after stack update
 - Cognito pool rename (Phase 3) creates new pool IDs — must capture from stack outputs and update agentcore.json
+- **Double deploy required for Phase 3**: First `agentcore deploy -y` creates the new CourseReviewMcp runtime (the `coursereview` gateway target is temporarily removed from agentcore.json to avoid validation failure). After deploy, capture the runtime ARN, add the `coursereview` gateway target back with the real endpoint URL, then second `agentcore deploy -y` updates the gateway.
 - All deployments happen on Ubuntu code-server (Docker build requirements + better performance)
 - Code changes happen on this Windows machine
 - The MCP tool name `get_course_reviews` and data file `course_reviews.csv` intentionally retain plural naming

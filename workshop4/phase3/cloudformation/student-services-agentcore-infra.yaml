@@ -324,17 +324,17 @@ Resources:
       AllowedOAuthFlowsUserPoolClient: true
 
   # =======================================================================
-  # DOMAIN: CourseReviews
+  # DOMAIN: CourseReview
   #
   # MCP server that retrieves course reviews from DynamoDB.
-  # Execution role: Bedrock (base) + DynamoDB (course_reviews table reads).
+  # Execution role: Bedrock (base) + DynamoDB (course_review table reads).
   # Cognito: protects the MCP runtime endpoint.
   # =======================================================================
 
-  CourseReviewsExecutionRole:
+  CourseReviewExecutionRole:
     Type: AWS::IAM::Role
     Properties:
-      RoleName: CourseReviews-execution-role
+      RoleName: CourseReview-execution-role
       AssumeRolePolicyDocument:
         Version: '2012-10-17'
         Statement:
@@ -352,10 +352,10 @@ Resources:
         - !Ref AgentCoreBasePolicy
         - 'arn:aws:iam::aws:policy/AmazonDynamoDBReadOnlyAccess'
 
-  CourseReviewsUserPool:
+  CourseReviewUserPool:
     Type: AWS::Cognito::UserPool
     Properties:
-      UserPoolName: course-reviews-user-pool
+      UserPoolName: course-review-user-pool
       Policies:
         PasswordPolicy:
           MinimumLength: 8
@@ -371,33 +371,33 @@ Resources:
           Required: true
           Mutable: true
 
-  CourseReviewsUserPoolDomain:
+  CourseReviewUserPoolDomain:
     Type: AWS::Cognito::UserPoolDomain
     Properties:
-      Domain: !Sub 'course-reviews-${AWS::AccountId}'
-      UserPoolId: !Ref CourseReviewsUserPool
+      Domain: !Sub 'course-review-${AWS::AccountId}'
+      UserPoolId: !Ref CourseReviewUserPool
 
-  CourseReviewsResourceServer:
+  CourseReviewResourceServer:
     Type: AWS::Cognito::UserPoolResourceServer
     Properties:
-      UserPoolId: !Ref CourseReviewsUserPool
-      Identifier: course-reviews
-      Name: Course Reviews
+      UserPoolId: !Ref CourseReviewUserPool
+      Identifier: course-review
+      Name: Course Review
       Scopes:
         - ScopeName: access
-          ScopeDescription: Access Course Reviews MCP Server
+          ScopeDescription: Access Course Review MCP Server
 
-  CourseReviewsAppClient:
+  CourseReviewAppClient:
     Type: AWS::Cognito::UserPoolClient
-    DependsOn: CourseReviewsResourceServer
+    DependsOn: CourseReviewResourceServer
     Properties:
-      UserPoolId: !Ref CourseReviewsUserPool
-      ClientName: course-reviews-client
+      UserPoolId: !Ref CourseReviewUserPool
+      ClientName: course-review-client
       GenerateSecret: true
       AllowedOAuthFlows:
         - client_credentials
       AllowedOAuthScopes:
-        - course-reviews/access
+        - course-review/access
       AllowedOAuthFlowsUserPoolClient: true
 
   # =======================================================================
@@ -605,42 +605,42 @@ Outputs:
     Export:
       Name: !Sub '${AWS::StackName}-CourseCatalogScope'
 
-  # --- CourseReviews ---
-  CourseReviewsExecutionRoleArn:
-    Description: 'Execution role ARN for CourseReviews runtime'
-    Value: !GetAtt CourseReviewsExecutionRole.Arn
+  # --- CourseReview ---
+  CourseReviewExecutionRoleArn:
+    Description: 'Execution role ARN for CourseReview runtime'
+    Value: !GetAtt CourseReviewExecutionRole.Arn
     Export:
-      Name: !Sub '${AWS::StackName}-CourseReviewsExecutionRoleArn'
+      Name: !Sub '${AWS::StackName}-CourseReviewExecutionRoleArn'
 
-  CourseReviewsUserPoolId:
-    Description: 'Cognito User Pool ID for Course Reviews'
-    Value: !Ref CourseReviewsUserPool
+  CourseReviewUserPoolId:
+    Description: 'Cognito User Pool ID for Course Review'
+    Value: !Ref CourseReviewUserPool
     Export:
-      Name: !Sub '${AWS::StackName}-CourseReviewsUserPoolId'
+      Name: !Sub '${AWS::StackName}-CourseReviewUserPoolId'
 
-  CourseReviewsDiscoveryUrl:
-    Description: 'OIDC Discovery URL for Course Reviews'
-    Value: !Sub 'https://cognito-idp.${AWS::Region}.amazonaws.com/${CourseReviewsUserPool}/.well-known/openid-configuration'
+  CourseReviewDiscoveryUrl:
+    Description: 'OIDC Discovery URL for Course Review'
+    Value: !Sub 'https://cognito-idp.${AWS::Region}.amazonaws.com/${CourseReviewUserPool}/.well-known/openid-configuration'
     Export:
-      Name: !Sub '${AWS::StackName}-CourseReviewsDiscoveryUrl'
+      Name: !Sub '${AWS::StackName}-CourseReviewDiscoveryUrl'
 
-  CourseReviewsClientId:
-    Description: 'App Client ID for Course Reviews'
-    Value: !Ref CourseReviewsAppClient
+  CourseReviewClientId:
+    Description: 'App Client ID for Course Review'
+    Value: !Ref CourseReviewAppClient
     Export:
-      Name: !Sub '${AWS::StackName}-CourseReviewsClientId'
+      Name: !Sub '${AWS::StackName}-CourseReviewClientId'
 
-  CourseReviewsTokenEndpoint:
-    Description: 'Token endpoint for Course Reviews'
-    Value: !Sub 'https://course-reviews-${AWS::AccountId}.auth.${AWS::Region}.amazoncognito.com/oauth2/token'
+  CourseReviewTokenEndpoint:
+    Description: 'Token endpoint for Course Review'
+    Value: !Sub 'https://course-review-${AWS::AccountId}.auth.${AWS::Region}.amazoncognito.com/oauth2/token'
     Export:
-      Name: !Sub '${AWS::StackName}-CourseReviewsTokenEndpoint'
+      Name: !Sub '${AWS::StackName}-CourseReviewTokenEndpoint'
 
-  CourseReviewsScope:
-    Description: 'OAuth scope for Course Reviews'
-    Value: 'course-reviews/access'
+  CourseReviewScope:
+    Description: 'OAuth scope for Course Review'
+    Value: 'course-review/access'
     Export:
-      Name: !Sub '${AWS::StackName}-CourseReviewsScope'
+      Name: !Sub '${AWS::StackName}-CourseReviewScope'
 
   # --- LoanApplication ---
   LoanApplicationExecutionRoleArn:

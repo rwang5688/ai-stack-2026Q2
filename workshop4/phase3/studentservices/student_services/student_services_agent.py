@@ -11,8 +11,6 @@ Usage:
     agentcore invoke "What courses are available for Fall 2026?"
 """
 
-import json
-import math
 import os
 import sys
 
@@ -27,9 +25,14 @@ import boto3
 import httpx
 from bedrock_agentcore import BedrockAgentCoreApp
 from mcp.client.streamable_http import streamablehttp_client
-from strands import Agent, tool
+from strands import Agent
 from strands.models import BedrockModel
 from strands.tools.mcp import MCPClient
+
+from .course_registration_agent import course_registration_agent
+from .course_review_agent import course_review_agent
+from .loan_application_agent import loan_application_agent
+from .math_teaching_agent import math_teaching_agent
 
 
 # ---------------------------------------------------------------------------
@@ -73,7 +76,7 @@ GATEWAY_SCOPE = os.environ.get("GATEWAY_SCOPE", "student-services-gateway/access
 
 
 # ---------------------------------------------------------------------------
-# System prompts
+# System prompt
 # ---------------------------------------------------------------------------
 ORCHESTRATOR_SYSTEM_PROMPT = """You are the Student Services Assistant for Any University (any.edu).
 You help students with course information, registration, loan predictions, and math tutoring.
@@ -95,30 +98,6 @@ When you receive a tool result, pass it through to the user verbatim. Do not sum
 If the tool result contains a routing_path field, display it at the TOP of your response like: 🔀 Routing: <routing_path value>
 
 CRITICAL for loan predictions: When the user provides comma-separated numeric values, pass the ENTIRE string to loan_application_agent EXACTLY as the user typed it."""
-
-COURSE_REVIEW_AGENT_PROMPT = """You are the Course Review Assistant for Any University (any.edu).
-You help students find information about courses from the course catalog and student reviews.
-
-CRITICAL WORKFLOW: For ANY course-related query, you MUST:
-1. FIRST call search_course_catalog to find relevant courses
-2. THEN call get_course_reviews for EACH course found (use the course code, e.g., "CS 441")
-3. Combine both sources in your response — catalog info AND student reviews
-
-NEVER skip step 2. Even if the user only asks about course descriptions, always include available student reviews."""
-
-COURSE_REGISTRATION_AGENT_PROMPT = """You are the Course Registration Assistant for Any University (any.edu).
-You help students register for courses. Use the register_course tool with student_id, course_name, and semester.
-If any required field is missing from the user's request, ask for it before calling the tool."""
-
-LOAN_APPLICATION_AGENT_PROMPT = """You are the Loan Offering Assistant for Any University (any.edu).
-You predict loan acceptance based on customer features. Use the predict_loan tool with the CSV features string.
-CRITICAL: Pass the user's CSV string EXACTLY as-is to predict_loan. Do NOT reformat, recount, or modify it.
-Interpret results: score >= 0.5 = Accept, score < 0.5 = Reject. Confidence = distance from 0.5 threshold."""
-
-MATH_TEACHING_AGENT_PROMPT = """You are the Math Teaching Assistant for Any University (any.edu).
-You solve math problems with clear, step-by-step explanations.
-Use the calculator tool for all arithmetic to ensure accuracy.
-Break complex problems into numbered steps and verify your final answer."""
 
 
 # ---------------------------------------------------------------------------
@@ -162,127 +141,6 @@ def get_mcp_client() -> MCPClient:
     return MCPClient(
         lambda: streamablehttp_client(url=GATEWAY_MCP_URL, auth=_OAuthAuth())
     )
-
-
-# ---------------------------------------------------------------------------
-# Calculator tool (local, no MCP)
-# ---------------------------------------------------------------------------
-ALLOWED_NAMES = {
-    "abs": abs,
-    "max": max,
-    "min": min,
-    "pow": pow,
-    "round": round,
-    "sum": sum,
-    **{k: getattr(math, k) for k in dir(math) if not k.startswith("_")},
-}
-
-
-@tool
-def calculator(expression: str) -> str:
-    """Evaluate a mathematical expression safely and return the result.
-
-    Supports arithmetic operators (+, -, *, /, **), parentheses, and math
-    functions (sqrt, sin, cos, tan, log, etc.). No system access allowed.
-
-    Args:
-        expression: A mathematical expression (e.g., "2 + 3 * 4", "math.sqrt(16)")
-    """
-    try:
-        result = eval(expression, {"__builtins__": {}}, ALLOWED_NAMES)
-        return f"{expression} = {result}"
-    except Exception as e:
-        return f"Error evaluating '{expression}': {str(e)}"
-
-
-# ---------------------------------------------------------------------------
-# Specialist agent tools (@tool decorated)
-# ---------------------------------------------------------------------------
-@tool
-def course_review_agent(query: str) -> str:
-    """Handle course catalog and review queries. Use for ANY question about courses, difficulty, reviews, ratings, recommendations, prerequisites, or course information."""
-    mcp_client = get_mcp_client()
-    model_config = get_model_config()
-    model = BedrockModel(
-        model_id=model_config["model_id"],
-        region_name=model_config["region"],
-        max_tokens=model_config["max_tokens"],
-    )
-    agent = Agent(
-        model=model,
-        system_prompt=COURSE_REVIEW_AGENT_PROMPT,
-        tools=[mcp_client],
-    )
-    response = agent(query)
-    return json.dumps({
-        "response": str(response),
-        "routing_path": "StudentServicesAgent → course_review_agent → AgentCore Gateway → CourseCatalogMcp + CourseReviewsMcp",
-    })
-
-
-@tool
-def course_registration_agent(query: str) -> str:
-    """Register students in courses. Requires student_id, course_name, and semester."""
-    mcp_client = get_mcp_client()
-    model_config = get_model_config()
-    model = BedrockModel(
-        model_id=model_config["model_id"],
-        region_name=model_config["region"],
-        max_tokens=model_config["max_tokens"],
-    )
-    agent = Agent(
-        model=model,
-        system_prompt=COURSE_REGISTRATION_AGENT_PROMPT,
-        tools=[mcp_client],
-    )
-    response = agent(query)
-    return json.dumps({
-        "response": str(response),
-        "routing_path": "StudentServicesAgent → course_registration_agent → AgentCore Gateway → CourseRegistrationMcp",
-    })
-
-
-@tool
-def loan_application_agent(query: str) -> str:
-    """Predict loan acceptance based on 59 numeric feature values provided as CSV."""
-    mcp_client = get_mcp_client()
-    model_config = get_model_config()
-    model = BedrockModel(
-        model_id=model_config["model_id"],
-        region_name=model_config["region"],
-        max_tokens=model_config["max_tokens"],
-    )
-    agent = Agent(
-        model=model,
-        system_prompt=LOAN_APPLICATION_AGENT_PROMPT,
-        tools=[mcp_client],
-    )
-    response = agent(query)
-    return json.dumps({
-        "response": str(response),
-        "routing_path": "StudentServicesAgent → loan_application_agent → AgentCore Gateway → LoanApplicationMcp",
-    })
-
-
-@tool
-def math_teaching_agent(query: str) -> str:
-    """Solve math problems with step-by-step explanations using a local calculator."""
-    model_config = get_model_config()
-    model = BedrockModel(
-        model_id=model_config["model_id"],
-        region_name=model_config["region"],
-        max_tokens=model_config["max_tokens"],
-    )
-    agent = Agent(
-        model=model,
-        system_prompt=MATH_TEACHING_AGENT_PROMPT,
-        tools=[calculator],
-    )
-    response = agent(query)
-    return json.dumps({
-        "response": str(response),
-        "routing_path": "StudentServicesAgent → math_teaching_agent → calculator (local)",
-    })
 
 
 # ---------------------------------------------------------------------------
