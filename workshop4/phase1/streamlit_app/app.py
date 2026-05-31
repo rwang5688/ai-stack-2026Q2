@@ -20,7 +20,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import streamlit as st
 
 from config import clear_parameter_cache, get_all_config_values, get_model_config
-from student_services_agent.agent import create_orchestrator
+from student_services.student_services_agent import create_orchestrator
 
 
 # --- Page Configuration ---

@@ -140,10 +140,10 @@ Resources:
         - AttributeName: reg_id
           KeyType: HASH
 
-  CourseReviewsTable:
+  CourseReviewTable:
     Type: AWS::DynamoDB::Table
     Properties:
-      TableName: course_reviews
+      TableName: course_review
       BillingMode: PAY_PER_REQUEST
       AttributeDefinitions:
         - AttributeName: course_name
@@ -196,13 +196,13 @@ Resources:
       Value: !Ref CourseRegistrationTable
       Description: DynamoDB course registration table name
 
-  SSMCourseReviewsTable:
+  SSMCourseReviewTable:
     Type: AWS::SSM::Parameter
     Properties:
-      Name: /student-services/course-reviews-table
+      Name: /student-services/course-review-table
       Type: String
-      Value: !Ref CourseReviewsTable
-      Description: DynamoDB course reviews table name
+      Value: !Ref CourseReviewTable
+      Description: DynamoDB course review table name
 
   SSMAwsRegion:
     Type: AWS::SSM::Parameter
@@ -259,11 +259,11 @@ Outputs:
     Export:
       Name: !Sub ${AWS::StackName}-CourseRegistrationTable
 
-  CourseReviewsTableName:
-    Description: DynamoDB course reviews table name
-    Value: !Ref CourseReviewsTable
+  CourseReviewTableName:
+    Description: DynamoDB course review table name
+    Value: !Ref CourseReviewTable
     Export:
-      Name: !Sub ${AWS::StackName}-CourseReviewsTable
+      Name: !Sub ${AWS::StackName}-CourseReviewTable
 
   KnowledgeBaseId:
     Description: Bedrock Knowledge Base ID

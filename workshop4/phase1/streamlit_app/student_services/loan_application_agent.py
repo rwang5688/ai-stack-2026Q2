@@ -6,15 +6,11 @@ Expects a CSV payload with 59 features representing customer demographics.
 """
 
 import re
-import sys
-import os
 
 import boto3
 from botocore.config import Config
 from strands import Agent, tool
 
-# Add docker_app directory to path for sibling imports
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import get_aws_region, get_model_config, get_xgboost_endpoint
 from shared.model_factory import create_model_from_config
 

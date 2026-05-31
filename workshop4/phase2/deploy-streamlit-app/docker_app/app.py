@@ -23,7 +23,7 @@ import streamlit as st
 from config_file import Config
 from utils.auth import Auth
 from config import clear_parameter_cache, get_all_config_values, get_model_config
-from student_services_agent.agent import create_orchestrator
+from student_services.student_services_agent import create_orchestrator
 
 
 # --- Page Configuration ---

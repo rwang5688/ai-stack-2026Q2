@@ -4,16 +4,12 @@ Course Registration Agent
 Handles student course registration by writing to DynamoDB.
 """
 
-import sys
-import os
 import uuid
 
 import boto3
 from botocore.config import Config
 from strands import Agent, tool
 
-# Add streamlit_app directory to path for sibling imports
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import get_aws_region, get_course_registration_table, get_model_config
 from shared.model_factory import create_model_from_config
 

@@ -139,9 +139,9 @@ def get_course_registration_table() -> str:
     return _get_param("course-registration-table", "COURSE_REGISTRATION_TABLE", "course_registration")
 
 
-def get_course_reviews_table() -> str:
-    """Get DynamoDB course reviews table name."""
-    return _get_param("course-reviews-table", "COURSE_REVIEWS_TABLE", "course_reviews")
+def get_course_review_table() -> str:
+    """Get DynamoDB course review table name."""
+    return _get_param("course-review-table", "COURSE_REVIEW_TABLE", "course_review")
 
 
 def get_all_config_values() -> Dict[str, str]:
@@ -160,7 +160,7 @@ def get_all_config_values() -> Dict[str, str]:
         "data_source_id": get_data_source_id(),
         "xgboost_endpoint": get_xgboost_endpoint(),
         "course_registration_table": get_course_registration_table(),
-        "course_reviews_table": get_course_reviews_table(),
+        "course_review_table": get_course_review_table(),
     }
 
 

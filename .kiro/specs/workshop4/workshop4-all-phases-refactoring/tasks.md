@@ -8,9 +8,9 @@ All deployments run on the Ubuntu code-server. Code changes happen on this Windo
 
 ## Tasks
 
-- [ ] 1. Phase 1 — Infrastructure + Code (get fully working first)
+- [x] 1. Phase 1 — Infrastructure + Code (get fully working first)
 
-  - [ ] 1.1 Update Phase 1 CloudFormation (DynamoDB + SSM + Output singular rename)
+  - [x] 1.1 Update Phase 1 CloudFormation (DynamoDB + SSM + Output singular rename)
     - File: `workshop4/phase1/cloudformation/student-services-infra.yaml`
     - Rename logical ID `CourseReviewsTable` → `CourseReviewTable`
     - Change physical table name `course_reviews` → `course_review`
@@ -22,14 +22,14 @@ All deployments run on the Ubuntu code-server. Code changes happen on this Windo
     - ⚠️ DESTRUCTIVE: DynamoDB table will be deleted and recreated — re-seed after deploy
     - _Requirements: 1.1, 1.2, 1.3_
 
-  - [ ] 1.2 Update seed data script to use new output key
+  - [x] 1.2 Update seed data script to use new output key
     - File: `workshop4/phase1/scripts/populate_seed_data.py`
     - In `required_keys` list: change `"CourseReviewsTableName"` → `"CourseReviewTableName"`
     - In variable assignment: change `reviews_table = outputs["CourseReviewsTableName"]` → `outputs["CourseReviewTableName"]`
     - Data file `course_reviews.csv` and S3 key `dynamodb/course_reviews.csv` remain unchanged
     - _Requirements: 1.4, 9.1, 9.2, 9.3_
 
-  - [ ] 1.3 Update Phase 1 config.py (singular table function)
+  - [x] 1.3 Update Phase 1 config.py (singular table function)
     - File: `workshop4/phase1/streamlit_app/config.py`
     - Rename function `get_course_reviews_table` → `get_course_review_table`
     - Change SSM key from `"course-reviews-table"` → `"course-review-table"`
@@ -38,7 +38,7 @@ All deployments run on the Ubuntu code-server. Code changes happen on this Windo
     - Update `get_all_config_values()` to call `get_course_review_table()` and use key `"course_review_table"`
     - _Requirements: 8.1_
 
-  - [ ] 1.4 Create Phase 1 `student_services/` package and move agent files
+  - [x] 1.4 Create Phase 1 `student_services/` package and move agent files
     - Create directory: `workshop4/phase1/streamlit_app/student_services/`
     - Create `student_services/__init__.py` that imports and re-exports `create_orchestrator`
     - Move `course_review_agent/agent.py` → `student_services/course_review_agent.py`
@@ -51,20 +51,20 @@ All deployments run on the Ubuntu code-server. Code changes happen on this Windo
     - Delete old subdirectories: `course_review_agent/`, `course_registration_agent/`, `loan_application_agent/`, `math_teaching_agent/`, `student_services_agent/`
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.7, 8.4_
 
-  - [ ] 1.5 Update Phase 1 app.py imports
+  - [x] 1.5 Update Phase 1 app.py imports
     - File: `workshop4/phase1/streamlit_app/app.py`
     - Change `from student_services_agent.agent import create_orchestrator` → `from student_services.student_services_agent import create_orchestrator`
     - _Requirements: 5.5, 5.6_
 
-- [ ] 2. Checkpoint — Phase 1 working
+- [x] 2. Checkpoint — Phase 1 working
   - Deploy CloudFormation stack update on code-server: `aws cloudformation deploy --template-file student-services-infra.yaml --stack-name student-services-infra --capabilities CAPABILITY_NAMED_IAM`
   - Re-seed data on code-server: `python scripts/populate_seed_data.py --region us-west-2`
   - Verify app starts without import errors: `python -c "import sys; sys.path.insert(0, '.'); from student_services.student_services_agent import create_orchestrator"`
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 3. Phase 2 — Code Changes (get fully working second)
+- [x] 3. Phase 2 — Code Changes (get fully working second)
 
-  - [ ] 3.1 Update Phase 2 config.py (singular table function)
+  - [x] 3.1 Update Phase 2 config.py (singular table function)
     - File: `workshop4/phase2/deploy-streamlit-app/docker_app/config.py`
     - Rename function `get_course_reviews_table` → `get_course_review_table`
     - Change SSM key from `"course-reviews-table"` → `"course-review-table"`
@@ -73,7 +73,7 @@ All deployments run on the Ubuntu code-server. Code changes happen on this Windo
     - Update `get_all_config_values()` to call `get_course_review_table()`
     - _Requirements: 8.2_
 
-  - [ ] 3.2 Create Phase 2 `student_services/` package and move agent files
+  - [x] 3.2 Create Phase 2 `student_services/` package and move agent files
     - Create directory: `workshop4/phase2/deploy-streamlit-app/docker_app/student_services/`
     - Create `student_services/__init__.py` that imports and re-exports `create_orchestrator` and specialist creation functions
     - Move `course_review_agent/agent.py` → `student_services/course_review_agent.py`
@@ -88,12 +88,12 @@ All deployments run on the Ubuntu code-server. Code changes happen on this Windo
     - `shared/` and `utils/` directories remain at `docker_app/` level unchanged
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.7, 8.5_
 
-  - [ ] 3.3 Update Phase 2 app.py imports
+  - [x] 3.3 Update Phase 2 app.py imports
     - File: `workshop4/phase2/deploy-streamlit-app/docker_app/app.py`
     - Change `from student_services_agent.agent import create_orchestrator` → `from student_services.student_services_agent import create_orchestrator`
     - _Requirements: 6.6, 6.8_
 
-- [ ] 4. Checkpoint — Phase 2 working
+- [x] 4. Checkpoint — Phase 2 working
   - Verify app starts without import errors: `python -c "import sys; sys.path.insert(0, '.'); from student_services.student_services_agent import create_orchestrator"`
   - Docker build on code-server: `docker build -t student-services-phase2 .`
   - Ensure all tests pass, ask the user if questions arise.

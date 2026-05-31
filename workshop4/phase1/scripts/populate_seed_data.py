@@ -42,7 +42,7 @@ def get_stack_outputs(stack_name: str, region: str) -> dict:
         "KnowledgeBaseId",
         "DataSourceId",
         "CourseRegistrationTableName",
-        "CourseReviewsTableName",
+        "CourseReviewTableName",
     ]
     for key in required_keys:
         if key not in outputs:
@@ -252,7 +252,7 @@ def main():
     kb_id = outputs["KnowledgeBaseId"]
     ds_id = outputs["DataSourceId"]
     reg_table = outputs["CourseRegistrationTableName"]
-    reviews_table = outputs["CourseReviewsTableName"]
+    reviews_table = outputs["CourseReviewTableName"]
     print(f"  Data bucket: {bucket_name}")
     print(f"  Knowledge Base ID: {kb_id}")
     print(f"  Data Source ID: {ds_id}")

@@ -8,20 +8,15 @@ Routes user queries to the appropriate specialist agent:
 - Math Teaching Agent: mathematical problem solving
 """
 
-import sys
-import os
-
 from strands import Agent
 
-# Add streamlit_app directory to path for sibling imports
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from shared.model_factory import create_model_from_config
 
 # Import specialist tool functions
-from course_review_agent.agent import course_review_assistant
-from course_registration_agent.agent import course_registration_assistant
-from loan_application_agent.agent import loan_offering_assistant
-from math_teaching_agent.agent import math_assistant
+from .course_registration_agent import course_registration_assistant
+from .course_review_agent import course_review_assistant
+from .loan_application_agent import loan_offering_assistant
+from .math_teaching_agent import math_assistant
 
 
 ORCHESTRATOR_SYSTEM_PROMPT = """You are the Student Services Assistant, an orchestrator that routes student queries to specialized agents.

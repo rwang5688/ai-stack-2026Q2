@@ -6,18 +6,14 @@ with DynamoDB (course reviews) to answer questions about courses.
 """
 
 import json
-import sys
-import os
 
 import boto3
 from botocore.config import Config
 from strands import Agent, tool
 
-# Add streamlit_app directory to path for sibling imports
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import (
     get_aws_region,
-    get_course_reviews_table,
+    get_course_review_table,
     get_knowledge_base_id,
     get_model_config,
 )
@@ -102,7 +98,7 @@ def query_course_reviews(course_name: str) -> str:
     Returns:
         Student reviews for the specified course.
     """
-    table_name = get_course_reviews_table()
+    table_name = get_course_review_table()
     region = get_aws_region()
 
     if not table_name:
