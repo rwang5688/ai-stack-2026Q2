@@ -1,4 +1,2 @@
-openai-whisper
 ffmpeg-python
-torchaudio
-nvgpu
+openai-whisper==20230918

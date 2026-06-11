@@ -1,18 +1,15 @@
 # Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
 # SPDX-License-Identifier: MIT-0
 
-import os
 import io
-import sys
-import time
 import json
 import logging
-import whisper
-import torch
-import boto3
+import os
 import tempfile
-import torchaudio
-from botocore.exceptions import NoCredentialsError
+import time
+
+import torch
+import whisper
 
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -32,7 +29,7 @@ def transform_fn(model, request_body, request_content_type, response_content_typ
     """
     logging.info("Check out the request_body type: %s", type(request_body))
     start_time = time.time()
-    
+
     file = io.BytesIO(request_body)
     tfile = tempfile.NamedTemporaryFile(delete=False)
     tfile.write(file.read())
