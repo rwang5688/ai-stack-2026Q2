@@ -1,2 +1,2 @@
 ffmpeg-python
-openai-whisper==20230918
+/opt/ml/model/code/openai_whisper-20230918-py3-none-any.whl
