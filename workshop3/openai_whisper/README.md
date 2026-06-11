@@ -46,12 +46,17 @@ openai_whisper/
 
 ### DLC Inference Image
 
-| Variant | Image Tag |
-|---------|-----------|
-| 2.x | `huggingface-pytorch-inference:2.0.0-transformers4.28.1-gpu-py310-cu118-ubuntu20.04` |
-| 4.x | `huggingface-pytorch-inference:2.6.0-transformers5.5.3-gpu-py312-cu124-ubuntu22.04` |
+Both notebooks use the **same** DLC inference container:
+
+```
+huggingface-pytorch-inference:2.0.0-transformers4.28.1-gpu-py310-cu118-ubuntu20.04
+```
 
 ECR registry: `763104351884.dkr.ecr.{region}.amazonaws.com/`
+
+**Why not use the newer DLC (2.6.0, Python 3.12)?** Because `openai-whisper` uses a legacy `setup.py` that imports `pkg_resources`, which is broken on Python 3.12. The package fails to build inside the container, and the endpoint deploy fails after 20+ minutes with no useful error. The old DLC (Python 3.10) installs whisper cleanly in seconds. We wasted an entire evening learning this the hard way.
+
+The notebook kernel (SageMaker Distribution 4.x) and the endpoint container are **completely independent**. You can run a modern Python 3.12 kernel and still deploy an endpoint using a Python 3.10 container. They don't talk to each other.
 
 ### Inference Code Directory
 
@@ -62,39 +67,17 @@ ECR registry: `763104351884.dkr.ecr.{region}.amazonaws.com/`
 
 Both directories contain identical `inference.py` logic (model_fn + transform_fn). They're split so that `requirements.txt` inside each container can diverge if needed.
 
-### Model Serving Environment Variables (MMS vs TorchServe)
+### Model Serving Environment Variables (MMS)
 
-**IMPORTANT: This has NOTHING to do with which SageMaker Studio image you run the notebook on.**
+Both notebooks use the same DLC (2.0.0) which uses **Multi-Model Server (MMS)**. The environment variables are:
 
-There are two separate, independent things happening:
+| Setting | Environment Variable | Value |
+|---------|---------------------|-------|
+| Max request size | `MMS_MAX_REQUEST_SIZE` | `2000000000` (2 GB) |
+| Max response size | `MMS_MAX_RESPONSE_SIZE` | `2000000000` (2 GB) |
+| Response timeout | `MMS_DEFAULT_RESPONSE_TIMEOUT` | `900` (15 minutes) |
 
-1. **Studio kernel image** (where your notebook Python code runs) — this is SageMaker Distribution 2.x or 4.x
-2. **DLC inference container** (where your model serves requests on the endpoint) — this is the `image_uri` you pass to `PyTorchModel`
-
-The env var prefix is determined by #2 — the DLC container you deploy to the endpoint:
-
-| DLC Image Tag | Serving Framework | Env Var Prefix |
-|---------------|-------------------|----------------|
-| `2.0.0-transformers4.28.1-gpu-py310-cu118-ubuntu20.04` | MMS | `MMS_*` |
-| `2.6.0-transformers5.5.3-gpu-py312-cu124-ubuntu22.04` | TorchServe | `TS_*` |
-
-The specific env vars:
-
-| Setting | MMS (older DLC) | TorchServe (newer DLC) |
-|---------|-----------------|------------------------|
-| Max request size (bytes) | `MMS_MAX_REQUEST_SIZE` | `TS_MAX_REQUEST_SIZE` |
-| Max response size (bytes) | `MMS_MAX_RESPONSE_SIZE` | `TS_MAX_RESPONSE_SIZE` |
-| Response timeout (seconds) | `MMS_DEFAULT_RESPONSE_TIMEOUT` | `TS_DEFAULT_RESPONSE_TIMEOUT` |
-
-All three are set to:
-- Request/response size: `2000000000` (2 GB)
-- Timeout: `900` (15 minutes)
-
-**Why we pair them the way we do**: The 2.x notebook uses an older DLC (which uses MMS) because those package versions are compatible. The 4.x notebook uses a newer DLC (which uses TorchServe) because *those* package versions are compatible. The pairing is about version compatibility, not a hard dependency between Studio image and serving framework.
-
-**Why this matters**: If you use the wrong prefix, the container **silently ignores** the env vars and applies defaults (~6 MB request size, 60s timeout). Your endpoint will reject audio files > 6 MB with no useful error message. No warning, no log, nothing.
-
-**How to tell which serving framework a DLC uses**: Look at the image tag version number. HuggingFace PyTorch inference images with tag `2.0.0` use MMS. Tags `2.1.0` and later use TorchServe. There's no official documentation that makes this obvious — you figure it out by trial and error or reading the Dockerfile.
+**Why this matters**: If these aren't set, the container applies defaults (~6 MB request size, 60s timeout). Your endpoint will reject audio files > 6 MB with no useful error message. No warning, no log, nothing.
 
 ## Usability Enhancements (Applied to Both Notebooks)
 
