@@ -1,3 +1,4 @@
+--no-build-isolation
 setuptools<71
 ffmpeg-python
 openai-whisper==20231117
