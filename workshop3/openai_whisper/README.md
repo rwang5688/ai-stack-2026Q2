@@ -100,7 +100,62 @@ Each notebook demonstrates three SageMaker deployment patterns:
 ## Gotchas
 
 - **Kernel restart required** after `%pip install` — the notebook has a markdown reminder cell for this
+- **First run of cell 1 takes 3-5 minutes** — whisper builds from source on Python 3.12. Subsequent runs (after kernel restart) are instant because the package is cached on disk. **Pre-run this before the workshop.**
 - **Endpoint deploy takes ~7 minutes** — don't panic, it's pulling the DLC image and loading the model
-- **`ml.g4dn.xlarge` quota** — you may need to request a quota increase for GPU instances in your account
+- **`ml.g6.xlarge` quota** — you need quota for `ml.g6.xlarge for endpoint usage` (at least 4). Request in Service Quotas console.
 - **The DLC image must exist in your region** — most regions have it, but if you get a "repository not found" error, check the [AWS DLC Available Images](https://github.com/aws/deep-learning-containers/blob/master/available_images.md) list
 - **Batch transform `max_payload=100`** — this is in MB. Audio files larger than 100 MB will be rejected
+
+## Pre-Built Whisper Wheels (CRITICAL — READ THIS)
+
+### The Problem
+
+`openai-whisper` on PyPI is distributed ONLY as a source tarball (`.tar.gz`), not a pre-built wheel. Its `setup.py` imports `pkg_resources`, which has been removed from modern `setuptools` (v71+). This means:
+
+- **Inside the DLC container**: `pip install openai-whisper` FAILS because pip's build isolation creates a temp env with the latest setuptools (which doesn't have `pkg_resources`). The endpoint deploy fails after 20+ minutes with `ModuleNotFoundError: No module named 'pkg_resources'`.
+- **Inside the notebook kernel** (Python 3.12, Distribution 4.x): Same problem. We work around it with `setuptools<71` + the install takes 3-5 minutes (source compile).
+- **This affects ALL versions of openai-whisper on PyPI** (20230918, 20231117, etc.) — they all use the same broken `setup.py`.
+
+### The Solution
+
+We pre-build the wheel locally and check it into the repo. The container installs from the local `.whl` file — no build, no setuptools, no `pkg_resources`, instant install.
+
+### How the Wheels Were Built
+
+Run from a SageMaker Studio terminal (or any environment with setuptools and Python 3.x):
+
+```bash
+# Build the 20231117 wheel (for code_sagemaker_4)
+cd /tmp
+pip wheel openai-whisper==20231117 --no-build-isolation --no-deps -w .
+cp openai_whisper-20231117-py3-none-any.whl ~/your-repo/workshop3/openai_whisper/code_sagemaker_4/
+
+# Build the 20230918 wheel (for code_sagemaker_2)
+pip wheel openai-whisper==20230918 --no-build-isolation --no-deps -w /tmp
+cp /tmp/openai_whisper-20230918-py3-none-any.whl ~/your-repo/workshop3/openai_whisper/code_sagemaker_2/
+```
+
+Key flags:
+- `--no-build-isolation`: Uses the system's setuptools (which has `pkg_resources`) instead of downloading a new broken one
+- `--no-deps`: Don't download dependencies — we only want the whisper wheel itself
+- `-w .`: Output the wheel to current directory
+
+The resulting wheels are `py3-none-any` (pure Python, no C extensions, works on any Python 3.x, any OS).
+
+### How the Wheels Are Used
+
+In `code_sagemaker_4/requirements.txt`:
+```
+ffmpeg-python
+/opt/ml/model/code/openai_whisper-20231117-py3-none-any.whl
+```
+
+When SageMaker starts the container, it runs `pip install -r /opt/ml/model/code/requirements.txt`. The `.whl` file is already in `/opt/ml/model/code/` (bundled with the source tarball via `source_dir`). Pip installs it instantly — no network, no build, no setuptools.
+
+### If You Ever Need to Rebuild
+
+If you upgrade to a newer whisper version, repeat the `pip wheel` command with the new version number. The key requirement is having a working `setuptools<71` in the environment where you run `pip wheel`. The SageMaker Distribution 4.x Studio terminal works because we install `setuptools<71` in cell 1 of the notebook.
+
+### Why This Happened
+
+AWS silently patches DLC images even when the tag stays the same (security updates). The `huggingface-pytorch-inference:2.0.0-transformers4.28.1-gpu-py310-cu118-ubuntu20.04` image that worked 2 years ago now has a newer setuptools that removed `pkg_resources`. The image tag is identical but the contents changed. There's no way to pin to the old image contents.
