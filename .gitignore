@@ -208,3 +208,8 @@ __marimo__/
 
 # Exclude keypair
 *.pem
+
+# Node
+node_modules/
+cdk.out/
+cdk-outputs.json

@@ -8,12 +8,12 @@ cd "$(dirname "$0")/deploy-streamlit-app"
 
 # Bootstrap CDK (idempotent — safe to run multiple times)
 echo ">>> Bootstrapping CDK..."
-cdk bootstrap
+npx -y aws-cdk@latest bootstrap
 echo ""
 
 # Deploy stack (builds Docker image, pushes to ECR, deploys CloudFormation)
 echo ">>> Deploying CDK stack..."
-cdk deploy --require-approval never --outputs-file cdk-outputs.json
+npx -y aws-cdk@latest deploy --require-approval never --outputs-file cdk-outputs.json
 echo ""
 
 # Print stack outputs

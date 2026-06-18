@@ -13,7 +13,7 @@ echo ""
 
 # Bootstrap CDK (idempotent — safe to run multiple times)
 echo ">>> Bootstrapping CDK..."
-cdk bootstrap
+npx -y aws-cdk@latest bootstrap
 echo ""
 
 # Deploy stack (builds Docker image, pushes to ECR, deploys CloudFormation)
@@ -21,7 +21,7 @@ echo ""
 AGENT_URL="https://bedrock-agentcore.us-west-2.amazonaws.com/runtimes/arn%3Aaws%3Abedrock-agentcore%3Aus-west-2%3A149057604171%3Aruntime%2Fstudentservices_StudentServicesAgent-DVMRTdBLbs/invocations"
 
 echo ">>> Deploying CDK stack..."
-cdk deploy --require-approval never --outputs-file cdk-outputs.json \
+npx -y aws-cdk@latest deploy --require-approval never --outputs-file cdk-outputs.json \
   --context student_services_agent_url="${AGENT_URL}"
 echo ""
 
