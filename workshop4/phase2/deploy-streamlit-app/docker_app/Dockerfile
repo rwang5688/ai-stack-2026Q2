@@ -1,9 +1,15 @@
-FROM --platform=linux/arm64 python:3.12
-EXPOSE 8501
+FROM --platform=linux/arm64 python:3.13-slim
+
 WORKDIR /app
+
+RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
+
 COPY requirements.txt ./requirements.txt
-RUN pip3 install --upgrade pip && pip3 install -r requirements.txt
+RUN pip install --no-cache-dir --upgrade pip && pip install --no-cache-dir -r requirements.txt
 COPY . .
+
 ENV BYPASS_TOOL_CONSENT=true
 ENV OTEL_SDK_DISABLED=true
-CMD streamlit run app.py --server.port 8501 --server.address 0.0.0.0
+
+EXPOSE 8501
+CMD ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
