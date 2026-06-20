@@ -110,10 +110,34 @@ CMD ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0
 - No application code changes needed — purely OS-level patching
 
 ## Next Steps
-- [ ] Upload changed files to code-server
-- [ ] Run `cdk deploy` from code-server for both Phase 2 and Phase 3
+- [x] Upload changed files to code-server
+- [x] Run `cdk deploy` from code-server for both Phase 2 and Phase 3 (both tested and confirmed working)
 - [ ] Verify via Inspector that CVEs are resolved (~24 hours after new tasks are running)
 - [ ] Consider adding a periodic rebuild schedule to prevent future SLA breaches
+  - Option A: Schedule a monthly `cdk deploy` (force new image build) via a calendar reminder
+  - Option B: Add a GitHub Actions / CodePipeline workflow that rebuilds and deploys on a cron schedule (e.g., weekly)
+  - Option C: Use ECR image scanning + EventBridge to trigger redeployment when new CVEs are detected
+  - Option D: Pin base image to a `python:3.13-slim-bookworm` tag and monitor Debian security tracker for updates
+  - Recommendation: For non-prod workshop accounts, a monthly manual rebuild (Option A) is sufficient. For anything in compliance scope, Option B or C is more appropriate.
+- [ ] Check other workspaces for potential SLA breaches
+  - The following findings are escalated and significantly past SLA (SLA dates from August 2025):
+    - `539307129890` (wangrob-aiml-02): `Streamlit-stl-front` — SLA 2025-08-16
+    - `539307129890` (wangrob-aiml-02): `TravelPlanner-agent-ui` — SLA 2025-08-16
+    - `499243079778` (wangrob-hcls-digipath-demos-01): `hcls-agents-react-ui-service` — SLA 2025-08-21
+  - For each workspace, use this prompt in a new Kiro session:
+    ```
+    I have a container remediation finding for an ECS Fargate service in this workspace.
+    The service name is [SERVICE_NAME] and it has OS-level CVEs that need patching.
+
+    Please:
+    1. Find the Dockerfile for this service
+    2. Determine if the container is still needed (check if the ECS service is active)
+    3. If still needed: add `apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*`
+       early in the Dockerfile, consider switching to a -slim base image if not already,
+       and help me redeploy
+    4. If no longer needed: help me tear down the ECS service and related infrastructure
+       to resolve the finding by decommissioning
+    ```
 
 ## Resources
 - Container remediation findings: `.kiro/references/workshop4-container-remediation-findings/container-remediation-findings.md`
